@@ -9,11 +9,12 @@ dependencies = [
     "mcp[cli]>=1.2.0",
 ]
 
-[project.optional-dependencies]
+[dependency-groups]
 dev = [
     "pytest>=7.0.0",
     "black>=23.0.0",
     "mypy>=1.0.0",
+    "expecttest>=0.1.4",
 ]
 
 [project.scripts]
