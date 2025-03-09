@@ -71,13 +71,13 @@ def write_text_content(file_path: str, content: str, encoding: str = 'utf-8', li
     with open(file_path, 'w', encoding=encoding) as f:
         f.write(content)
 
-def write_file_content(file_path: str, content: str, description: Optional[str] = None) -> str:
+def write_file_content(file_path: str, content: str, description: str = "") -> str:
     """Write content to a file.
 
     Args:
         file_path: The absolute path to the file to write
         content: The content to write to the file
-        description: Optional description of the change for git commit
+        description: Short description of the change
 
     Returns:
         A success message or an error message
@@ -104,14 +104,13 @@ def write_file_content(file_path: str, content: str, description: Optional[str] 
         # Write the content with proper encoding and line endings
         write_text_content(file_path, content, encoding, line_endings)
         
-        # Commit the changes if a description was provided
+        # Commit the changes
         git_message = ""
-        if description:
-            success, message = commit_changes(file_path, description)
-            if success:
-                git_message = f"\nChanges committed to git: {description}"
-            else:
-                git_message = f"\nFailed to commit changes to git: {message}"
+        success, message = commit_changes(file_path, description)
+        if success:
+            git_message = f"\nChanges committed to git: {description}"
+        else:
+            git_message = f"\nFailed to commit changes to git: {message}"
         
         return f"Successfully wrote to {file_path}{git_message}"
     except Exception as e:
