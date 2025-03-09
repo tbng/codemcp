@@ -101,12 +101,23 @@ def commit_changes(file_path: str, description: str) -> Tuple[bool, str]:
         # If there are uncommitted changes (besides our target file), commit them first
         if status_result.stdout and file_is_tracked:
             # Get list of changed files
-            changed_files = [
-                line.split(" ")[-1]
-                for line in status_result.stdout.splitlines()
-                if normalize_file_path(os.path.join(directory, line.split(" ")[-1]))
-                != normalize_file_path(file_path)
-            ]
+            changed_files = []
+            for line in status_result.stdout.splitlines():
+                # Skip empty lines
+                if not line.strip():
+                    continue
+                    
+                # git status --porcelain output format: XY filename
+                # where X is status in staging area, Y is status in working tree
+                # There are at least 2 spaces before the filename
+                parts = line.strip().split(" ", 1)
+                if len(parts) > 1:
+                    # Extract the filename, removing any leading spaces
+                    filename = parts[1].lstrip()
+                    full_path = normalize_file_path(os.path.join(directory, filename))
+                    # Skip our target file
+                    if full_path != normalize_file_path(file_path):
+                        changed_files.append(filename)
 
             if changed_files:
                 # Commit other changes first with a default message
