@@ -5,6 +5,7 @@ import sys
 from typing import Optional, Dict, Any, List, Tuple
 import base64
 from pathlib import Path
+import logging
 
 from mcp.server.fastmcp import FastMCP, Context, Image
 
@@ -125,8 +126,52 @@ async def deskaid(ctx: Context, command: str, file_path: str, arg1: Optional[str
     else:
         return f"Unknown command: {command}. Available commands: ReadFile, WriteFile, EditFile, LS"
 
+def configure_logging(log_file='deskaid.log'):
+    """Configure logging to write to both a file and the console.
+
+    Debug logging can be enabled by setting the DESKAID_DEBUG environment variable to any value.
+    Example: DESKAID_DEBUG=1 python -m deskaid
+    """
+    log_dir = os.path.join(os.path.expanduser('~'), '.deskaid')
+    os.makedirs(log_dir, exist_ok=True)
+    log_path = os.path.join(log_dir, log_file)
+
+    # Determine log level from environment variable
+    debug_enabled = os.environ.get('DESKAID_DEBUG') or True
+    log_level = logging.DEBUG if debug_enabled else logging.INFO
+
+    # Create a root logger
+    root_logger = logging.getLogger()
+    root_logger.setLevel(log_level)
+
+    # Clear any existing handlers
+    if root_logger.hasHandlers():
+        root_logger.handlers.clear()
+
+    # Create file handler
+    file_handler = logging.FileHandler(log_path)
+    file_handler.setLevel(log_level)
+
+    # Create console handler
+    console_handler = logging.StreamHandler()
+    console_handler.setLevel(log_level)
+
+    # Create formatter and add it to the handlers
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    file_handler.setFormatter(formatter)
+    console_handler.setFormatter(formatter)
+
+    # Add the handlers to the root logger
+    root_logger.addHandler(file_handler)
+    root_logger.addHandler(console_handler)
+
+    logging.info(f"Logging configured. Log file: {log_path}")
+    if debug_enabled:
+        logging.debug("Debug logging enabled")
+
 def run():
     """Run the MCP server."""
+    configure_logging()
     mcp.run()
 
 if __name__ == "__main__":

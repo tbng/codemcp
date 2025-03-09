@@ -4,8 +4,15 @@ import os
 import stat
 from typing import Optional, Dict, Tuple, List
 import re
+import json
+import difflib
+import logging
+import hashlib
 
 from ..common import get_edit_snippet
+
+# Set up logger
+logger = logging.getLogger(__name__)
 
 def detect_file_encoding(file_path: str) -> str:
     """Detect the encoding of a file.
@@ -113,6 +120,60 @@ def write_text_content(file_path: str, content: str, encoding: str = 'utf-8', li
     with open(file_path, 'w', encoding=encoding) as f:
         f.write(content)
 
+def debug_string_comparison(s1: str, s2: str, label1: str = "string1", label2: str = "string2") -> bool:
+    """Thoroughly debug string comparison and identify differences.
+
+    Args:
+        s1: First string
+        s2: Second string
+        label1: Label for the first string
+        label2: Label for the second string
+
+    Returns:
+        True if strings are different, False if they are the same
+    """
+    # Basic checks
+    length_same = len(s1) == len(s2)
+    content_same = s1 == s2
+
+    logger.debug(f"String comparison debug:")
+    logger.debug(f"  Length same? {length_same} ({len(s1)} vs {len(s2)})")
+    logger.debug(f"  Content same? {content_same}")
+
+    # Hash check
+    hash1 = hashlib.md5(s1.encode('utf-8')).hexdigest()
+    hash2 = hashlib.md5(s2.encode('utf-8')).hexdigest()
+    logger.debug(f"  MD5 hashes: {hash1} vs {hash2}")
+
+    # If strings appear to be the same but should be different
+    if content_same:
+        # Check for invisible characters or encoding issues
+        s1_repr = repr(s1)
+        s2_repr = repr(s2)
+        logger.debug(f"  Repr comparison: {s1_repr[:100]} vs {s2_repr[:100]}")
+
+        # Check byte by byte
+        bytes1 = s1.encode('utf-8')
+        bytes2 = s2.encode('utf-8')
+        if bytes1 != bytes2:
+            logger.debug(f"  Strings differ at byte level even though they appear equal as strings!")
+
+            # Find the first differing byte
+            for i, (b1, b2) in enumerate(zip(bytes1, bytes2)):
+                if b1 != b2:
+                    logger.debug(f"  First byte difference at position {i}: {b1} vs {b2}")
+                    break
+    else:
+        # Find differences
+        diff = list(difflib.ndiff(s1.splitlines(), s2.splitlines()))
+        changes = [d for d in diff if d.startswith('+ ') or d.startswith('- ')]
+        if changes:
+            logger.debug(f"  Line differences (first 5):")
+            for d in changes[:5]:
+                logger.debug(f"    {d}")
+
+    return not content_same
+
 def edit_file_content(file_path: str, old_string: str, new_string: str, read_file_timestamps: Optional[Dict[str, float]] = None) -> str:
     """Edit a file by replacing old_string with new_string.
 
@@ -129,9 +190,13 @@ def edit_file_content(file_path: str, old_string: str, new_string: str, read_fil
         # Convert to absolute path if needed
         full_file_path = file_path if os.path.isabs(file_path) else os.path.abspath(file_path)
 
-        # Validate input
-        if old_string == new_string:
+        # Debug string comparison using our thorough utility
+        strings_are_different = debug_string_comparison(old_string, new_string, "old_string", "new_string")
+
+        if not strings_are_different:
             return "No changes to make: old_string and new_string are exactly the same."
+
+        # Proceed with the edit now that we've confirmed the strings are different
 
         # Handle creating a new file
         if old_string == '' and os.path.exists(full_file_path):
