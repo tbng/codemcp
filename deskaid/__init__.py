@@ -165,17 +165,35 @@ async def deskaid(ctx: Context, command: str, *, file_path: Optional[str] = None
 
 def configure_logging(log_file='deskaid.log'):
     """Configure logging to write to both a file and the console.
-
-    Debug logging can be enabled by setting the DESKAID_DEBUG environment variable to any value.
+    
+    The log level is determined from the configuration file ~/.deskaidrc.
+    It can be overridden by setting the DESKAID_DEBUG environment variable.
     Example: DESKAID_DEBUG=1 python -m deskaid
     """
+    from .config import get_logger_verbosity
+    
     log_dir = os.path.join(os.path.expanduser('~'), '.deskaid')
     os.makedirs(log_dir, exist_ok=True)
     log_path = os.path.join(log_dir, log_file)
 
-    # Determine log level from environment variable
-    debug_enabled = os.environ.get('DESKAID_DEBUG') or True
-    log_level = logging.DEBUG if debug_enabled else logging.INFO
+    # Get log level from config, with environment variable override
+    log_level_str = os.environ.get('DESKAID_DEBUG_LEVEL') or get_logger_verbosity()
+    
+    # Map string log level to logging constants
+    log_level_map = {
+        'DEBUG': logging.DEBUG,
+        'INFO': logging.INFO,
+        'WARNING': logging.WARNING,
+        'ERROR': logging.ERROR,
+        'CRITICAL': logging.CRITICAL
+    }
+    
+    # Convert string to logging level, default to INFO if invalid
+    log_level = log_level_map.get(log_level_str.upper(), logging.INFO)
+    
+    # Force DEBUG level if DESKAID_DEBUG is set (for backward compatibility)
+    if os.environ.get('DESKAID_DEBUG'):
+        log_level = logging.DEBUG
 
     # Create a root logger
     root_logger = logging.getLogger()
@@ -203,8 +221,7 @@ def configure_logging(log_file='deskaid.log'):
     root_logger.addHandler(console_handler)
 
     logging.info(f"Logging configured. Log file: {log_path}")
-    if debug_enabled:
-        logging.debug("Debug logging enabled")
+    logging.info(f"Log level set to: {logging.getLevelName(log_level)}")
 
 def run():
     """Run the MCP server."""
