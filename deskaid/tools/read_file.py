@@ -8,10 +8,13 @@ from ..common import (
     MAX_LINES_TO_READ,
     MAX_LINE_LENGTH,
     MAX_OUTPUT_SIZE,
-    is_image_file
+    is_image_file,
 )
 
-def read_file_content(file_path: str, offset: Optional[int] = None, limit: Optional[int] = None) -> str:
+
+def read_file_content(
+    file_path: str, offset: Optional[int] = None, limit: Optional[int] = None
+) -> str:
     """Read a file's content with optional offset and limit.
 
     Args:
@@ -40,7 +43,7 @@ def read_file_content(file_path: str, offset: Optional[int] = None, limit: Optio
             return f"Error: File content ({file_size // 1024}KB) exceeds maximum allowed size ({MAX_OUTPUT_SIZE // 1024}KB). Please use offset and limit parameters to read specific portions of the file."
 
         # Handle text files
-        with open(full_file_path, 'r', encoding='utf-8', errors='replace') as f:
+        with open(full_file_path, "r", encoding="utf-8", errors="replace") as f:
             # Get total line count
             all_lines = f.readlines()
             total_lines = len(all_lines)
@@ -53,13 +56,15 @@ def read_file_content(file_path: str, offset: Optional[int] = None, limit: Optio
                 return f"Error: Offset {offset} is beyond the end of the file (total lines: {total_lines})"
 
             max_lines = MAX_LINES_TO_READ if limit is None else limit
-            selected_lines = all_lines[line_offset:line_offset + max_lines]
+            selected_lines = all_lines[line_offset : line_offset + max_lines]
 
             # Process lines (truncate long lines)
             processed_lines = []
             for line in selected_lines:
                 if len(line) > MAX_LINE_LENGTH:
-                    processed_lines.append(line[:MAX_LINE_LENGTH] + "... (line truncated)")
+                    processed_lines.append(
+                        line[:MAX_LINE_LENGTH] + "... (line truncated)"
+                    )
                 else:
                     processed_lines.append(line)
 
@@ -69,7 +74,7 @@ def read_file_content(file_path: str, offset: Optional[int] = None, limit: Optio
                 line_num = line_offset + i + 1  # 1-indexed line number
                 numbered_lines.append(f"{line_num:6}\t{line.rstrip()}")
 
-            content = '\n'.join(numbered_lines)
+            content = "\n".join(numbered_lines)
 
             # Add a message if we truncated the file
             if line_offset + len(processed_lines) < total_lines:

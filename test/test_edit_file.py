@@ -12,7 +12,7 @@ from deskaid.tools.edit_file import (
     find_similar_file,
     apply_edit,
     write_text_content,
-    edit_file_content
+    edit_file_content,
 )
 from deskaid.common import get_edit_snippet
 
@@ -26,7 +26,9 @@ class TestEditFile(TestCase):
         # Create a test file with known content
         self.test_file_path = os.path.join(self.temp_dir.name, "test_file.txt")
         with open(self.test_file_path, "w", encoding="utf-8") as f:
-            f.write("This is a test file\nWith multiple lines\nFor testing edit functionality\n")
+            f.write(
+                "This is a test file\nWith multiple lines\nFor testing edit functionality\n"
+            )
 
         # Create a test file with CRLF line endings
         self.crlf_file_path = os.path.join(self.temp_dir.name, "crlf_file.txt")
@@ -73,7 +75,9 @@ class TestEditFile(TestCase):
 
     def test_find_similar_file_directory_not_exists(self):
         """Test finding a similar file when directory doesn't exist"""
-        non_existent_path = os.path.join(self.temp_dir.name, "non_existent_dir", "file.txt")
+        non_existent_path = os.path.join(
+            self.temp_dir.name, "non_existent_dir", "file.txt"
+        )
         result = find_similar_file(non_existent_path)
         self.assertIsNone(result)
 
@@ -84,10 +88,13 @@ class TestEditFile(TestCase):
 
         patch, updated_file = apply_edit(self.test_file_path, old_string, new_string)
 
-        self.assertIn("This is a test file\nWith replaced lines\nFor testing edit functionality\n", updated_file)
+        self.assertIn(
+            "This is a test file\nWith replaced lines\nFor testing edit functionality\n",
+            updated_file,
+        )
         self.assertEqual(len(patch), 1)
-        self.assertEqual(patch[0]['oldLines'], 1)
-        self.assertEqual(patch[0]['newLines'], 1)
+        self.assertEqual(patch[0]["oldLines"], 1)
+        self.assertEqual(patch[0]["newLines"], 1)
 
     def test_apply_edit_multiline_replacement(self):
         """Test applying a multiline text replacement"""
@@ -96,10 +103,13 @@ class TestEditFile(TestCase):
 
         patch, updated_file = apply_edit(self.test_file_path, old_string, new_string)
 
-        self.assertIn("This is a test file\nWith completely\ndifferent\ntext edit functionality\n", updated_file)
+        self.assertIn(
+            "This is a test file\nWith completely\ndifferent\ntext edit functionality\n",
+            updated_file,
+        )
         self.assertEqual(len(patch), 1)
-        self.assertEqual(patch[0]['oldLines'], 2)
-        self.assertEqual(patch[0]['newLines'], 3)
+        self.assertEqual(patch[0]["oldLines"], 2)
+        self.assertEqual(patch[0]["newLines"], 3)
 
     def test_apply_edit_non_existent_file(self):
         """Test applying an edit to a non-existent file"""
@@ -111,13 +121,15 @@ class TestEditFile(TestCase):
         # rather than calling apply_edit which has an issue with empty old_string
         if not os.path.exists(non_existent_path):
             updated_file = new_string
-            patch = [{
-                'oldStart': 1,
-                'oldLines': 0,
-                'newStart': 1,
-                'newLines': len(new_string.split('\n')),
-                'lines': [f"+{line}" for line in new_string.split('\n')]
-            }]
+            patch = [
+                {
+                    "oldStart": 1,
+                    "oldLines": 0,
+                    "newStart": 1,
+                    "newLines": len(new_string.split("\n")),
+                    "lines": [f"+{line}" for line in new_string.split("\n")],
+                }
+            ]
             self.assertEqual(len(patch), 1)
             self.assertEqual(updated_file, new_string)
 
@@ -249,12 +261,18 @@ class TestEditFile(TestCase):
         # Create a mock timestamps dictionary with current timestamp to avoid the "modified since read" error
         timestamps = {self.test_file_path: os.stat(self.test_file_path).st_mtime + 1}
 
-        result = edit_file_content(self.test_file_path, old_string, new_string, timestamps)
+        result = edit_file_content(
+            self.test_file_path, old_string, new_string, timestamps
+        )
 
         self.assertIn(f"Successfully edited {self.test_file_path}", result)
 
         # Verify timestamps were updated
-        self.assertAlmostEqual(timestamps[self.test_file_path], os.stat(self.test_file_path).st_mtime, delta=1)
+        self.assertAlmostEqual(
+            timestamps[self.test_file_path],
+            os.stat(self.test_file_path).st_mtime,
+            delta=1,
+        )
 
     def test_edit_file_content_modified_since_read(self):
         """Test editing a file that was modified since it was read"""
@@ -268,7 +286,9 @@ class TestEditFile(TestCase):
         with open(self.test_file_path, "a", encoding="utf-8") as f:
             f.write("Additional line\n")
 
-        result = edit_file_content(self.test_file_path, old_string, new_string, timestamps)
+        result = edit_file_content(
+            self.test_file_path, old_string, new_string, timestamps
+        )
 
         self.assertIn("Error: File has been modified since read", result)
 
@@ -280,7 +300,9 @@ class TestEditFile(TestCase):
         # Create a mock timestamps dictionary that doesn't include our file
         timestamps = {"some_other_file.txt": 12345.0}
 
-        result = edit_file_content(self.test_file_path, old_string, new_string, timestamps)
+        result = edit_file_content(
+            self.test_file_path, old_string, new_string, timestamps
+        )
 
         self.assertIn("Error: File has not been read yet", result)
 
@@ -294,7 +316,9 @@ class TestEditFile(TestCase):
         new_string = "edited lines"
 
         # We need to patch the function at the point where it's imported, not where it's defined
-        with patch("deskaid.tools.edit_file.get_edit_snippet", return_value="MOCK SNIPPET"):
+        with patch(
+            "deskaid.tools.edit_file.get_edit_snippet", return_value="MOCK SNIPPET"
+        ):
             result = edit_file_content(self.test_file_path, old_string, new_string)
 
             self.assertIn("MOCK SNIPPET", result)

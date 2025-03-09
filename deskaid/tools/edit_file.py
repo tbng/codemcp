@@ -14,6 +14,7 @@ from ..common import get_edit_snippet, commit_changes
 # Set up logger
 logger = logging.getLogger(__name__)
 
+
 def detect_file_encoding(file_path: str) -> str:
     """Detect the encoding of a file.
 
@@ -24,7 +25,8 @@ def detect_file_encoding(file_path: str) -> str:
         The encoding of the file, defaults to 'utf-8'
     """
     # Simple implementation - in a real app, would use chardet or similar
-    return 'utf-8'
+    return "utf-8"
+
 
 def detect_line_endings(file_path: str) -> str:
     """Detect the line endings of a file.
@@ -35,11 +37,12 @@ def detect_line_endings(file_path: str) -> str:
     Returns:
         'CRLF' or 'LF'
     """
-    with open(file_path, 'rb') as f:
+    with open(file_path, "rb") as f:
         content = f.read()
-        if b'\r\n' in content:
-            return 'CRLF'
-        return 'LF'
+        if b"\r\n" in content:
+            return "CRLF"
+        return "LF"
+
 
 def find_similar_file(file_path: str) -> Optional[str]:
     """Find a similar file with a different extension.
@@ -57,11 +60,14 @@ def find_similar_file(file_path: str) -> Optional[str]:
 
     base_name = os.path.splitext(os.path.basename(file_path))[0]
     for f in os.listdir(directory):
-        if f.startswith(base_name + '.') and f != os.path.basename(file_path):
+        if f.startswith(base_name + ".") and f != os.path.basename(file_path):
             return os.path.join(directory, f)
     return None
 
-def apply_edit(file_path: str, old_string: str, new_string: str) -> Tuple[List[Dict], str]:
+
+def apply_edit(
+    file_path: str, old_string: str, new_string: str
+) -> Tuple[List[Dict], str]:
     """Apply an edit to a file.
 
     Args:
@@ -74,10 +80,10 @@ def apply_edit(file_path: str, old_string: str, new_string: str) -> Tuple[List[D
     """
     # Simple patch implementation - in a real app, would use a proper diff library
     if os.path.exists(file_path):
-        with open(file_path, 'r', encoding=detect_file_encoding(file_path)) as f:
+        with open(file_path, "r", encoding=detect_file_encoding(file_path)) as f:
             content = f.read()
     else:
-        content = ''
+        content = ""
 
     updated_file = content.replace(old_string, new_string, 1)
 
@@ -85,24 +91,30 @@ def apply_edit(file_path: str, old_string: str, new_string: str) -> Tuple[List[D
     # This is a simplified version of what the TS code does with the diff library
     patch = []
     if old_string != new_string:
-        old_lines = old_string.split('\n')
-        new_lines = new_string.split('\n')
+        old_lines = old_string.split("\n")
+        new_lines = new_string.split("\n")
 
         # Find the line number where the change occurs
         before_text = content.split(old_string)[0]
-        line_num = before_text.count('\n')
+        line_num = before_text.count("\n")
 
-        patch.append({
-            'oldStart': line_num + 1,
-            'oldLines': len(old_lines),
-            'newStart': line_num + 1,
-            'newLines': len(new_lines),
-            'lines': [f"-{line}" for line in old_lines] + [f"+{line}" for line in new_lines]
-        })
+        patch.append(
+            {
+                "oldStart": line_num + 1,
+                "oldLines": len(old_lines),
+                "newStart": line_num + 1,
+                "newLines": len(new_lines),
+                "lines": [f"-{line}" for line in old_lines]
+                + [f"+{line}" for line in new_lines],
+            }
+        )
 
     return patch, updated_file
 
-def write_text_content(file_path: str, content: str, encoding: str = 'utf-8', line_endings: str = 'LF') -> None:
+
+def write_text_content(
+    file_path: str, content: str, encoding: str = "utf-8", line_endings: str = "LF"
+) -> None:
     """Write text content to a file with the specified encoding and line endings.
 
     Args:
@@ -112,15 +124,18 @@ def write_text_content(file_path: str, content: str, encoding: str = 'utf-8', li
         line_endings: The line endings to use ('CRLF' or 'LF')
     """
     # Normalize line endings
-    if line_endings == 'CRLF':
-        content = content.replace('\n', '\r\n')
+    if line_endings == "CRLF":
+        content = content.replace("\n", "\r\n")
     else:
-        content = content.replace('\r\n', '\n')
+        content = content.replace("\r\n", "\n")
 
-    with open(file_path, 'w', encoding=encoding) as f:
+    with open(file_path, "w", encoding=encoding) as f:
         f.write(content)
 
-def debug_string_comparison(s1: str, s2: str, label1: str = "string1", label2: str = "string2") -> bool:
+
+def debug_string_comparison(
+    s1: str, s2: str, label1: str = "string1", label2: str = "string2"
+) -> bool:
     """Thoroughly debug string comparison and identify differences.
 
     Args:
@@ -141,8 +156,8 @@ def debug_string_comparison(s1: str, s2: str, label1: str = "string1", label2: s
     logger.debug(f"  Content same? {content_same}")
 
     # Hash check
-    hash1 = hashlib.md5(s1.encode('utf-8')).hexdigest()
-    hash2 = hashlib.md5(s2.encode('utf-8')).hexdigest()
+    hash1 = hashlib.md5(s1.encode("utf-8")).hexdigest()
+    hash2 = hashlib.md5(s2.encode("utf-8")).hexdigest()
     logger.debug(f"  MD5 hashes: {hash1} vs {hash2}")
 
     # If strings appear to be the same but should be different
@@ -153,20 +168,24 @@ def debug_string_comparison(s1: str, s2: str, label1: str = "string1", label2: s
         logger.debug(f"  Repr comparison: {s1_repr[:100]} vs {s2_repr[:100]}")
 
         # Check byte by byte
-        bytes1 = s1.encode('utf-8')
-        bytes2 = s2.encode('utf-8')
+        bytes1 = s1.encode("utf-8")
+        bytes2 = s2.encode("utf-8")
         if bytes1 != bytes2:
-            logger.debug(f"  Strings differ at byte level even though they appear equal as strings!")
+            logger.debug(
+                f"  Strings differ at byte level even though they appear equal as strings!"
+            )
 
             # Find the first differing byte
             for i, (b1, b2) in enumerate(zip(bytes1, bytes2)):
                 if b1 != b2:
-                    logger.debug(f"  First byte difference at position {i}: {b1} vs {b2}")
+                    logger.debug(
+                        f"  First byte difference at position {i}: {b1} vs {b2}"
+                    )
                     break
     else:
         # Find differences
         diff = list(difflib.ndiff(s1.splitlines(), s2.splitlines()))
-        changes = [d for d in diff if d.startswith('+ ') or d.startswith('- ')]
+        changes = [d for d in diff if d.startswith("+ ") or d.startswith("- ")]
         if changes:
             logger.debug(f"  Line differences (first 5):")
             for d in changes[:5]:
@@ -174,7 +193,14 @@ def debug_string_comparison(s1: str, s2: str, label1: str = "string1", label2: s
 
     return not content_same
 
-def edit_file_content(file_path: str, old_string: str, new_string: str, read_file_timestamps: Optional[Dict[str, float]] = None, description: str = "") -> str:
+
+def edit_file_content(
+    file_path: str,
+    old_string: str,
+    new_string: str,
+    read_file_timestamps: Optional[Dict[str, float]] = None,
+    description: str = "",
+) -> str:
     """Edit a file by replacing old_string with new_string.
 
     Args:
@@ -189,10 +215,14 @@ def edit_file_content(file_path: str, old_string: str, new_string: str, read_fil
     """
     try:
         # Convert to absolute path if needed
-        full_file_path = file_path if os.path.isabs(file_path) else os.path.abspath(file_path)
+        full_file_path = (
+            file_path if os.path.isabs(file_path) else os.path.abspath(file_path)
+        )
 
         # Debug string comparison using our thorough utility
-        strings_are_different = debug_string_comparison(old_string, new_string, "old_string", "new_string")
+        strings_are_different = debug_string_comparison(
+            old_string, new_string, "old_string", "new_string"
+        )
 
         if not strings_are_different:
             return "No changes to make: old_string and new_string are exactly the same."
@@ -200,11 +230,11 @@ def edit_file_content(file_path: str, old_string: str, new_string: str, read_fil
         # Proceed with the edit now that we've confirmed the strings are different
 
         # Handle creating a new file
-        if old_string == '' and os.path.exists(full_file_path):
+        if old_string == "" and os.path.exists(full_file_path):
             return "Cannot create new file - file already exists."
 
         # Handle creating a new file
-        if old_string == '' and not os.path.exists(full_file_path):
+        if old_string == "" and not os.path.exists(full_file_path):
             directory = os.path.dirname(full_file_path)
             os.makedirs(directory, exist_ok=True)
             write_text_content(full_file_path, new_string)
@@ -220,12 +250,14 @@ def edit_file_content(file_path: str, old_string: str, new_string: str, read_fil
             return message
 
         # Check if file is a Jupyter notebook
-        if full_file_path.endswith('.ipynb'):
+        if full_file_path.endswith(".ipynb"):
             return "Error: File is a Jupyter Notebook. Use the NotebookEditTool to edit this file."
 
         # Check if file has been read
         if read_file_timestamps and full_file_path not in read_file_timestamps:
-            return "Error: File has not been read yet. Read it first before writing to it."
+            return (
+                "Error: File has not been read yet. Read it first before writing to it."
+            )
 
         # Check if file has been modified since read
         if read_file_timestamps and os.path.exists(full_file_path):
@@ -238,7 +270,7 @@ def edit_file_content(file_path: str, old_string: str, new_string: str, read_fil
         line_endings = detect_line_endings(full_file_path)
 
         # Read the original file
-        with open(full_file_path, 'r', encoding=encoding) as f:
+        with open(full_file_path, "r", encoding=encoding) as f:
             content = f.read()
 
         # Check if old_string exists in the file
@@ -266,7 +298,7 @@ def edit_file_content(file_path: str, old_string: str, new_string: str, read_fil
 
         # Generate a snippet of the edited file to show in the response
         snippet = get_edit_snippet(content, old_string, new_string)
-        
+
         # Commit the changes
         git_message = ""
         success, message = commit_changes(full_file_path, description)
@@ -274,7 +306,7 @@ def edit_file_content(file_path: str, old_string: str, new_string: str, read_fil
             git_message = f"\n\nChanges committed to git: {description}"
         else:
             git_message = f"\n\nFailed to commit changes to git: {message}"
-        
+
         return f"Successfully edited {full_file_path}\n\nHere's a snippet of the edited file:\n{snippet}{git_message}"
     except Exception as e:
         return f"Error editing file: {str(e)}"

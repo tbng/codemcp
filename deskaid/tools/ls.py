@@ -9,6 +9,7 @@ from ..common import normalize_file_path
 MAX_FILES = 1000
 TRUNCATED_MESSAGE = f"There are more than {MAX_FILES} files in the directory. Use more specific paths to explore nested directories. The first {MAX_FILES} files and directories are included below:\n\n"
 
+
 def ls_directory(directory_path: str) -> str:
     """List the contents of a directory.
 
@@ -49,6 +50,7 @@ def ls_directory(directory_path: str) -> str:
             return f"{TRUNCATED_MESSAGE}{tree_output}"
     except Exception as e:
         return f"Error listing directory: {str(e)}"
+
 
 def list_directory(initial_path: str) -> List[str]:
     """List all files and directories recursively.
@@ -94,6 +96,7 @@ def list_directory(initial_path: str) -> List[str]:
 
     return results
 
+
 def skip(path: str) -> bool:
     """Determine if a path should be skipped.
 
@@ -104,11 +107,12 @@ def skip(path: str) -> bool:
         True if the path should be skipped, False otherwise
     """
     basename = os.path.basename(path)
-    if path != '.' and basename.startswith('.'):
+    if path != "." and basename.startswith("."):
         return True
-    if '__pycache__' in path:
+    if "__pycache__" in path:
         return True
     return False
+
 
 class TreeNode:
     """A node in a file tree."""
@@ -118,6 +122,7 @@ class TreeNode:
         self.path = path
         self.type = node_type
         self.children = []
+
 
 def create_file_tree(sorted_paths: List[str]) -> List[TreeNode]:
     """Create a file tree from a list of paths.
@@ -133,7 +138,7 @@ def create_file_tree(sorted_paths: List[str]) -> List[TreeNode]:
     for path in sorted_paths:
         parts = path.split(os.sep)
         current_level = root
-        current_path = ''
+        current_path = ""
 
         for i, part in enumerate(parts):
             if not part:  # Skip empty parts (trailing slashes)
@@ -153,14 +158,21 @@ def create_file_tree(sorted_paths: List[str]) -> List[TreeNode]:
                 current_level = existing_node.children
             else:
                 # Create a new node
-                node_type = 'file' if is_last_part and not path.endswith(os.sep) else 'directory'
+                node_type = (
+                    "file"
+                    if is_last_part and not path.endswith(os.sep)
+                    else "directory"
+                )
                 new_node = TreeNode(part, current_path, node_type)
                 current_level.append(new_node)
                 current_level = new_node.children
 
     return root
 
-def print_tree(tree: List[TreeNode], level: int = 0, prefix: str = '', cwd: str = '') -> str:
+
+def print_tree(
+    tree: List[TreeNode], level: int = 0, prefix: str = "", cwd: str = ""
+) -> str:
     """Print a file tree.
 
     Args:
@@ -172,16 +184,16 @@ def print_tree(tree: List[TreeNode], level: int = 0, prefix: str = '', cwd: str 
     Returns:
         A formatted string representation of the tree
     """
-    result = ''
+    result = ""
 
     # Add absolute path at root level
     if level == 0:
         result += f"- {cwd}{os.sep}\n"
-        prefix = '  '
+        prefix = "  "
 
     for node in tree:
         # Add the current node to the result
-        node_suffix = f"{os.sep}" if node.type == 'directory' else ''
+        node_suffix = f"{os.sep}" if node.type == "directory" else ""
         result += f"{prefix}{'-'} {node.name}{node_suffix}\n"
 
         # Recursively print children

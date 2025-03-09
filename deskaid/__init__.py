@@ -17,11 +17,20 @@ from .tools.ls import ls_directory
 # Initialize FastMCP server
 mcp = FastMCP("deskaid")
 
+
 @mcp.tool()
-async def deskaid(ctx: Context, command: str, *, file_path: Optional[str] = None, content: Optional[str] = None,
-                 old_string: Optional[str] = None, new_string: Optional[str] = None,
-                 offset: Optional[str] = None, limit: Optional[str] = None, 
-                 description: Optional[str] = None) -> str:
+async def deskaid(
+    ctx: Context,
+    command: str,
+    *,
+    file_path: Optional[str] = None,
+    content: Optional[str] = None,
+    old_string: Optional[str] = None,
+    new_string: Optional[str] = None,
+    offset: Optional[str] = None,
+    limit: Optional[str] = None,
+    description: Optional[str] = None,
+) -> str:
     """
     This is a multipurpose tool that supports the following subcommands:
 
@@ -113,7 +122,7 @@ async def deskaid(ctx: Context, command: str, *, file_path: Optional[str] = None
         "ReadFile": {"file_path", "offset", "limit"},
         "WriteFile": {"file_path", "content", "description"},
         "EditFile": {"file_path", "old_string", "new_string", "description"},
-        "LS": {"file_path"}
+        "LS": {"file_path"},
     }
 
     # Check if command exists
@@ -122,15 +131,17 @@ async def deskaid(ctx: Context, command: str, *, file_path: Optional[str] = None
 
     # Get all provided non-None parameters
     provided_params = {
-        param: value for param, value in {
+        param: value
+        for param, value in {
             "file_path": file_path,
             "content": content,
             "old_string": old_string,
             "new_string": new_string,
             "offset": offset,
             "limit": limit,
-            "description": description
-        }.items() if value is not None
+            "description": description,
+        }.items()
+        if value is not None
     }
 
     # Check for unexpected parameters
@@ -172,39 +183,40 @@ async def deskaid(ctx: Context, command: str, *, file_path: Optional[str] = None
 
         return ls_directory(file_path)
 
-def configure_logging(log_file='deskaid.log'):
+
+def configure_logging(log_file="deskaid.log"):
     """Configure logging to write to both a file and the console.
-    
+
     The log level is determined from the configuration file ~/.deskaidrc.
     It can be overridden by setting the DESKAID_DEBUG environment variable.
     Example: DESKAID_DEBUG=1 python -m deskaid
-    
+
     By default, logs from the 'mcp' module are filtered out unless in debug mode.
     """
     from .config import get_logger_verbosity
-    
-    log_dir = os.path.join(os.path.expanduser('~'), '.deskaid')
+
+    log_dir = os.path.join(os.path.expanduser("~"), ".deskaid")
     os.makedirs(log_dir, exist_ok=True)
     log_path = os.path.join(log_dir, log_file)
 
     # Get log level from config, with environment variable override
-    log_level_str = os.environ.get('DESKAID_DEBUG_LEVEL') or get_logger_verbosity()
-    
+    log_level_str = os.environ.get("DESKAID_DEBUG_LEVEL") or get_logger_verbosity()
+
     # Map string log level to logging constants
     log_level_map = {
-        'DEBUG': logging.DEBUG,
-        'INFO': logging.INFO,
-        'WARNING': logging.WARNING,
-        'ERROR': logging.ERROR,
-        'CRITICAL': logging.CRITICAL
+        "DEBUG": logging.DEBUG,
+        "INFO": logging.INFO,
+        "WARNING": logging.WARNING,
+        "ERROR": logging.ERROR,
+        "CRITICAL": logging.CRITICAL,
     }
-    
+
     # Convert string to logging level, default to INFO if invalid
     log_level = log_level_map.get(log_level_str.upper(), logging.INFO)
-    
+
     # Force DEBUG level if DESKAID_DEBUG is set (for backward compatibility)
     debug_mode = False
-    if os.environ.get('DESKAID_DEBUG'):
+    if os.environ.get("DESKAID_DEBUG"):
         log_level = logging.DEBUG
         debug_mode = True
 
@@ -225,18 +237,20 @@ def configure_logging(log_file='deskaid.log'):
     console_handler.setLevel(log_level)
 
     # Create formatter and add it to the handlers
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    formatter = logging.Formatter(
+        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    )
     file_handler.setFormatter(formatter)
     console_handler.setFormatter(formatter)
-    
+
     # Set up filter to exclude logs from 'mcp' module unless in debug mode
     class ModuleFilter(logging.Filter):
         def filter(self, record):
             # Allow all logs in debug mode, otherwise filter 'mcp' module
-            if debug_mode or not record.name.startswith('mcp'):
+            if debug_mode or not record.name.startswith("mcp"):
                 return True
             return False
-    
+
     module_filter = ModuleFilter()
     file_handler.addFilter(module_filter)
     console_handler.addFilter(module_filter)
@@ -250,10 +264,12 @@ def configure_logging(log_file='deskaid.log'):
     if not debug_mode:
         logging.info("Logs from 'mcp' module are being filtered")
 
+
 def run():
     """Run the MCP server."""
     configure_logging()
     mcp.run()
+
 
 if __name__ == "__main__":
     run()

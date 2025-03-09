@@ -13,7 +13,7 @@ from deskaid.tools.ls import (
     TreeNode,
     create_file_tree,
     print_tree,
-    MAX_FILES
+    MAX_FILES,
 )
 
 
@@ -126,7 +126,12 @@ class TestLS(TestCase):
 
     def test_create_file_tree(self):
         """Test the create_file_tree function"""
-        paths = ["file1.txt", "file2.txt", f"subdir{os.sep}", f"subdir{os.sep}subdir_file.txt"]
+        paths = [
+            "file1.txt",
+            "file2.txt",
+            f"subdir{os.sep}",
+            f"subdir{os.sep}subdir_file.txt",
+        ]
         tree = create_file_tree(paths)
 
         # Check the root level
@@ -171,7 +176,7 @@ class TestLS(TestCase):
             "  - file1.txt",
             "  - file2.txt",
             "  - subdir/",
-            "    - subdir_file.txt"
+            "    - subdir_file.txt",
         ]
 
         for line in expected_lines:
@@ -200,13 +205,16 @@ class TestLS(TestCase):
 
             # Monkey patch the list_directory function
             import deskaid.tools.ls
+
             deskaid.tools.ls.list_directory = mock_list_directory
 
             # Call ls_directory
             result = ls_directory(many_files_dir)
 
             # Check that the truncation message is included
-            self.assertIn(f"There are more than {MAX_FILES} files in the directory", result)
+            self.assertIn(
+                f"There are more than {MAX_FILES} files in the directory", result
+            )
 
         finally:
             # Restore the original list_directory function

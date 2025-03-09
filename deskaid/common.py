@@ -10,15 +10,18 @@ MAX_LINES_TO_READ = 1000
 MAX_LINE_LENGTH = 1000
 MAX_OUTPUT_SIZE = 0.25 * 1024 * 1024  # 0.25MB in bytes
 
+
 def is_image_file(file_path: str) -> bool:
     """Check if a file is an image based on its MIME type."""
     # Stub implementation - we don't care about image support
     return False
 
+
 def get_image_format(file_path: str) -> str:
     """Get the format of an image file."""
     # Stub implementation - we don't care about image support
-    return 'png'
+    return "png"
+
 
 def normalize_file_path(file_path: str) -> str:
     """Normalize a file path to an absolute path."""
@@ -26,19 +29,20 @@ def normalize_file_path(file_path: str) -> str:
         return os.path.abspath(os.path.join(os.getcwd(), file_path))
     return os.path.abspath(file_path)
 
+
 def is_git_repository(path: str) -> bool:
     """Check if the path is within a Git repository.
-    
+
     Args:
         path: The file path to check
-        
+
     Returns:
         True if path is in a Git repository, False otherwise
     """
     try:
         # Get the directory containing the file
         directory = os.path.dirname(path) if os.path.isfile(path) else path
-        
+
         # Run git command to verify this is a git repository
         subprocess.run(
             ["git", "rev-parse", "--is-inside-work-tree"],
@@ -46,22 +50,23 @@ def is_git_repository(path: str) -> bool:
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             check=True,
-            text=True
+            text=True,
         )
         return True
     except (subprocess.SubprocessError, OSError):
         return False
 
+
 def commit_changes(file_path: str, description: str) -> Tuple[bool, str]:
     """Commit changes to a file in Git.
-    
+
     If the working directory has uncomitted changes, will commit those first
     with a default message before making the requested commit.
-    
+
     Args:
         file_path: The path to the file to commit
         description: Commit message describing the change
-        
+
     Returns:
         A tuple of (success, message)
     """
@@ -69,20 +74,20 @@ def commit_changes(file_path: str, description: str) -> Tuple[bool, str]:
         # First, check if this is a git repository
         if not is_git_repository(file_path):
             return False, "File is not in a Git repository"
-        
+
         directory = os.path.dirname(file_path)
-        
+
         # Check if the file is tracked by git
         file_status = subprocess.run(
             ["git", "ls-files", "--error-unmatch", file_path],
             cwd=directory,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            text=True
+            text=True,
         )
-        
+
         file_is_tracked = file_status.returncode == 0
-        
+
         # Check if working directory has uncommitted changes
         status_result = subprocess.run(
             ["git", "status", "--porcelain"],
@@ -90,61 +95,61 @@ def commit_changes(file_path: str, description: str) -> Tuple[bool, str]:
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             check=True,
-            text=True
+            text=True,
         )
-        
+
         # If there are uncommitted changes (besides our target file), commit them first
         if status_result.stdout and file_is_tracked:
             # Get list of changed files
             changed_files = [
-                line.split(" ")[-1] for line in status_result.stdout.splitlines() 
-                if normalize_file_path(os.path.join(directory, line.split(" ")[-1])) != normalize_file_path(file_path)
+                line.split(" ")[-1]
+                for line in status_result.stdout.splitlines()
+                if normalize_file_path(os.path.join(directory, line.split(" ")[-1]))
+                != normalize_file_path(file_path)
             ]
-            
+
             if changed_files:
                 # Commit other changes first with a default message
-                subprocess.run(
-                    ["git", "add", "."],
-                    cwd=directory,
-                    check=True
-                )
-                
+                subprocess.run(["git", "add", "."], cwd=directory, check=True)
+
                 subprocess.run(
                     ["git", "commit", "-m", "Snapshot before deskaid change"],
                     cwd=directory,
-                    check=True
+                    check=True,
                 )
-        
+
         # Add the specified file
         add_result = subprocess.run(
             ["git", "add", file_path],
             cwd=directory,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            text=True
+            text=True,
         )
-        
+
         if add_result.returncode != 0:
             return False, f"Failed to add file to Git: {add_result.stderr}"
-        
+
         # Commit the change
         commit_result = subprocess.run(
             ["git", "commit", "-m", description],
             cwd=directory,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            text=True
+            text=True,
         )
-        
+
         if commit_result.returncode != 0:
             return False, f"Failed to commit changes: {commit_result.stderr}"
-        
+
         return True, "Changes committed successfully"
     except Exception as e:
         return False, f"Error committing changes: {str(e)}"
 
-def get_edit_snippet(original_text: str, old_str: str, new_str: str,
-context_lines: int = 4) -> str:
+
+def get_edit_snippet(
+    original_text: str, old_str: str, new_str: str, context_lines: int = 4
+) -> str:
     """
     Generate a snippet of the edited file showing the changes with line numbers.
 
@@ -159,18 +164,17 @@ context_lines: int = 4) -> str:
     """
     # Find where the edit occurs
     before_text = original_text.split(old_str)[0]
-    before_lines = before_text.split('\n')
+    before_lines = before_text.split("\n")
     replacement_line = len(before_lines)
 
     # Get the edited content
     edited_text = original_text.replace(old_str, new_str)
-    edited_lines = edited_text.split('\n')
+    edited_lines = edited_text.split("\n")
 
     # Calculate the start and end line numbers for the snippet
     start_line = max(0, replacement_line - context_lines)
     end_line = min(
-        len(edited_lines),
-        replacement_line + context_lines + len(new_str.split('\n'))
+        len(edited_lines), replacement_line + context_lines + len(new_str.split("\n"))
     )
 
     # Extract the snippet lines
@@ -182,4 +186,4 @@ context_lines: int = 4) -> str:
         line_num = start_line + i + 1
         result.append(f"{line_num:4d} | {line}")
 
-    return '\n'.join(result)
+    return "\n".join(result)

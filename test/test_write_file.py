@@ -11,7 +11,7 @@ from deskaid.tools.write_file import (
     detect_line_endings,
     detect_repo_line_endings,
     write_text_content,
-    write_file_content
+    write_file_content,
 )
 
 
@@ -148,7 +148,9 @@ class TestWriteFile(TestCase):
         """Test handling of exceptions during writing"""
         mock_write.side_effect = Exception("Test exception")
 
-        abs_path = os.path.abspath(os.path.join(self.temp_dir.name, "exception_test.txt"))
+        abs_path = os.path.abspath(
+            os.path.join(self.temp_dir.name, "exception_test.txt")
+        )
         content = "This should raise an exception"
 
         result = write_file_content(abs_path, content)
