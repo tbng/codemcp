@@ -37,6 +37,30 @@ Test with MCP Inspector:
 mcp dev deskaid_server.py
 ```
 
+## Configuration
+
+Deskaid uses a TOML configuration file located at `~/.deskaidrc`. Currently supported configuration options:
+
+```toml
+[logger]
+verbosity = "INFO"  # Can be DEBUG, INFO, WARNING, ERROR, or CRITICAL
+```
+
+### Logging
+
+Logs are written to `~/.deskaid/deskaid.log` and to the console. The log level can be set in the configuration file or overridden with environment variables:
+
+- Set the log level in config: `verbosity = "DEBUG"` in `~/.deskaidrc`
+- Override with environment variable: `DESKAID_DEBUG_LEVEL=DEBUG python -m deskaid`
+- Enable debug mode: `DESKAID_DEBUG=1 python -m deskaid`
+
+By default, logs from the 'mcp' module are filtered out to reduce noise. These logs are only shown when running in debug mode (`DESKAID_DEBUG=1`).
+
+Log format:
+```
+YYYY-MM-DD HH:MM:SS,ms - module_name - LEVEL - Message
+```
+
 ## Commands
 
 ### ReadFile

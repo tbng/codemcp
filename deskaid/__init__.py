@@ -169,6 +169,8 @@ def configure_logging(log_file='deskaid.log'):
     The log level is determined from the configuration file ~/.deskaidrc.
     It can be overridden by setting the DESKAID_DEBUG environment variable.
     Example: DESKAID_DEBUG=1 python -m deskaid
+    
+    By default, logs from the 'mcp' module are filtered out unless in debug mode.
     """
     from .config import get_logger_verbosity
     
@@ -192,8 +194,10 @@ def configure_logging(log_file='deskaid.log'):
     log_level = log_level_map.get(log_level_str.upper(), logging.INFO)
     
     # Force DEBUG level if DESKAID_DEBUG is set (for backward compatibility)
+    debug_mode = False
     if os.environ.get('DESKAID_DEBUG'):
         log_level = logging.DEBUG
+        debug_mode = True
 
     # Create a root logger
     root_logger = logging.getLogger()
@@ -215,6 +219,18 @@ def configure_logging(log_file='deskaid.log'):
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     file_handler.setFormatter(formatter)
     console_handler.setFormatter(formatter)
+    
+    # Set up filter to exclude logs from 'mcp' module unless in debug mode
+    class ModuleFilter(logging.Filter):
+        def filter(self, record):
+            # Allow all logs in debug mode, otherwise filter 'mcp' module
+            if debug_mode or not record.name.startswith('mcp'):
+                return True
+            return False
+    
+    module_filter = ModuleFilter()
+    file_handler.addFilter(module_filter)
+    console_handler.addFilter(module_filter)
 
     # Add the handlers to the root logger
     root_logger.addHandler(file_handler)
@@ -222,6 +238,8 @@ def configure_logging(log_file='deskaid.log'):
 
     logging.info(f"Logging configured. Log file: {log_path}")
     logging.info(f"Log level set to: {logging.getLevelName(log_level)}")
+    if not debug_mode:
+        logging.info("Logs from 'mcp' module are being filtered")
 
 def run():
     """Run the MCP server."""
