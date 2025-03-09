@@ -11,6 +11,7 @@ from mcp.server.fastmcp import FastMCP, Context, Image
 from .tools.read_file import read_file_content
 from .tools.write_file import write_file_content
 from .tools.edit_file import edit_file_content
+from .tools.ls import ls_directory
 
 # Initialize FastMCP server
 mcp = FastMCP("deskaid")
@@ -86,10 +87,14 @@ async def deskaid(ctx: Context, command: str, file_path: str, arg1: Optional[str
 
     Remember: when making multiple file edits in a row to the same file, you should prefer to send all edits in a single message with multiple calls to this tool, rather than multiple messages with a single call each.
 
+    ## LS directory_path
+
+    Lists files and directories in a given path. The path parameter must be an absolute path, not a relative path. You should generally prefer the Glob and Grep tools, if you know which directories to search.
+
     Args:
         ctx: The MCP context
-        command: The subcommand to execute (ReadFile, WriteFile, EditFile)
-        file_path: The path to the file to operate on
+        command: The subcommand to execute (ReadFile, WriteFile, EditFile, LS)
+        file_path: The path to the file or directory to operate on
         arg1: First optional argument (varies by command)
         arg2: Second optional argument (varies by command)
     """
@@ -113,8 +118,12 @@ async def deskaid(ctx: Context, command: str, file_path: str, arg1: Optional[str
         new_string = arg2 or ""
         return edit_file_content(file_path, old_string, new_string)
 
+    elif command == "LS":
+        # Handle LS command
+        return ls_directory(file_path)
+
     else:
-        return f"Unknown command: {command}. Available commands: ReadFile, WriteFile, EditFile"
+        return f"Unknown command: {command}. Available commands: ReadFile, WriteFile, EditFile, LS"
 
 def run():
     """Run the MCP server."""
