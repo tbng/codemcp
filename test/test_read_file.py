@@ -3,6 +3,7 @@
 import os
 import tempfile
 import unittest
+import re
 from expecttest import TestCase
 
 from deskaid.tools.read_file import read_file_content
@@ -34,10 +35,21 @@ class TestReadFile(TestCase):
             for i in range(1, MAX_LINES_TO_READ + 100):
                 f.write(f"Line {i}\n")
 
+    def normalize_result(self, result):
+        """Normalize temporary directory paths in the result.
+
+        This replaces the actual temporary directory path with a fixed placeholder
+        to make tests more stable across different runs.
+        """
+        if self.temp_dir and self.temp_dir.name:
+            # Replace the actual temp dir path with a fixed placeholder
+            return re.sub(re.escape(self.temp_dir.name), "/tmp/test_dir", result)
+        return result
+
     def test_read_file_basic(self):
         """Test basic file reading functionality"""
         result = read_file_content(self.test_file_path)
-        self.assertExpectedInline(result, """\
+        self.assertExpectedInline(self.normalize_result(result), """\
      1	This is line 1
      2	This is line 2
      3	This is line 3
@@ -142,7 +154,7 @@ class TestReadFile(TestCase):
     def test_read_file_with_offset(self):
         """Test reading a file with an offset"""
         result = read_file_content(self.test_file_path, offset=50)
-        self.assertExpectedInline(result, """\
+        self.assertExpectedInline(self.normalize_result(result), """\
     50	This is line 50
     51	This is line 51
     52	This is line 52
@@ -198,7 +210,7 @@ class TestReadFile(TestCase):
     def test_read_file_with_limit(self):
         """Test reading a file with a limit"""
         result = read_file_content(self.test_file_path, limit=10)
-        self.assertExpectedInline(result, """\
+        self.assertExpectedInline(self.normalize_result(result), """\
      1	This is line 1
      2	This is line 2
      3	This is line 3
@@ -214,7 +226,7 @@ class TestReadFile(TestCase):
     def test_read_file_with_offset_and_limit(self):
         """Test reading a file with both offset and limit"""
         result = read_file_content(self.test_file_path, offset=50, limit=5)
-        self.assertExpectedInline(result, """\
+        self.assertExpectedInline(self.normalize_result(result), """\
     50	This is line 50
     51	This is line 51
     52	This is line 52
@@ -225,22 +237,24 @@ class TestReadFile(TestCase):
     def test_read_file_invalid_offset(self):
         """Test reading a file with an invalid offset"""
         result = read_file_content(self.test_file_path, offset=200)
-        self.assertExpectedInline(result, """Error: Offset 200 is beyond the end of the file (total lines: 100)""")
+        self.assertExpectedInline(self.normalize_result(result), """Error: Offset 200 is beyond the end of the file (total lines: 100)""")
 
     def test_read_file_nonexistent(self):
         """Test reading a nonexistent file"""
         result = read_file_content(os.path.join(self.temp_dir.name, "nonexistent.txt"))
-        self.assertExpectedInline(result, """Error: File does not exist: /var/folders/zp/xff7r1c96vj9b2f375x9r0340000gn/T/tmpbpw70ih9/nonexistent.txt""")
+        normalized_result = self.normalize_result(result)
+        self.assertExpectedInline(normalized_result, """Error: File does not exist: /tmp/test_dir/nonexistent.txt""")
 
     def test_read_directory(self):
         """Test reading a directory instead of a file"""
         result = read_file_content(self.temp_dir.name)
-        self.assertExpectedInline(result, """Error: Path is a directory, not a file: /var/folders/zp/xff7r1c96vj9b2f375x9r0340000gn/T/tmpx7bbrddd""")
+        normalized_result = self.normalize_result(result)
+        self.assertExpectedInline(normalized_result, """Error: Path is a directory, not a file: /tmp/test_dir""")
 
     def test_read_file_long_lines(self):
         """Test reading a file with lines exceeding the maximum length"""
         result = read_file_content(self.long_line_file_path)
-        self.assertExpectedInline(result, """\
+        self.assertExpectedInline(self.normalize_result(result), """\
      1	Short line
      2	AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA... (line truncated)
      3	Another short line""")
@@ -248,7 +262,7 @@ class TestReadFile(TestCase):
     def test_read_large_file(self):
         """Test reading a large file that exceeds the line limit"""
         result = read_file_content(self.large_file_path)
-        self.assertExpectedInline(result, """\
+        self.assertExpectedInline(self.normalize_result(result), """\
      1	Line 1
      2	Line 2
      3	Line 3
@@ -1250,6 +1264,23 @@ class TestReadFile(TestCase):
    999	Line 999
   1000	Line 1000
 ... (file truncated, showing 1000 of 1099 lines)""")
+
+    def test_normalize_result(self):
+        """Test the normalize_result function"""
+        # Test with a path containing the temp dir
+        test_string = f"Error: File does not exist: {self.temp_dir.name}/some/path.txt"
+        normalized = self.normalize_result(test_string)
+        self.assertEqual(normalized, "Error: File does not exist: /tmp/test_dir/some/path.txt")
+
+        # Test with multiple occurrences of the temp dir
+        test_string = f"Path1: {self.temp_dir.name}/file1.txt, Path2: {self.temp_dir.name}/file2.txt"
+        normalized = self.normalize_result(test_string)
+        self.assertEqual(normalized, "Path1: /tmp/test_dir/file1.txt, Path2: /tmp/test_dir/file2.txt")
+
+        # Test with a string that doesn't contain the temp dir
+        test_string = "This string doesn't contain a temp dir path"
+        normalized = self.normalize_result(test_string)
+        self.assertEqual(normalized, test_string)
 
 
 if __name__ == "__main__":
