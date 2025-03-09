@@ -95,8 +95,7 @@ def edit_file_content(file_path: str, old_string: str, new_string: str) -> str:
     """Edit a file by replacing old_string with new_string."""
     try:
         if not os.path.isabs(file_path):
-            return f"Error: File path must be absolute, not relative: 
-{file_path}"
+            return f"Error: File path must be absolute, not relative: {file_path}"
         
         # Handle creating a new file
         if not old_string and not os.path.exists(file_path):
@@ -115,8 +114,7 @@ def edit_file_content(file_path: str, old_string: str, new_string: str) -> str:
         
         # No changes to make
         if old_string == new_string:
-            return "No changes to make: old_string and new_string are exactly 
-the same."
+            return "No changes to make: old_string and new_string are exactly the same."
         
         # Read the original file
         with open(file_path, 'r', encoding='utf-8', errors='replace') as f:
@@ -124,14 +122,11 @@ the same."
         
         # Check if old_string exists in the file
         if old_string and old_string not in content:
-            return "Error: The provided text to replace was not found in the 
-file. Make sure it matches exactly, including whitespace and indentation."
+            return "Error: The provided text to replace was not found in the file. Make sure it matches exactly, including whitespace and indentation."
         
         # Check for uniqueness of old_string
         if old_string and content.count(old_string) > 1:
-            return "Error: The provided text to replace appears multiple times 
-in the file. Please provide more context to uniquely identify the instance to 
-replace."
+            return "Error: The provided text to replace appears multiple times in the file. Please provide more context to uniquely identify the instance to replace."
         
         # Create a snippet of the changes for the response
         original_content = content
@@ -144,8 +139,7 @@ replace."
         # Generate a snippet of the edited file to show in the response
         snippet = get_edit_snippet(original_content, old_string, new_string)
         
-        return f"Successfully edited {file_path}\n\nHere's a snippet of the 
-edited file:\n{snippet}"
+        return f"Successfully edited {file_path}\n\nHere's a snippet of the edited file:\n{snippet}"
     except Exception as e:
         return f"Error editing file: {str(e)}"
 
