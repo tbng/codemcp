@@ -72,3 +72,5 @@ Edits a file by replacing old_string with new_string.
 - Import Aider system prompts
 - Load webpages
 - Run tests/lints/typecheck
+
+- LS - only use git ls-files
