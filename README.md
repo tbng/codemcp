@@ -74,3 +74,4 @@ Edits a file by replacing old_string with new_string.
 - Run tests/lints/typecheck
 
 - LS - only use git ls-files
+- An "init" command that will feed the project prompt (per project config)
