@@ -140,6 +140,20 @@ def commit_changes(file_path: str, description: str) -> Tuple[bool, str]:
 
         if add_result.returncode != 0:
             return False, f"Failed to add file to Git: {add_result.stderr}"
+            
+        # Check if there are any changes to commit
+        status_result = subprocess.run(
+            ["git", "status", "--porcelain", file_path],
+            cwd=directory,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=True,
+            text=True,
+        )
+        
+        # If there are no changes to commit (after git add), we're done
+        if not status_result.stdout.strip():
+            return True, "No changes to commit (file is identical to what's already committed)"
 
         # Commit the change
         commit_result = subprocess.run(
