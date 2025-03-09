@@ -95,36 +95,100 @@ def edit_file_content(file_path: str, old_string: str, new_string: str) -> str:
     """Edit a file by replacing old_string with new_string."""
     try:
         if not os.path.isabs(file_path):
-            return f"Error: File path must be absolute, not relative: {file_path}"
+            return f"Error: File path must be absolute, not relative: 
+{file_path}"
         
-        if not os.path.exists(file_path) and old_string:
+        # Handle creating a new file
+        if not old_string and not os.path.exists(file_path):
+            directory = os.path.dirname(file_path)
+            os.makedirs(directory, exist_ok=True)
+            with open(file_path, 'w', encoding='utf-8') as f:
+                f.write(new_string)
+            return f"Successfully created {file_path}"
+        
+        # Handle existing file validation
+        if not os.path.exists(file_path):
             return f"Error: File does not exist: {file_path}"
         
-        # Creating a new file
-        if not old_string and not os.path.exists(file_path):
-            return write_file_content(file_path, new_string)
+        if os.path.isdir(file_path):
+            return f"Error: Path is a directory, not a file: {file_path}"
         
-        # Editing an existing file
+        # No changes to make
+        if old_string == new_string:
+            return "No changes to make: old_string and new_string are exactly 
+the same."
+        
+        # Read the original file
         with open(file_path, 'r', encoding='utf-8', errors='replace') as f:
             content = f.read()
         
+        # Check if old_string exists in the file
+        if old_string and old_string not in content:
+            return "Error: The provided text to replace was not found in the 
+file. Make sure it matches exactly, including whitespace and indentation."
+        
         # Check for uniqueness of old_string
         if old_string and content.count(old_string) > 1:
-            return "Error: The provided text to replace appears multiple times in the file. Please provide more context to uniquely identify the instance to replace."
+            return "Error: The provided text to replace appears multiple times 
+in the file. Please provide more context to uniquely identify the instance to 
+replace."
         
-        if old_string and old_string not in content:
-            return "Error: The provided text to replace was not found in the file. Make sure it matches exactly, including whitespace and indentation."
-        
-        # Replace the content
+        # Create a snippet of the changes for the response
+        original_content = content
         new_content = content.replace(old_string, new_string, 1)
         
         # Write the modified content back to the file
         with open(file_path, 'w', encoding='utf-8') as f:
             f.write(new_content)
         
-        return f"Successfully edited {file_path}"
+        # Generate a snippet of the edited file to show in the response
+        snippet = get_edit_snippet(original_content, old_string, new_string)
+        
+        return f"Successfully edited {file_path}\n\nHere's a snippet of the 
+edited file:\n{snippet}"
     except Exception as e:
         return f"Error editing file: {str(e)}"
+
+def get_edit_snippet(original_text: str, old_str: str, new_str: str, 
+context_lines: int = 4) -> str:
+    """
+    Generate a snippet of the edited file showing the changes with line numbers.
+    
+    Args:
+        original_text: The original file content
+        old_str: The text that was replaced
+        new_str: The new text that replaced old_str
+        context_lines: Number of lines to show before and after the change
+    
+    Returns:
+        A formatted string with line numbers and the edited content
+    """
+    # Find where the edit occurs
+    before_text = original_text.split(old_str)[0]
+    before_lines = before_text.split('\n')
+    replacement_line = len(before_lines)
+    
+    # Get the edited content
+    edited_text = original_text.replace(old_str, new_str)
+    edited_lines = edited_text.split('\n')
+    
+    # Calculate the start and end line numbers for the snippet
+    start_line = max(0, replacement_line - context_lines)
+    end_line = min(
+        len(edited_lines),
+        replacement_line + context_lines + len(new_str.split('\n'))
+    )
+    
+    # Extract the snippet lines
+    snippet_lines = edited_lines[start_line:end_line]
+    
+    # Format with line numbers
+    result = []
+    for i, line in enumerate(snippet_lines):
+        line_num = start_line + i + 1
+        result.append(f"{line_num:4d} | {line}")
+    
+    return '\n'.join(result)
 
 @mcp.tool()
 async def deskaid(ctx: Context, command: str, file_path: str, arg1: Optional[str] = None, arg2: Optional[str] = None) -> str:
