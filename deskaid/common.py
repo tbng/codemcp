@@ -141,18 +141,30 @@ def commit_changes(file_path: str, description: str) -> Tuple[bool, str]:
         if add_result.returncode != 0:
             return False, f"Failed to add file to Git: {add_result.stderr}"
             
-        # Check if there are any changes to commit after git add
-        # Using git diff-index HEAD to check for staged changes against HEAD
-        diff_result = subprocess.run(
-            ["git", "diff-index", "--cached", "--quiet", "HEAD", "--", file_path],
+        # First check if there's already a commit in the repository
+        has_commits = False
+        rev_parse_result = subprocess.run(
+            ["git", "rev-parse", "--verify", "HEAD"],
             cwd=directory,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
         )
+        has_commits = rev_parse_result.returncode == 0
         
-        # If diff-index returns 0, there are no changes to commit for this file
-        if diff_result.returncode == 0:
-            return True, "No changes to commit (file is identical to what's already committed)"
+        # Only check for changes if we already have commits
+        if has_commits:
+            # Check if there are any changes to commit after git add
+            # Using git diff-index HEAD to check for staged changes against HEAD
+            diff_result = subprocess.run(
+                ["git", "diff-index", "--cached", "--quiet", "HEAD", "--", file_path],
+                cwd=directory,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+            
+            # If diff-index returns 0, there are no changes to commit for this file
+            if diff_result.returncode == 0:
+                return True, "No changes to commit (file is identical to what's already committed)"
 
         # Commit the change
         commit_result = subprocess.run(
