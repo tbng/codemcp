@@ -16,6 +16,7 @@ dev = [
     "black>=23.0.0",
     "mypy>=1.0.0",
     "expecttest>=0.1.4",
+    "ruff>=0.1.5",
 ]
 
 [project.scripts]
