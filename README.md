@@ -1,5 +1,7 @@
 # Deskaid
 
+## WARNING: DO NOT USE, SAFETY FEATURES NOT IMPLEMENTED YET
+
 An MCP server for file operations that provides tools for reading, writing, and editing files.
 
 ## Features
