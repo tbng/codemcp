@@ -18,7 +18,9 @@ from .tools.ls import ls_directory
 mcp = FastMCP("deskaid")
 
 @mcp.tool()
-async def deskaid(ctx: Context, command: str, file_path: str, arg1: Optional[str] = None, arg2: Optional[str] = None) -> str:
+async def deskaid(ctx: Context, command: str, *, file_path: Optional[str] = None, content: Optional[str] = None,
+                 old_string: Optional[str] = None, new_string: Optional[str] = None,
+                 offset: Optional[str] = None, limit: Optional[str] = None) -> str:
     """
     This is a multipurpose tool that supports the following subcommands:
 
@@ -96,35 +98,70 @@ async def deskaid(ctx: Context, command: str, file_path: str, arg1: Optional[str
         ctx: The MCP context
         command: The subcommand to execute (ReadFile, WriteFile, EditFile, LS)
         file_path: The path to the file or directory to operate on
-        arg1: First optional argument (varies by command)
-        arg2: Second optional argument (varies by command)
+        content: Content for WriteFile command
+        old_string: String to replace for EditFile command
+        new_string: Replacement string for EditFile command
+        offset: Line offset for ReadFile command
+        limit: Line limit for ReadFile command
     """
-    if command == "ReadFile":
-        # Handle ReadFile command
-        offset = int(arg1) if arg1 and arg1.isdigit() else None
-        limit = int(arg2) if arg2 and arg2.isdigit() else None
+    # Define expected parameters for each command
+    expected_params = {
+        "ReadFile": {"file_path", "offset", "limit"},
+        "WriteFile": {"file_path", "content"},
+        "EditFile": {"file_path", "old_string", "new_string"},
+        "LS": {"file_path"}
+    }
 
-        # We're stubbing out image handling
-        # Just use the updated read_file_content function
-        return read_file_content(file_path, offset, limit)
+    # Check if command exists
+    if command not in expected_params:
+        return f"Unknown command: {command}. Available commands: {', '.join(expected_params.keys())}"
+
+    # Get all provided non-None parameters
+    provided_params = {
+        param: value for param, value in {
+            "file_path": file_path,
+            "content": content,
+            "old_string": old_string,
+            "new_string": new_string,
+            "offset": offset,
+            "limit": limit
+        }.items() if value is not None
+    }
+
+    # Check for unexpected parameters
+    unexpected_params = set(provided_params.keys()) - expected_params[command]
+    if unexpected_params:
+        return f"Error: Unexpected parameters for {command} command: {', '.join(unexpected_params)}"
+
+    # Now handle each command with its expected parameters
+    if command == "ReadFile":
+        if file_path is None:
+            return "Error: file_path is required for ReadFile command"
+
+        offset_int = int(offset) if offset and offset.isdigit() else None
+        limit_int = int(limit) if limit and limit.isdigit() else None
+        return read_file_content(file_path, offset_int, limit_int)
 
     elif command == "WriteFile":
-        # Handle WriteFile command
-        content = arg1 or ""
-        return write_file_content(file_path, content)
+        if file_path is None:
+            return "Error: file_path is required for WriteFile command"
+
+        content_str = content or ""
+        return write_file_content(file_path, content_str)
 
     elif command == "EditFile":
-        # Handle EditFile command
-        old_string = arg1 or ""
-        new_string = arg2 or ""
-        return edit_file_content(file_path, old_string, new_string)
+        if file_path is None:
+            return "Error: file_path is required for EditFile command"
+
+        old_str = old_string or ""
+        new_str = new_string or ""
+        return edit_file_content(file_path, old_str, new_str)
 
     elif command == "LS":
-        # Handle LS command
-        return ls_directory(file_path)
+        if file_path is None:
+            return "Error: file_path is required for LS command"
 
-    else:
-        return f"Unknown command: {command}. Available commands: ReadFile, WriteFile, EditFile, LS"
+        return ls_directory(file_path)
 
 def configure_logging(log_file='deskaid.log'):
     """Configure logging to write to both a file and the console.
