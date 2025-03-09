@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 
 import os
+import re
 import tempfile
 import unittest
-import re
+
 from expecttest import TestCase
 
+from deskaid.common import MAX_LINE_LENGTH, MAX_LINES_TO_READ
 from deskaid.tools.read_file import read_file_content
-from deskaid.common import MAX_LINES_TO_READ, MAX_LINE_LENGTH
 
 
 class TestReadFile(TestCase):

@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 
-import os
-import stat
-from typing import Optional, Dict, Tuple, List
-import re
-import json
 import difflib
-import logging
 import hashlib
+import json
+import logging
+import os
+import re
+import stat
+from typing import Dict, List, Optional, Tuple
 
-from ..common import get_edit_snippet, commit_changes
+from ..common import commit_changes, get_edit_snippet
 
 # Set up logger
 logger = logging.getLogger(__name__)

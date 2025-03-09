@@ -3,18 +3,19 @@
 import os
 import tempfile
 import unittest
-from unittest.mock import patch, mock_open, MagicMock
+from unittest.mock import MagicMock, mock_open, patch
+
 from expecttest import TestCase
 
+from deskaid.common import get_edit_snippet
 from deskaid.tools.edit_file import (
+    apply_edit,
     detect_file_encoding,
     detect_line_endings,
-    find_similar_file,
-    apply_edit,
-    write_text_content,
     edit_file_content,
+    find_similar_file,
+    write_text_content,
 )
-from deskaid.common import get_edit_snippet
 
 
 class TestEditFile(TestCase):

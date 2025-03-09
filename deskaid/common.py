@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 
-import os
 import mimetypes
+import os
 import subprocess
-from typing import Optional, Tuple, List
+from typing import List, Optional, Tuple
 
 # Constants
 MAX_LINES_TO_READ = 1000

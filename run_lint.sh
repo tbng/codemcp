@@ -7,6 +7,6 @@ python -m ruff format deskaid/ test/
 
 # Run Ruff linting (optional)
 echo "Running Ruff linter..."
-python -m ruff check deskaid/ test/
+python -m ruff check --fix --select I deskaid/ test/
 
 echo "Lint and format completed successfully!"

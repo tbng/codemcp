@@ -4,11 +4,11 @@ import os
 from typing import Optional
 
 from ..common import (
-    normalize_file_path,
-    MAX_LINES_TO_READ,
     MAX_LINE_LENGTH,
+    MAX_LINES_TO_READ,
     MAX_OUTPUT_SIZE,
     is_image_file,
+    normalize_file_path,
 )
 
 

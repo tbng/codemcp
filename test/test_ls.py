@@ -1,19 +1,20 @@
 #!/usr/bin/env python3
 
 import os
+import re
 import tempfile
 import unittest
-import re
+
 from expecttest import TestCase
 
 from deskaid.tools.ls import (
-    ls_directory,
-    list_directory,
-    skip,
+    MAX_FILES,
     TreeNode,
     create_file_tree,
+    list_directory,
+    ls_directory,
     print_tree,
-    MAX_FILES,
+    skip,
 )
 
 

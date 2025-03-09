@@ -5,9 +5,10 @@ This module provides access to user configuration stored in ~/.deskaidrc in TOML
 """
 
 import os
-import tomli
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Any, Dict, Optional
+
+import tomli
 
 # Default configuration values
 DEFAULT_CONFIG = {

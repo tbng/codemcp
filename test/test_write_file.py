@@ -3,15 +3,16 @@
 import os
 import tempfile
 import unittest
-from unittest.mock import patch, mock_open
+from unittest.mock import mock_open, patch
+
 from expecttest import TestCase
 
 from deskaid.tools.write_file import (
     detect_file_encoding,
     detect_line_endings,
     detect_repo_line_endings,
-    write_text_content,
     write_file_content,
+    write_text_content,
 )
 
 
