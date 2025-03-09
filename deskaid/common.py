@@ -45,7 +45,7 @@ def is_git_repository(path: str) -> bool:
         directory = os.path.dirname(path) if os.path.isfile(path) else path
 
         # Run git command to verify this is a git repository
-        subprocess.run(
+        result = subprocess.run(
             ["git", "rev-parse", "--is-inside-work-tree"],
             cwd=directory,
             stdout=subprocess.PIPE,
@@ -53,6 +53,11 @@ def is_git_repository(path: str) -> bool:
             check=True,
             text=True,
         )
+        # Log command output instead of sending to stdout
+        if result.stdout:
+            logging.debug("git rev-parse output: %s", result.stdout.strip())
+        if result.stderr:
+            logging.debug("git rev-parse stderr: %s", result.stderr.strip())
         return True
     except (subprocess.SubprocessError, OSError):
         return False
