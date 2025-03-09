@@ -20,7 +20,8 @@ mcp = FastMCP("deskaid")
 @mcp.tool()
 async def deskaid(ctx: Context, command: str, *, file_path: Optional[str] = None, content: Optional[str] = None,
                  old_string: Optional[str] = None, new_string: Optional[str] = None,
-                 offset: Optional[str] = None, limit: Optional[str] = None) -> str:
+                 offset: Optional[str] = None, limit: Optional[str] = None, 
+                 description: Optional[str] = None) -> str:
     """
     This is a multipurpose tool that supports the following subcommands:
 
@@ -28,9 +29,10 @@ async def deskaid(ctx: Context, command: str, *, file_path: Optional[str] = None
 
     Reads a file from the local filesystem. The file_path parameter must be an absolute path, not a relative path. By default, it reads up to ${MAX_LINES_TO_READ} lines starting from the beginning of the file. You can optionally specify a line offset and limit (especially handy for long files), but it's recommended to read the whole file by not providing these parameters. Any lines longer than ${MAX_LINE_LENGTH} characters will be truncated. For image files, the tool will display the image for you.
 
-    ## WriteFile file_path content
+    ## WriteFile file_path content description?
 
     Write a file to the local filesystem. Overwrites the existing file if there is one.
+    Optionally provide a description to commit the change to git.
 
     Before using this tool:
 
@@ -39,9 +41,10 @@ async def deskaid(ctx: Context, command: str, *, file_path: Optional[str] = None
     2. Directory Verification (only applicable when creating new files):
        - Use the LS tool to verify the parent directory exists and is the correct location
 
-    ## EditFile file_path old_string new_string
+    ## EditFile file_path old_string new_string description?
 
     This is a tool for editing files. For larger edits, use the Write tool to overwrite files.
+    Optionally provide a description to commit the change to git.
 
     Before using this tool:
 
@@ -103,12 +106,13 @@ async def deskaid(ctx: Context, command: str, *, file_path: Optional[str] = None
         new_string: Replacement string for EditFile command
         offset: Line offset for ReadFile command
         limit: Line limit for ReadFile command
+        description: Optional commit message describing the change (for WriteFile/EditFile)
     """
     # Define expected parameters for each command
     expected_params = {
         "ReadFile": {"file_path", "offset", "limit"},
-        "WriteFile": {"file_path", "content"},
-        "EditFile": {"file_path", "old_string", "new_string"},
+        "WriteFile": {"file_path", "content", "description"},
+        "EditFile": {"file_path", "old_string", "new_string", "description"},
         "LS": {"file_path"}
     }
 
@@ -124,7 +128,8 @@ async def deskaid(ctx: Context, command: str, *, file_path: Optional[str] = None
             "old_string": old_string,
             "new_string": new_string,
             "offset": offset,
-            "limit": limit
+            "limit": limit,
+            "description": description
         }.items() if value is not None
     }
 
@@ -147,7 +152,8 @@ async def deskaid(ctx: Context, command: str, *, file_path: Optional[str] = None
             return "Error: file_path is required for WriteFile command"
 
         content_str = content or ""
-        return write_file_content(file_path, content_str)
+        desc = description
+        return write_file_content(file_path, content_str, desc)
 
     elif command == "EditFile":
         if file_path is None:
@@ -155,7 +161,8 @@ async def deskaid(ctx: Context, command: str, *, file_path: Optional[str] = None
 
         old_str = old_string or ""
         new_str = new_string or ""
-        return edit_file_content(file_path, old_str, new_str)
+        desc = description
+        return edit_file_content(file_path, old_str, new_str, None, desc)
 
     elif command == "LS":
         if file_path is None:

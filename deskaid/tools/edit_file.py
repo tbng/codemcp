@@ -9,7 +9,7 @@ import difflib
 import logging
 import hashlib
 
-from ..common import get_edit_snippet
+from ..common import get_edit_snippet, commit_changes
 
 # Set up logger
 logger = logging.getLogger(__name__)
@@ -174,7 +174,7 @@ def debug_string_comparison(s1: str, s2: str, label1: str = "string1", label2: s
 
     return not content_same
 
-def edit_file_content(file_path: str, old_string: str, new_string: str, read_file_timestamps: Optional[Dict[str, float]] = None) -> str:
+def edit_file_content(file_path: str, old_string: str, new_string: str, read_file_timestamps: Optional[Dict[str, float]] = None, description: Optional[str] = None) -> str:
     """Edit a file by replacing old_string with new_string.
 
     Args:
@@ -182,6 +182,7 @@ def edit_file_content(file_path: str, old_string: str, new_string: str, read_fil
         old_string: The text to replace
         new_string: The new text to replace old_string with
         read_file_timestamps: Dictionary mapping file paths to timestamps when they were last read
+        description: Optional description of the change for git commit
 
     Returns:
         A success message or an error message
@@ -265,7 +266,16 @@ def edit_file_content(file_path: str, old_string: str, new_string: str, read_fil
 
         # Generate a snippet of the edited file to show in the response
         snippet = get_edit_snippet(content, old_string, new_string)
-
-        return f"Successfully edited {full_file_path}\n\nHere's a snippet of the edited file:\n{snippet}"
+        
+        # Commit the changes if a description was provided
+        git_message = ""
+        if description:
+            success, message = commit_changes(full_file_path, description)
+            if success:
+                git_message = f"\n\nChanges committed to git: {description}"
+            else:
+                git_message = f"\n\nFailed to commit changes to git: {message}"
+        
+        return f"Successfully edited {full_file_path}\n\nHere's a snippet of the edited file:\n{snippet}{git_message}"
     except Exception as e:
         return f"Error editing file: {str(e)}"

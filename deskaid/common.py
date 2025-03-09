@@ -2,7 +2,8 @@
 
 import os
 import mimetypes
-from typing import Optional
+import subprocess
+from typing import Optional, Tuple, List
 
 # Constants
 MAX_LINES_TO_READ = 1000
@@ -24,6 +25,123 @@ def normalize_file_path(file_path: str) -> str:
     if not os.path.isabs(file_path):
         return os.path.abspath(os.path.join(os.getcwd(), file_path))
     return os.path.abspath(file_path)
+
+def is_git_repository(path: str) -> bool:
+    """Check if the path is within a Git repository.
+    
+    Args:
+        path: The file path to check
+        
+    Returns:
+        True if path is in a Git repository, False otherwise
+    """
+    try:
+        # Get the directory containing the file
+        directory = os.path.dirname(path) if os.path.isfile(path) else path
+        
+        # Run git command to verify this is a git repository
+        subprocess.run(
+            ["git", "rev-parse", "--is-inside-work-tree"],
+            cwd=directory,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=True,
+            text=True
+        )
+        return True
+    except (subprocess.SubprocessError, OSError):
+        return False
+
+def commit_changes(file_path: str, description: str) -> Tuple[bool, str]:
+    """Commit changes to a file in Git.
+    
+    If the working directory has uncomitted changes, will commit those first
+    with a default message before making the requested commit.
+    
+    Args:
+        file_path: The path to the file to commit
+        description: Commit message describing the change
+        
+    Returns:
+        A tuple of (success, message)
+    """
+    try:
+        # First, check if this is a git repository
+        if not is_git_repository(file_path):
+            return False, "File is not in a Git repository"
+        
+        directory = os.path.dirname(file_path)
+        
+        # Check if the file is tracked by git
+        file_status = subprocess.run(
+            ["git", "ls-files", "--error-unmatch", file_path],
+            cwd=directory,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True
+        )
+        
+        file_is_tracked = file_status.returncode == 0
+        
+        # Check if working directory has uncommitted changes
+        status_result = subprocess.run(
+            ["git", "status", "--porcelain"],
+            cwd=directory,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=True,
+            text=True
+        )
+        
+        # If there are uncommitted changes (besides our target file), commit them first
+        if status_result.stdout and file_is_tracked:
+            # Get list of changed files
+            changed_files = [
+                line.split(" ")[-1] for line in status_result.stdout.splitlines() 
+                if normalize_file_path(os.path.join(directory, line.split(" ")[-1])) != normalize_file_path(file_path)
+            ]
+            
+            if changed_files:
+                # Commit other changes first with a default message
+                subprocess.run(
+                    ["git", "add", "."],
+                    cwd=directory,
+                    check=True
+                )
+                
+                subprocess.run(
+                    ["git", "commit", "-m", "Snapshot before deskaid change"],
+                    cwd=directory,
+                    check=True
+                )
+        
+        # Add the specified file
+        add_result = subprocess.run(
+            ["git", "add", file_path],
+            cwd=directory,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True
+        )
+        
+        if add_result.returncode != 0:
+            return False, f"Failed to add file to Git: {add_result.stderr}"
+        
+        # Commit the change
+        commit_result = subprocess.run(
+            ["git", "commit", "-m", description],
+            cwd=directory,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True
+        )
+        
+        if commit_result.returncode != 0:
+            return False, f"Failed to commit changes: {commit_result.stderr}"
+        
+        return True, "Changes committed successfully"
+    except Exception as e:
+        return False, f"Error committing changes: {str(e)}"
 
 def get_edit_snippet(original_text: str, old_str: str, new_str: str,
 context_lines: int = 4) -> str:
