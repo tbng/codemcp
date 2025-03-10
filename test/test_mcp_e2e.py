@@ -20,11 +20,12 @@ from mcp.client.stdio import stdio_client
 class MCPEndToEndTest(TestCase, unittest.IsolatedAsyncioTestCase):
     """End-to-end test for codemcp using MCP client."""
 
-    def setUp(self):
+    async def asyncSetUp(self):
+        """Async setup method to prepare the test environment."""
         # Create a temporary directory for testing
         self.temp_dir = tempfile.TemporaryDirectory()
         self.testing_time = "1112911993"  # Fixed timestamp for git
-        
+
         # Initialize environment variables for git
         self.env = os.environ.copy()
         # Set environment variables for reproducible git behavior
@@ -43,12 +44,23 @@ class MCPEndToEndTest(TestCase, unittest.IsolatedAsyncioTestCase):
         self.env.setdefault("GIT_COMMITTER_NAME", "C O Mitter")
         self.env.setdefault("GIT_COMMITTER_DATE", f"{self.testing_time} -0700")
         self.env.setdefault("GIT_AUTHOR_DATE", f"{self.testing_time} -0700")
-        
+
         # Initialize a git repository in the temp directory
         self.init_git_repo()
+        
+    # Keep the old setUp method for backward compatibility
+    def setUp(self):
+        # This will allow the test to run with both unittest and pytest
+        pass
 
-    def tearDown(self):
+    async def asyncTearDown(self):
+        """Async teardown to clean up after the test."""
         self.temp_dir.cleanup()
+        
+    # Keep the old tearDown method for backward compatibility
+    def tearDown(self):
+        # This will be called by regular unittest
+        pass
 
     def init_git_repo(self):
         """Initialize a git repository for testing."""
