@@ -14,6 +14,7 @@ from codemcp.tools.edit_file import (
     detect_line_endings,
     edit_file_content,
     find_similar_file,
+    replace_most_similar_chunk,
     write_text_content,
 )
 
