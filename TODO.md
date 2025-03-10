@@ -24,3 +24,14 @@ BIGGEST PROBLEMS
 - Stop using catch all exceptions
 - Mocks - SUSPICOUS
 - Use the Anthropic export data to do some token counting
+
+- Support this style of grep
+{
+  `command`: `Grep`,
+  `pattern`: `self\\.assertIn.*normalized_result`,
+  `path`: `/Users/ezyang/Dev/codemcp/test/test_mcp_e2e.py`
+}
+
+hypothetical tool ideas
+- Regex search replace for refactor-y stuff (need to prompt this well, cuz LLM
+  needs to review changes)
