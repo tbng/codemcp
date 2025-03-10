@@ -63,15 +63,11 @@ def is_git_repository(path: str) -> bool:
         return False
 
 
-def commit_changes(file_path: str, description: str) -> Tuple[bool, str]:
-    """Commit changes to a file in Git.
-
-    If the working directory has uncomitted changes, will commit those first
-    with a default message before making the requested commit.
+def commit_pending_changes(file_path: str) -> Tuple[bool, str]:
+    """Commit any pending changes in the repository, excluding the target file.
 
     Args:
-        file_path: The path to the file to commit
-        description: Commit message describing the change
+        file_path: The path to the file to exclude from committing
 
     Returns:
         A tuple of (success, message)
@@ -91,7 +87,7 @@ def commit_changes(file_path: str, description: str) -> Tuple[bool, str]:
             stderr=subprocess.PIPE,
             text=True,
         )
-        
+
         # Log command output
         if file_status.stdout:
             logging.debug("git ls-files output: %s", file_status.stdout.strip())
@@ -109,7 +105,7 @@ def commit_changes(file_path: str, description: str) -> Tuple[bool, str]:
             check=True,
             text=True,
         )
-        
+
         # Log command output
         if status_result.stdout:
             logging.debug("git status output: %s", status_result.stdout.strip())
@@ -124,7 +120,7 @@ def commit_changes(file_path: str, description: str) -> Tuple[bool, str]:
                 # Skip empty lines
                 if not line.strip():
                     continue
-                    
+
                 # git status --porcelain output format: XY filename
                 # where X is status in staging area, Y is status in working tree
                 # There are at least 2 spaces before the filename
@@ -140,14 +136,14 @@ def commit_changes(file_path: str, description: str) -> Tuple[bool, str]:
             if changed_files:
                 # Commit other changes first with a default message
                 add_result = subprocess.run(
-                    ["git", "add", "."], 
-                    cwd=directory, 
+                    ["git", "add", "."],
+                    cwd=directory,
                     check=True,
                     stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE,
                     text=True
                 )
-                
+
                 # Log command output
                 if add_result.stdout:
                     logging.debug("git add output: %s", add_result.stdout.strip())
@@ -162,12 +158,36 @@ def commit_changes(file_path: str, description: str) -> Tuple[bool, str]:
                     stderr=subprocess.PIPE,
                     text=True
                 )
-                
+
                 # Log command output
                 if commit_snapshot_result.stdout:
                     logging.debug("git commit snapshot output: %s", commit_snapshot_result.stdout.strip())
                 if commit_snapshot_result.stderr:
                     logging.debug("git commit snapshot stderr: %s", commit_snapshot_result.stderr.strip())
+                
+                return True, "Committed pending changes"
+        
+        return True, "No pending changes to commit"
+    except Exception as e:
+        return False, f"Error committing pending changes: {str(e)}"
+
+
+def commit_changes(file_path: str, description: str) -> Tuple[bool, str]:
+    """Commit changes to a file in Git.
+
+    Args:
+        file_path: The path to the file to commit
+        description: Commit message describing the change
+
+    Returns:
+        A tuple of (success, message)
+    """
+    try:
+        # First, check if this is a git repository
+        if not is_git_repository(file_path):
+            return False, "File is not in a Git repository"
+
+        directory = os.path.dirname(file_path)
 
         # Add the specified file
         add_result = subprocess.run(
@@ -177,7 +197,7 @@ def commit_changes(file_path: str, description: str) -> Tuple[bool, str]:
             stderr=subprocess.PIPE,
             text=True,
         )
-        
+
         # Log command output
         if add_result.stdout:
             logging.debug("git add file output: %s", add_result.stdout.strip())
@@ -186,7 +206,7 @@ def commit_changes(file_path: str, description: str) -> Tuple[bool, str]:
 
         if add_result.returncode != 0:
             return False, f"Failed to add file to Git: {add_result.stderr}"
-            
+
         # First check if there's already a commit in the repository
         has_commits = False
         rev_parse_result = subprocess.run(
@@ -196,15 +216,15 @@ def commit_changes(file_path: str, description: str) -> Tuple[bool, str]:
             stderr=subprocess.PIPE,
             text=True,
         )
-        
+
         # Log command output
         if rev_parse_result.stdout:
             logging.debug("git rev-parse HEAD output: %s", rev_parse_result.stdout.strip())
         if rev_parse_result.stderr:
             logging.debug("git rev-parse HEAD stderr: %s", rev_parse_result.stderr.strip())
-            
+
         has_commits = rev_parse_result.returncode == 0
-        
+
         # Only check for changes if we already have commits
         if has_commits:
             # Check if there are any changes to commit after git add
@@ -216,11 +236,11 @@ def commit_changes(file_path: str, description: str) -> Tuple[bool, str]:
                 stderr=subprocess.PIPE,
                 text=True,
             )
-            
+
             # Log command output (only stderr since stdout would be empty with --quiet flag)
             if diff_result.stderr:
                 logging.debug("git diff-index stderr: %s", diff_result.stderr.strip())
-            
+
             # If diff-index returns 0, there are no changes to commit for this file
             if diff_result.returncode == 0:
                 return True, "No changes to commit (file is identical to what's already committed)"
@@ -233,7 +253,7 @@ def commit_changes(file_path: str, description: str) -> Tuple[bool, str]:
             stderr=subprocess.PIPE,
             text=True,
         )
-        
+
         # Log command output
         if commit_result.stdout:
             logging.debug("git commit output: %s", commit_result.stdout.strip())
