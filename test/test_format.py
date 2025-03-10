@@ -3,11 +3,11 @@
 import os
 import tempfile
 import unittest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, MagicMock, call
 
 import tomli_w
 
-from codemcp.tools.format import format_code, _get_format_command
+from codemcp.tools.format import format_code, _get_format_command, _check_for_changes
 
 
 class TestFormatTool(unittest.TestCase):
@@ -48,9 +48,14 @@ class TestFormatTool(unittest.TestCase):
         result = _get_format_command(self.project_dir)
         self.assertEqual(result, format_command)
 
+    @patch("codemcp.tools.format.is_git_repository")
+    @patch("codemcp.tools.format._check_for_changes")
     @patch("subprocess.run")
-    def test_format_code_success(self, mock_run):
+    def test_format_code_success(self, mock_run, mock_check_changes, mock_is_git_repo):
         """Test successful execution of format_code."""
+        # Mock git repository check (not a git repo to simplify test)
+        mock_is_git_repo.return_value = False
+        
         # Mock successful subprocess run
         mock_process = MagicMock()
         mock_process.stdout = "Formatting successful"
@@ -66,6 +71,8 @@ class TestFormatTool(unittest.TestCase):
 
         result = format_code(self.project_dir)
         self.assertIn("Code formatting successful", result)
+        
+        # Check that subprocess.run was called correctly for the format command
         mock_run.assert_called_once_with(
             format_command,
             cwd=self.project_dir,
