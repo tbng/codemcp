@@ -2,9 +2,10 @@
 
 import os
 import sys
+import logging
 from typing import Optional, Tuple
 
-from ..common import commit_changes
+from ..common import commit_changes, commit_pending_changes
 
 
 def detect_file_encoding(file_path: str) -> str:
@@ -92,6 +93,13 @@ def write_file_content(file_path: str, content: str, description: str = "") -> s
     try:
         if not os.path.isabs(file_path):
             return f"Error: File path must be absolute, not relative: {file_path}"
+
+        # First commit any pending changes
+        commit_success, commit_message = commit_pending_changes(file_path)
+        if not commit_success:
+            logging.debug(f"Failed to commit pending changes: {commit_message}")
+        else:
+            logging.debug(f"Pending changes status: {commit_message}")
 
         # Get directory and ensure it exists
         directory = os.path.dirname(file_path)
