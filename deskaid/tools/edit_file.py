@@ -275,7 +275,30 @@ def edit_file_content(
 
         # Check if old_string exists in the file
         if old_string and old_string not in content:
-            return "Error: String to replace not found in file."
+            # Fallback: Try matching after stripping trailing whitespace from each line
+            content_no_trailing_whitespace = "\n".join([line.rstrip() for line in content.split("\n")])
+            old_string_no_trailing_whitespace = "\n".join([line.rstrip() for line in old_string.split("\n")])
+            
+            if old_string_no_trailing_whitespace in content_no_trailing_whitespace:
+                # Find the actual text in the original content that matches when trailing whitespace is stripped
+                content_lines = content.split("\n")
+                old_string_lines = old_string.split("\n")
+                
+                for i in range(len(content_lines) - len(old_string_lines) + 1):
+                    matched = True
+                    for j in range(len(old_string_lines)):
+                        if content_lines[i + j].rstrip() != old_string_lines[j].rstrip():
+                            matched = False
+                            break
+                    
+                    if matched:
+                        actual_match = "\n".join(content_lines[i:i + len(old_string_lines)])
+                        # Update old_string to use the actual text from the file
+                        logger.debug(f"Found match after stripping trailing whitespace. Using actual text from file.")
+                        old_string = actual_match
+                        break
+            else:
+                return "Error: String to replace not found in file."
 
         # Check for uniqueness of old_string
         if old_string and content.count(old_string) > 1:
