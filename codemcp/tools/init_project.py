@@ -6,6 +6,10 @@ import tomli
 
 from ..common import normalize_file_path
 
+__all__ = [
+    "init_project",
+]
+
 
 def init_project(directory: str) -> str:
     """Initialize a project by reading the codemcp.toml TOML file and returning
