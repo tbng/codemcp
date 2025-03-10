@@ -101,3 +101,7 @@ Edits a file by replacing old_string with new_string.
 - An "init" command that will feed the project prompt (per project config)
 - Add a system prompt command that will load instructions at the start of
   convo
+
+- Deal with output length limit from Claude Desktop (cannot do an edit longer
+  than the limit)
+- More faithfully copy claude code's line numbering algorithm
