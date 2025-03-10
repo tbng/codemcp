@@ -221,6 +221,12 @@ def debug_string_comparison(
         s2_no_trailing = "\n".join([line.rstrip() for line in s2.splitlines()])
         if s1_no_trailing == s2_no_trailing:
             logger.debug("  Strings match when trailing whitespace is stripped from each line!")
+            
+        # Check if strings are equal after normalizing only whitespace-only lines
+        s1_normalized = "\n".join([line.rstrip() if line.strip() == "" else line for line in s1.splitlines()])
+        s2_normalized = "\n".join([line.rstrip() if line.strip() == "" else line for line in s2.splitlines()])
+        if s1_normalized == s2_normalized:
+            logger.debug("  Strings match when normalizing only whitespace-only lines!")
 
     return not content_same
 
