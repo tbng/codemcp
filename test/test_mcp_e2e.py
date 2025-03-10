@@ -769,10 +769,10 @@ nothing to commit, working tree clean
         # Create an untracked subdirectory
         untracked_dir = os.path.join(self.temp_dir.name, "untracked_subdir")
         os.makedirs(untracked_dir, exist_ok=True)
-        
+
         # Path to a new file in the untracked directory
         new_file_path = os.path.join(untracked_dir, "new_file.txt")
-        
+
         async with self.create_client_session() as session:
             # Try to create a new file using EditFile with empty old_string
             result = await session.call_tool("codemcp", {
@@ -782,28 +782,80 @@ nothing to commit, working tree clean
                 "new_string": "This file in untracked dir",
                 "description": "Attempt to create file in untracked dir with EditFile"
             })
-            
+
             # Normalize the result
             normalized_result = self.normalize_path(result)
             result_text = self.extract_text_from_result(normalized_result)
 
-            # Check actual behavior
-            if "Successfully created" in result_text:
-                # The file was created in untracked directory - this is a potential issue
-                self.assertTrue(os.path.exists(new_file_path), 
-                    "File was not created even though operation reported success")
+            # Since we've changed the behavior, we now expect this to succeed
+            self.assertIn("Successfully created", result_text)
+            
+            # Check the file was created
+            self.assertTrue(os.path.exists(new_file_path),
+                "File was not created even though operation reported success")
+            
+            # Read the content to verify it was written correctly
+            with open(new_file_path, "r") as f:
+                content = f.read()
+            self.assertEqual(content, "This file in untracked dir")
+            
+            # The file should have been added to git
+            ls_files_output = subprocess.check_output(
+                ["git", "ls-files", new_file_path],
+                cwd=self.temp_dir.name,
+                env=self.env
+            ).decode().strip()
+            
+            # Check that the file is tracked
+            self.assertTrue(ls_files_output, 
+                "File was created but not added to git")
                 
-                # SECURITY CHECK: The file and its parent directory should be added to git
-                # to maintain our safety invariant
-                ls_files_output = subprocess.check_output(
-                    ["git", "ls-files", new_file_path],
-                    cwd=self.temp_dir.name,
-                    env=self.env
-                ).decode().strip()
+    async def test_create_new_file_with_write_file(self):
+        """Test creating a new file that doesn't exist yet with WriteFile."""
+        # Path to a new file that doesn't exist yet
+        new_file_path = os.path.join(self.temp_dir.name, "completely_new_file.txt")
+        
+        # Make sure it doesn't exist
+        if os.path.exists(new_file_path):
+            os.unlink(new_file_path)
+            
+        self.assertFalse(os.path.exists(new_file_path), "Test file should not exist initially")
+        
+        async with self.create_client_session() as session:
+            # Create a new file
+            result = await session.call_tool("codemcp", {
+                "command": "WriteFile",
+                "file_path": new_file_path,
+                "content": "This is a brand new file",
+                "description": "Create a new file with WriteFile"
+            })
+            
+            # Normalize the result
+            normalized_result = self.normalize_path(result)
+            result_text = self.extract_text_from_result(normalized_result)
+            
+            # Check that the operation succeeded
+            self.assertIn("Successfully wrote to", result_text)
+            
+            # Verify the file was created
+            self.assertTrue(os.path.exists(new_file_path),
+                "File was not created even though operation reported success")
                 
-                # Check that the file is tracked
-                self.assertTrue(ls_files_output, 
-                    "SECURITY VULNERABILITY: File was created in untracked directory but not added to git")
+            # Check content
+            with open(new_file_path, "r") as f:
+                content = f.read()
+            self.assertEqual(content, "This is a brand new file")
+            
+            # Verify the file was added to git
+            ls_files_output = subprocess.check_output(
+                ["git", "ls-files", new_file_path],
+                cwd=self.temp_dir.name,
+                env=self.env
+            ).decode().strip()
+            
+            # The new file should be tracked in git
+            self.assertTrue(ls_files_output, 
+                "New file was created but not added to git")
             
     async def test_write_to_untracked_file(self):
         """Test that writes to untracked files are rejected."""
