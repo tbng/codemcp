@@ -759,9 +759,10 @@ no changes added to commit (use "git add" and/or "git commit -a")
             
             # Normalize the result
             normalized_result = self.normalize_path(result)
-            
+            result_text = self.extract_text_from_result(normalized_result)
+
             # Check actual behavior
-            if "Successfully created" in normalized_result:
+            if "Successfully created" in result_text:
                 # The file was created in untracked directory - this is a potential issue
                 self.assertTrue(os.path.exists(new_file_path), 
                     "File was not created even though operation reported success")
