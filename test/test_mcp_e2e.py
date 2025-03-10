@@ -335,23 +335,19 @@ nothing added to commit but untracked files present (use "git add" to track)
             expected_content = "Line 1\nModified Line 2\nLine 3\nLine 4\nLine 5\n"
             self.assertEqual(file_content, expected_content)
             
-            # Verify git state shows modified file
+            # Verify git state shows file was committed
             status = subprocess.check_output(
-                ["git", "status"], 
-                cwd=self.temp_dir.name, 
+                ["git", "status"],
+                cwd=self.temp_dir.name,
                 env=self.env
             ).decode()
-            
-            # Use expect test to verify git status - should show as modified but not staged
+
+            # Use expect test to verify git status - should show as clean working tree
+            # since EditFile automatically commits changes
             self.assertExpectedInline(
                 status,
                 """On branch main
-Changes not staged for commit:
-  (use "git add <file>..." to update what will be committed)
-  (use "git restore <file>..." to discard changes in working directory)
-	modified:   edit_file.txt
-
-no changes added to commit (use "git add" and/or "git commit -a")
+nothing to commit, working tree clean
 """
             )
     
