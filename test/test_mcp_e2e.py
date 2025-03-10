@@ -200,12 +200,13 @@ class MCPEndToEndTest(TestCase, unittest.IsolatedAsyncioTestCase):
             
             # Normalize the result
             normalized_result = self.normalize_path(result)
-            
+            result_text = self.extract_text_from_result(normalized_result)
+
             # Verify we got exactly lines 2-3
-            self.assertIn("Line 2", normalized_result)
-            self.assertIn("Line 3", normalized_result)
-            self.assertNotIn("Line 1", normalized_result)
-            self.assertNotIn("Line 4", normalized_result)
+            self.assertIn("Line 2", result_text)
+            self.assertIn("Line 3", result_text)
+            self.assertNotIn("Line 1", result_text)
+            self.assertNotIn("Line 4", result_text)
     
     async def test_write_file(self):
         """Test the WriteFile command."""
