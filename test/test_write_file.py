@@ -196,7 +196,7 @@ class TestWriteFile(TestCase):
     def test_write_file_content_untracked_file(self):
         """Test that writing to an untracked file is rejected"""
         # Override the commit_pending_changes mock to simulate an untracked file
-        with patch('codemcp.tools.write_file.commit_pending_changes') as mock_pending:
+        with patch('codemcp.tools.file_utils.commit_pending_changes') as mock_pending:
             # Simulate the subprocess.run result for an untracked file with the updated error message
             mock_pending.return_value = (False, "File is not tracked by git. Please add the file to git tracking first using 'git add <file>'")
 
