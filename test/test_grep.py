@@ -83,8 +83,9 @@ class TestGrepTool(unittest.TestCase):
         ]
         self.assertEqual(result, expected)
 
+    @mock.patch("deskaid.tools.grep.normalize_file_path", return_value="/not/a/git/repo")
     @mock.patch("deskaid.tools.grep.is_git_repository", return_value=False)
-    def test_git_grep_not_a_git_repo(self, mock_is_git_repo):
+    def test_git_grep_not_a_git_repo(self, mock_is_git_repo, mock_normalize):
         # Should raise a ValueError if the path is not a git repository
         with self.assertRaises(ValueError):
             git_grep("pattern", "/not/a/git/repo")
