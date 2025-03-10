@@ -8,6 +8,12 @@ from typing import Any
 
 import tomli
 
+__all__ = [
+    "get_config_path",
+    "load_config",
+    "get_logger_verbosity",
+]
+
 # Default configuration values
 DEFAULT_CONFIG = {
     "logger": {
