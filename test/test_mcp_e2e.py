@@ -132,6 +132,28 @@ class MCPEndToEndTest(TestCase, unittest.IsolatedAsyncioTestCase):
         else:
             return str(result)
 
+    def _unwrap_single_exception_group(self, eg):
+        """
+        Helper method to unwrap an ExceptionGroup if it contains exactly one exception.
+        
+        Args:
+            eg: An ExceptionGroup object
+            
+        Returns:
+            tuple: (unwrapped, exception) where:
+                - unwrapped: Boolean indicating if unwrapping was performed
+                - exception: Either the unwrapped exception or the original ExceptionGroup
+        """
+        if len(eg.exceptions) == 1:
+            exc = eg.exceptions[0]
+            # Recursively unwrap if it's another ExceptionGroup with a single exception
+            while isinstance(exc, ExceptionGroup) and len(exc.exceptions) == 1:
+                exc = exc.exceptions[0]
+            return True, exc
+        else:
+            # Multiple exceptions - don't unwrap
+            return False, eg
+            
     @asynccontextmanager
     async def create_client_session(self):
         """Create an MCP client session connected to codemcp server."""
@@ -152,25 +174,16 @@ class MCPEndToEndTest(TestCase, unittest.IsolatedAsyncioTestCase):
                         await session.initialize()
                         yield session
                 except ExceptionGroup as eg:
-                    # Check if there's only one exception in the group
-                    if len(eg.exceptions) == 1:
-                        exc = eg.exceptions[0]
-                        # Recursively unwrap if it's another ExceptionGroup with a single exception
-                        while isinstance(exc, ExceptionGroup) and len(exc.exceptions) == 1:
-                            exc = exc.exceptions[0]
+                    unwrapped, exc = self._unwrap_single_exception_group(eg)
+                    if unwrapped:
                         raise exc from None
                     else:
-                        # Re-raise the original exception group with multiple exceptions
                         raise
         except ExceptionGroup as eg:
-            # Same pattern for the outer exception handler
-            if len(eg.exceptions) == 1:
-                exc = eg.exceptions[0]
-                while isinstance(exc, ExceptionGroup) and len(exc.exceptions) == 1:
-                    exc = exc.exceptions[0]
+            unwrapped, exc = self._unwrap_single_exception_group(eg)
+            if unwrapped:
                 raise exc from None
             else:
-                # Re-raise the original exception group with multiple exceptions
                 raise
 
     async def test_list_tools(self):
