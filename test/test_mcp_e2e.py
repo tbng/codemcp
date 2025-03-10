@@ -175,10 +175,11 @@ class MCPEndToEndTest(TestCase, unittest.IsolatedAsyncioTestCase):
             
             # Normalize the result for easier comparison
             normalized_result = self.normalize_path(result)
-            
+            result_text = self.extract_text_from_result(normalized_result)
+
             # Verify the result includes our file content (ignoring line numbers)
             for line in test_content.splitlines():
-                self.assertIn(line, normalized_result)
+                self.assertIn(line, result_text)
     
     async def test_read_file_with_offset_limit(self):
         """Test the ReadFile command with offset and limit."""
