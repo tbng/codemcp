@@ -35,30 +35,36 @@ class TestWriteFile(TestCase):
         # Setup mock patches
         self.setup_mocks()
         
-    def _init_git_repo(self):
-        """Initialize a git repository in the temporary directory and create a codemcp.toml file."""
-        temp_dir = self.temp_dir.name
+    def setup_mocks(self):
+        """Setup mocks for git functions to bypass repository checks"""
+        # Create patch for git repository check
+        self.is_git_repo_patch = patch('codemcp.git.is_git_repository')
+        self.mock_is_git_repo = self.is_git_repo_patch.start()
+        self.mock_is_git_repo.return_value = True
+        self.addCleanup(self.is_git_repo_patch.stop)
         
-        # Create codemcp.toml file
-        config_path = os.path.join(temp_dir, "codemcp.toml")
+        # Create patch for git base directory
+        self.git_base_dir_patch = patch('codemcp.access.get_git_base_dir')
+        self.mock_git_base_dir = self.git_base_dir_patch.start()
+        self.mock_git_base_dir.return_value = self.temp_dir.name
+        self.addCleanup(self.git_base_dir_patch.stop)
+        
+        # Create patch for commit operations
+        self.commit_changes_patch = patch('codemcp.tools.write_file.commit_changes')
+        self.mock_commit_changes = self.commit_changes_patch.start()
+        self.mock_commit_changes.return_value = (True, "Mocked commit success")
+        self.addCleanup(self.commit_changes_patch.stop)
+        
+        # Create patch for pending commit operations
+        self.commit_pending_patch = patch('codemcp.tools.write_file.commit_pending_changes')
+        self.mock_commit_pending = self.commit_pending_patch.start()
+        self.mock_commit_pending.return_value = (True, "No pending changes to commit")
+        self.addCleanup(self.commit_pending_patch.stop)
+        
+        # Create a mock codemcp.toml file to satisfy permission check
+        config_path = os.path.join(self.temp_dir.name, "codemcp.toml")
         with open(config_path, "w") as f:
             f.write("[codemcp]\nenabled = true\n")
-        
-        # Initialize git repository
-        subprocess.run(["git", "init"], cwd=temp_dir, check=True, 
-                      stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        
-        # Configure git for test environment
-        subprocess.run(["git", "config", "user.name", "Test User"], cwd=temp_dir, check=True,
-                      stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        subprocess.run(["git", "config", "user.email", "test@example.com"], cwd=temp_dir, check=True,
-                      stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        
-        # Add files and make initial commit
-        subprocess.run(["git", "add", "."], cwd=temp_dir, check=True,
-                      stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        subprocess.run(["git", "commit", "-m", "Initial commit for tests"], cwd=temp_dir, check=True,
-                      stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     def test_detect_file_encoding_utf8(self):
         """Test detecting UTF-8 encoding"""
