@@ -701,6 +701,10 @@ if __name__ == "__main__":
     if sys.platform == "win32":
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
     
+    # FOR TESTING: Uncomment the next two lines to run ONLY test_edit_untracked_file
+    # sys.argv = [sys.argv[0]] if len(sys.argv) == 1 else [sys.argv[0]]
+    # sys.argv.append('test_edit_untracked_file')
+    
     # Check if a specific test was requested
     if len(sys.argv) > 1:
         test_name = sys.argv.pop(1)
