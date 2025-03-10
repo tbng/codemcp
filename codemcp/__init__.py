@@ -36,6 +36,7 @@ async def codemcp(
     pattern: Optional[str] = None,
     path: Optional[str] = None,
     include: Optional[str] = None,
+    old_str: Optional[str] = None,  # Added for backward compatibility
 ) -> str:
     """
     This is a multipurpose tool that supports the following subcommands:
