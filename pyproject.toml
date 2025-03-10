@@ -8,6 +8,7 @@ license = {text = "MIT"}
 dependencies = [
     "mcp[cli]>=1.2.0",
     "ruff>=0.9.10",
+    "toml>=0.10.2",
     "tomli>=2.2.1",
 ]
 
