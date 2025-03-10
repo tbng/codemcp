@@ -1,3 +1,11 @@
+BIGGEST PROBLEMS
+- Increasing the success rate of code patching
+  - Logging so I can repro these problems
+- Branchy git structure for ease of review
+- Fix the asyncio testing
+
+
+
 - Prevent edits to files which are not under version control
 - Add files to context
 - Set a base directory (so absolute paths aren't always required)
