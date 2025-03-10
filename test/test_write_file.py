@@ -199,19 +199,43 @@ class TestWriteFile(TestCase):
         with patch('codemcp.tools.write_file.commit_pending_changes') as mock_pending:
             # Simulate the subprocess.run result for an untracked file with the updated error message
             mock_pending.return_value = (False, "File is not tracked by git. Please add the file to git tracking first using 'git add <file>'")
-            
-            # Attempt to write to the "untracked" file
+
+            # Create the file first so it exists but is untracked
             abs_path = os.path.abspath(os.path.join(self.temp_dir.name, "untracked_file.txt"))
+            with open(abs_path, "w") as f:
+                f.write("Initial content")
+                
             content = "Content that should not be written"
-            
             result = write_file_content(abs_path, content)
-            
+
             # Verify that the write was rejected
             self.assertIn("Error: File is not tracked by git", result)
             self.assertIn("Please add the file to git tracking", result)
             
-            # Verify that the file was not created
-            self.assertFalse(os.path.exists(abs_path))
+            # Verify that the file content was not changed
+            with open(abs_path, "r") as f:
+                written_content = f.read()
+            self.assertEqual(written_content, "Initial content")
+            
+    def test_write_file_content_new_file(self):
+        """Test creating a new file that doesn't exist yet"""
+        abs_path = os.path.abspath(os.path.join(self.temp_dir.name, "new_file.txt"))
+        content = "Content for a new file"
+        
+        # Make sure the file doesn't exist first
+        if os.path.exists(abs_path):
+            os.remove(abs_path)
+            
+        result = write_file_content(abs_path, content)
+
+        # Verify that the write was successful
+        self.assertIn(f"Successfully wrote to {abs_path}", result)
+        
+        # Verify that the file was created with correct content
+        self.assertTrue(os.path.exists(abs_path))
+        with open(abs_path, "r") as f:
+            written_content = f.read()
+        self.assertEqual(written_content, content)
 
 
 if __name__ == "__main__":
