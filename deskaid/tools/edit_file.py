@@ -241,9 +241,9 @@ def edit_file_content(
     """Edit a file by replacing old_string with new_string.
     
     If the old_string is not found in the file, attempts a fallback mechanism
-    where trailing whitespace is stripped from each line before matching.
-    If a match is found after stripping trailing whitespace, the original
-    text from the file (with its original whitespace) will be used for replacement.
+    where trailing whitespace is stripped from blank lines (lines with only whitespace)
+    before matching. This helps match files where the only difference is in trailing
+    whitespace on otherwise empty lines.
 
     Args:
         file_path: The absolute path to the file to edit
