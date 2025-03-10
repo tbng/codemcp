@@ -84,7 +84,10 @@ def apply_edit(
             content = f.read()
     else:
         content = ""
-
+    
+    # By the time we reach this function, old_string should be properly
+    # matched with the file content - either directly or using the 
+    # trailing whitespace stripping fallback in edit_file_content
     updated_file = content.replace(old_string, new_string, 1)
 
     # Create a simple patch structure
