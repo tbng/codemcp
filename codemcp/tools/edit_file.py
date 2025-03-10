@@ -4,10 +4,13 @@ import difflib
 import hashlib
 import json
 import logging
+import math
 import os
 import re
 import stat
-from typing import Dict, List, Optional, Tuple
+from difflib import SequenceMatcher
+from pathlib import Path
+from typing import Dict, List, Optional, Tuple, Union
 
 from ..common import get_edit_snippet
 from ..git import commit_changes, commit_pending_changes
