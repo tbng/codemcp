@@ -214,7 +214,12 @@ def commit_changes(file_path: str, description: str) -> Tuple[bool, str]:
                 cwd=directory,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
+                text=True,
             )
+            
+            # Log command output (only stderr since stdout would be empty with --quiet flag)
+            if diff_result.stderr:
+                logging.debug("git diff-index stderr: %s", diff_result.stderr.strip())
             
             # If diff-index returns 0, there are no changes to commit for this file
             if diff_result.returncode == 0:
