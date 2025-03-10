@@ -178,7 +178,7 @@ class TestFormatTool(unittest.TestCase):
     @patch("codemcp.tools.format.commit_changes")
     @patch("codemcp.tools.format._check_for_changes")
     @patch("codemcp.tools.format.is_git_repository")
-    @patch("subprocess.run")
+    @patch("codemcp.tools.format.run_command")
     def test_format_code_with_git_changes(
         self, mock_run, mock_is_git_repo, mock_check_changes, mock_commit
     ):
