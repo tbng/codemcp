@@ -59,20 +59,13 @@ def commit_pending_changes(file_path: str) -> tuple[bool, str]:
         directory = os.path.dirname(file_path)
 
         # Check if the file is tracked by git
-        file_status = subprocess.run(
+        file_status = run_command(
             ["git", "ls-files", "--error-unmatch", file_path],
             cwd=directory,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            capture_output=True,
             text=True,
             check=False,
         )
-
-        # Log command output
-        if file_status.stdout:
-            logging.debug("git ls-files output: %s", file_status.stdout.strip())
-        if file_status.stderr:
-            logging.debug("git ls-files stderr: %s", file_status.stderr.strip())
 
         file_is_tracked = file_status.returncode == 0
 
