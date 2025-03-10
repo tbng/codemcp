@@ -1,4 +1,4 @@
-# Deskaid
+# codemcp
 
 ## WARNING: DO NOT USE, SAFETY FEATURES NOT IMPLEMENTED YET
 
@@ -39,7 +39,7 @@ mcp dev codemcp_server.py
 
 ## Configuration
 
-Deskaid uses a TOML configuration file located at `~/.codemcprc`. Currently supported configuration options:
+codemcp uses a TOML configuration file located at `~/.codemcprc`. Currently supported configuration options:
 
 ```toml
 [logger]
