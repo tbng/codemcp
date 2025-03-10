@@ -142,7 +142,9 @@ class TestFormatTool(unittest.TestCase):
         mock_process2.stderr = ""
 
         # Test case 3: Exception occurs
-        mock_run.side_effect = [mock_process1, mock_process2, subprocess.CalledProcessError(128, ["git", "status", "--porcelain"], stderr="Git error")]
+        error = subprocess.CalledProcessError(128, ["git", "status", "--porcelain"])
+        error.stderr = "Git error"
+        mock_run.side_effect = [mock_process1, mock_process2, error]
 
         # Test with changes
         result1 = _check_for_changes(self.project_dir)
