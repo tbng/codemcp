@@ -1,41 +1,85 @@
 # codemcp
 
-## WARNING: DO NOT USE, SAFETY FEATURES NOT IMPLEMENTED YET
+A multi-purpose MCP for coding with Claude Sonnet.  It is specifically
+intended to be used with Claude Desktop, where you can purchase Claude Pro and
+pay only a flat monthly fee for as much usage up to Anthropic's rate limit, as
+opposed to potentially uncapped cost from API usage.
 
-An MCP server for file operations that provides tools for reading, writing, and editing files.
+Currently, this MCP only provides the ability to directly read/write files on
+your filesystem, based off of Claude Code's tools.  However, it takes an
+opinionated approach to implementing this functionality based on the coding
+use case:
 
-## Features
+- Git is mandatory; we generate a commit for every edit so you can easily use
+  Git to rollback if the AI does something bad.  TODO: The MCP will ONLY write
+  to Git tracked files, so you are guaranteed to be able to rollback if
+  necessary.
 
-- Read files with optional offset and limit parameters
-- Write content to files
-- Edit files by replacing specific text
-- Support for both text and image files
+- You must specifically opt-in a repository to being editable with codemcp by
+  creating a codemcp.toml file at its base directory.  We will refuse to write
+  all other files.
+
+Major missing functionality that I plan to implement ASAP:
+
+- Linter/autoformatter integration
+
+- Typecheck/build integration
+
+- Test runner integration
+
+- Scrape webpage and add to context
+
+Things I NEVER intend to implement, for philosophical reasons:
+
+- Bash tool
+
+This tool was bootstrapped into developing itself in three hours.  I'm still
+working out Sonnet 3.7's quirks for Python projects, so apologies for any
+naughty code.
 
 ## Installation
 
-```bash
-uv pip install codemcp
-```
-
-## Usage
-
-Run the server:
+From source:
 
 ```bash
-python codemcp_server.py
+uv venv
+source .venv/bin/activate
+uv sync
 ```
 
-Install in Claude Desktop:
+and then in `claude_desktop_config.json`
+
+```json
+{
+  "mcpServers": {
+    "codemcp": {
+      "command": "/Users/ezyang/Dev/codemcp/.venv/bin/python",
+      "args": [
+        "-m",
+        "codemcp"
+      ]
+    }
+  }
+}
+```
+
+or (TODO: test this actually works)
 
 ```bash
 mcp install codemcp_server.py
 ```
 
-Test with MCP Inspector:
+TODO: uvx instructions
 
-```bash
-mcp dev codemcp_server.py
+## Usage
+
+Create a project and put this in your system prompt:
+
 ```
+Before doing anything, first init project PATH_TO_PROJECT.
+```
+
+Then chat with Claude about what changes you want to make to the project.
 
 ## Configuration
 
@@ -46,64 +90,15 @@ codemcp uses a TOML configuration file located at `~/.codemcprc`. Currently supp
 verbosity = "INFO"  # Can be DEBUG, INFO, WARNING, ERROR, or CRITICAL
 ```
 
-### Logging
+## Logging
 
-Logs are written to `~/.codemcp/codemcp.log` and to the console. The log level can be set in the configuration file or overridden with environment variables:
+Logs are written to `~/.codemcp/codemcp.log`. The log level can be set in the configuration file or overridden with environment variables:
 
 - Set the log level in config: `verbosity = "DEBUG"` in `~/.codemcprc`
-- Override with environment variable: `DESKAID_DEBUG_LEVEL=DEBUG python -m codemcp`
-- Enable debug mode: `DESKAID_DEBUG=1 python -m codemcp`
 
-By default, logs from the 'mcp' module are filtered out to reduce noise. These logs are only shown when running in debug mode (`DESKAID_DEBUG=1`).
+## Known problems
 
-Log format:
-```
-YYYY-MM-DD HH:MM:SS,ms - module_name - LEVEL - Message
-```
-
-## Commands
-
-### ReadFile
-
-```
-ReadFile file_path [offset] [limit]
-```
-
-Reads a file from the local filesystem with optional offset and limit parameters.
-
-### WriteFile
-
-```
-WriteFile file_path content
-```
-
-Writes content to a file, creating it if it doesn't exist.
-
-### EditFile
-
-```
-EditFile file_path old_string new_string
-```
-
-Edits a file by replacing old_string with new_string.
-
-## Project Roadmap
-
-- Auto git commit after every edit so rollbacks work
-- Prevent edits to files which are not under version control
-- Add files to context
-- Set a base directory (so absolute paths aren't always required)
-- Import Aider system prompts
-- Load webpages
-- Run tests/lints/typecheck
-
-- LS - only use git ls-files
-- An "init" command that will feed the project prompt (per project config)
-- Add a system prompt command that will load instructions at the start of
-  convo
-
-- Deal with output length limit from Claude Desktop (cannot do an edit longer
-  than the limit)
-- More faithfully copy claude code's line numbering algorithm
-- Stop using catch all exceptions
-- Mocks - SUSPICOUS
+- Thinking mode doesn't work too well
+- Sonnet 3.7 will try very hard to execute commands, which doesn't work
+- You can't do an edit that is larger than Claude Desktop's output size limit.
+  If you do hit a limit try "Continue" first.
