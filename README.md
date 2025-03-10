@@ -72,13 +72,10 @@ and then in `claude_desktop_config.json`
 }
 ```
 
-or (TODO: test this actually works)
-
-```bash
-mcp install codemcp_server.py
-```
-
 TODO: uvx instructions
+
+There is a pypi package but it is out of date until we get out of rapid
+development, install from source for now.
 
 ## Usage
 
