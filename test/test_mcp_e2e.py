@@ -268,34 +268,194 @@ no changes added to commit (use "git add" and/or "git commit -a")
         # Create a test directory structure
         test_dir = os.path.join(self.temp_dir.name, "test_directory")
         os.makedirs(test_dir)
-        
+
         with open(os.path.join(test_dir, "file1.txt"), "w") as f:
             f.write("Content of file 1")
-        
+
         with open(os.path.join(test_dir, "file2.txt"), "w") as f:
             f.write("Content of file 2")
-        
+
         # Create a subdirectory
         sub_dir = os.path.join(test_dir, "subdirectory")
         os.makedirs(sub_dir)
-        
+
         with open(os.path.join(sub_dir, "subfile.txt"), "w") as f:
             f.write("Content of subfile")
-        
+
         async with self.create_client_session() as session:
             # Call the LS tool
             result = await session.call_tool("codemcp", {
                 "command": "LS",
                 "file_path": test_dir
             })
-            
+
             # Normalize the result
             normalized_result = self.normalize_path(result)
-            
+
             # Verify the result includes all files and directories
             self.assertIn("file1.txt", normalized_result)
             self.assertIn("file2.txt", normalized_result)
             self.assertIn("subdirectory", normalized_result)
+            
+    async def test_edit_untracked_file(self):
+        """Test that codemcp cannot edit files that aren't tracked by git."""
+        # Create a file but don't commit it to git
+        untracked_file_path = os.path.join(self.temp_dir.name, "untracked.txt")
+        with open(untracked_file_path, "w") as f:
+            f.write("Untracked file content")
+
+        # Verify the file exists but is not tracked
+        status = subprocess.check_output(
+            ["git", "status"], 
+            cwd=self.temp_dir.name, 
+            env=self.env
+        ).decode()
+        self.assertIn("Untracked files:", status)
+        self.assertIn("untracked.txt", status)
+
+        async with self.create_client_session() as session:
+            # Try to edit the untracked file
+            result = await session.call_tool("codemcp", {
+                "command": "EditFile",
+                "file_path": untracked_file_path,
+                "old_string": "Untracked file content",
+                "new_string": "Modified untracked content",
+                "description": "Attempt to modify untracked file"
+            })
+
+            # Normalize the result
+            normalized_result = self.normalize_path(result)
+            
+            # NOTE: This test might pass incorrectly with current implementation!
+            # The access checks don't verify if files are tracked, only that they are in a git repo
+            # This will help identify a security problem with the current implementation
+            self.assertExpectedInline(
+                normalized_result,
+                """Error: File is not tracked by git. Only tracked files can be edited."""
+            )
+
+    async def test_write_file_outside_tracked_paths(self):
+        """Test that codemcp prevents writing to paths outside tracked paths."""
+        # Create a subdirectory but don't add it to git
+        subdir_path = os.path.join(self.temp_dir.name, "untrackeddir")
+        os.makedirs(subdir_path, exist_ok=True)
+        
+        new_file_path = os.path.join(subdir_path, "newfile.txt")
+        
+        async with self.create_client_session() as session:
+            # Try to write a new file in the untracked directory
+            result = await session.call_tool("codemcp", {
+                "command": "WriteFile",
+                "file_path": new_file_path,
+                "content": "New file in untracked directory",
+                "description": "Attempt to create file in untracked directory"
+            })
+
+            # Normalize the result
+            normalized_result = self.normalize_path(result)
+            
+            # Current implementation might incorrectly allow this
+            # This will help identify a security problem with the current implementation
+            self.assertExpectedInline(
+                normalized_result,
+                """Error: Parent directory is not tracked by git."""
+            )
+
+    async def test_write_to_gitignored_file(self):
+        """Test that codemcp prevents writing to files that are in .gitignore."""
+        # Create a .gitignore file
+        gitignore_path = os.path.join(self.temp_dir.name, ".gitignore")
+        with open(gitignore_path, "w") as f:
+            f.write("ignored.txt\n")
+        
+        # Add and commit the .gitignore file
+        subprocess.run(
+            ["git", "add", ".gitignore"],
+            cwd=self.temp_dir.name,
+            env=self.env,
+            check=True
+        )
+        
+        subprocess.run(
+            ["git", "commit", "-m", "Add .gitignore"],
+            cwd=self.temp_dir.name,
+            env=self.env,
+            check=True
+        )
+        
+        # Create the ignored file
+        ignored_file_path = os.path.join(self.temp_dir.name, "ignored.txt")
+        with open(ignored_file_path, "w") as f:
+            f.write("This file is ignored by git")
+        
+        async with self.create_client_session() as session:
+            # Try to edit the ignored file
+            result = await session.call_tool("codemcp", {
+                "command": "EditFile",
+                "file_path": ignored_file_path,
+                "old_string": "This file is ignored by git",
+                "new_string": "Modified ignored content",
+                "description": "Attempt to modify gitignored file"
+            })
+            
+            # Normalize the result
+            normalized_result = self.normalize_path(result)
+            
+            # Current implementation might incorrectly allow this
+            # This will help identify a security problem with the current implementation
+            self.assertExpectedInline(
+                normalized_result,
+                """Error: File is ignored by git and cannot be edited."""
+            )
+            
+    async def test_edit_after_git_rm(self):
+        """Test that codemcp prevents editing files that have been removed with git rm."""
+        # Create a tracked file
+        tracked_file_path = os.path.join(self.temp_dir.name, "tracked.txt")
+        with open(tracked_file_path, "w") as f:
+            f.write("Tracked file content")
+            
+        # Add and commit the file
+        subprocess.run(
+            ["git", "add", "tracked.txt"],
+            cwd=self.temp_dir.name,
+            env=self.env,
+            check=True
+        )
+        
+        subprocess.run(
+            ["git", "commit", "-m", "Add tracked file"],
+            cwd=self.temp_dir.name,
+            env=self.env,
+            check=True
+        )
+        
+        # Remove the file with git rm
+        subprocess.run(
+            ["git", "rm", "tracked.txt"],
+            cwd=self.temp_dir.name,
+            env=self.env,
+            check=True
+        )
+        
+        async with self.create_client_session() as session:
+            # Try to edit the removed file
+            result = await session.call_tool("codemcp", {
+                "command": "WriteFile",
+                "file_path": tracked_file_path,
+                "content": "Attempt to write to git-removed file",
+                "description": "Attempt to modify git-removed file"
+            })
+            
+            # Normalize the result
+            normalized_result = self.normalize_path(result)
+            
+            # Current implementation might incorrectly allow this
+            # This will help identify a security problem with the current implementation
+            self.assertExpectedInline(
+                normalized_result,
+                """Error: File has been removed from git index and cannot be edited."""
+            )
 
 
 if __name__ == "__main__":
