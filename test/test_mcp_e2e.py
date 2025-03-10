@@ -881,23 +881,14 @@ if __name__ == "__main__":
         test_name = sys.argv.pop(1)
         print(f"Running test: {test_name}")
 
-        # Find and run the specified test method
-        test_instance = MCPEndToEndTest(test_name)
-        test_instance.setUp()
-        try:
-            # Get the test method and run it
-            test_method = getattr(test_instance, test_name)
-            result = loop.run_until_complete(test_method())
-            if result is not None:
-                print(f"Warning: Test {test_name} returned a non-None value: {result}")
-            print(f"Test {test_name} completed successfully")
-        except Exception as e:
-            print(f"Test {test_name} failed: {e}")
-            import traceback
-            traceback.print_exc()
-        finally:
-            test_instance.tearDown()
+        # Create a test suite with just this test
+        suite = unittest.TestSuite()
+        suite.addTest(MCPEndToEndTest(test_name))
+        
+        # Run the test using the standard unittest runner
+        runner = unittest.TextTestRunner()
+        runner.run(suite)
     else:
-        # For running all tests, we'll use the regular unittest framework
-        # with proper async support
-        unittest.main(testRunner=AsyncTestRunner)
+        # For running all tests, use the standard unittest framework
+        # IsolatedAsyncioTestCase will handle the async methods properly
+        unittest.main()
