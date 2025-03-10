@@ -154,22 +154,20 @@ class TestFormatTool(unittest.TestCase):
         result3 = _check_for_changes(self.project_dir)
         self.assertFalse(result3)
 
-        # Verify subprocess.run was called correctly
+        # Verify run_command was called correctly
         calls = [
             call(
                 ["git", "status", "--porcelain"],
                 cwd=self.project_dir,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
                 check=True,
+                capture_output=True,
                 text=True,
             ),
             call(
                 ["git", "status", "--porcelain"],
                 cwd=self.project_dir,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
                 check=True,
+                capture_output=True,
                 text=True,
             ),
         ]
