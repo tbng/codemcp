@@ -137,7 +137,9 @@ def format_code(project_dir: str) -> str:
             error_msg = (
                 f"Format command failed with exit code {e.returncode}:\n{e.stderr}"
             )
-            logging.error(error_msg)
+            # Note: run_command already logs the command and stderr at debug level
+            # We just need to log the error summary at error level
+            logging.error(f"Format command failed with exit code {e.returncode}")
             return f"Error: {error_msg}"
 
     except Exception as e:
