@@ -365,26 +365,35 @@ class TestEditFile(TestCase):
         mixed_whitespace_path = os.path.join(self.temp_dir.name, "mixed_whitespace.txt")
         with open(mixed_whitespace_path, "w", encoding="utf-8") as f:
             f.write("This file has\n  \nmultiple empty lines\n\t\nwith different whitespace\n   \n")
-        
+
         # Original string with clean empty lines
         old_string = "This file has\n\nmultiple empty lines\n\nwith different whitespace\n\n"
         new_string = "The file now has\n\nno more empty lines\nwith whitespace"
-        
+
         # Use read_file_timestamps to avoid "file has not been read" error
         timestamps = {mixed_whitespace_path: os.stat(mixed_whitespace_path).st_mtime + 1}
-        
+
         # Run the edit operation
         result = edit_file_content(mixed_whitespace_path, old_string, new_string, timestamps)
-        
+
         # Check that the edit was successful
         self.assertIn(f"Successfully edited {mixed_whitespace_path}", result)
-        
+
         # Read the file and verify the content was replaced
         with open(mixed_whitespace_path, "r", encoding="utf-8") as f:
             content = f.read()
-        
+
         # The whitespace-only lines should be replaced with the new content
-        self.assertEqual("The file now has\n\nno more empty lines\nwith whitespace\n", content)
+        # Read with binary mode to ensure we're comparing the actual content
+        with open(mixed_whitespace_path, "rb") as f:
+            binary_content = f.read()
+        
+        # For debugging
+        expected = "The file now has\n\nno more empty lines\nwith whitespace\n"
+        expected_bytes = expected.encode('utf-8')
+        
+        # Check if the content has the expected newlines
+        self.assertEqual(expected, content)
 
     def test_edit_file_content_multiple_matches(self):
         """Test editing when there are multiple matches of the string to replace"""
