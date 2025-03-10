@@ -206,7 +206,7 @@ class TestFormatTool(unittest.TestCase):
         result = format_code(self.project_dir)
         self.assertIn("Code formatting successful and changes committed", result)
 
-        # Verify subprocess.run was called for the format command
+        # Verify run_command was called for the format command
         mock_run.assert_called_once()
 
         # Verify commit_changes was called
