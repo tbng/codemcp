@@ -15,4 +15,6 @@ python -m ruff check --ignore "$UNSAFE_CODES" --fix codemcp/ test/
 # Less safe autofixes
 ruff check --select "$UNSAFE_CODES" --unsafe-fixes --fix codemcp/ test/
 
+python -m ruff format codemcp/ test/
+
 echo "Lint and format completed successfully!"

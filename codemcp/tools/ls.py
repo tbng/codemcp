@@ -172,7 +172,10 @@ def create_file_tree(sorted_paths: list[str]) -> list[TreeNode]:
 
 
 def print_tree(
-    tree: list[TreeNode], level: int = 0, prefix: str = "", cwd: str = "",
+    tree: list[TreeNode],
+    level: int = 0,
+    prefix: str = "",
+    cwd: str = "",
 ) -> str:
     """Print a file tree.
 

@@ -64,7 +64,8 @@ def commit_pending_changes(file_path: str) -> tuple[bool, str]:
             cwd=directory,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            text=True, check=False,
+            text=True,
+            check=False,
         )
 
         # Log command output
@@ -193,7 +194,8 @@ def commit_changes(file_path: str, description: str) -> tuple[bool, str]:
             cwd=directory,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            text=True, check=False,
+            text=True,
+            check=False,
         )
 
         # Log command output
@@ -212,17 +214,20 @@ def commit_changes(file_path: str, description: str) -> tuple[bool, str]:
             cwd=directory,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            text=True, check=False,
+            text=True,
+            check=False,
         )
 
         # Log command output
         if rev_parse_result.stdout:
             logging.debug(
-                "git rev-parse HEAD output: %s", rev_parse_result.stdout.strip(),
+                "git rev-parse HEAD output: %s",
+                rev_parse_result.stdout.strip(),
             )
         if rev_parse_result.stderr:
             logging.debug(
-                "git rev-parse HEAD stderr: %s", rev_parse_result.stderr.strip(),
+                "git rev-parse HEAD stderr: %s",
+                rev_parse_result.stderr.strip(),
             )
 
         has_commits = rev_parse_result.returncode == 0
@@ -236,7 +241,8 @@ def commit_changes(file_path: str, description: str) -> tuple[bool, str]:
                 cwd=directory,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
-                text=True, check=False,
+                text=True,
+                check=False,
             )
 
             # Log command output (only stderr since stdout would be empty with --quiet flag)
@@ -256,7 +262,8 @@ def commit_changes(file_path: str, description: str) -> tuple[bool, str]:
             cwd=directory,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            text=True, check=False,
+            text=True,
+            check=False,
         )
 
         # Log command output

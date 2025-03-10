@@ -174,7 +174,8 @@ class MCPEndToEndTest(TestCase, unittest.IsolatedAsyncioTestCase):
         async with self.create_client_session() as session:
             # Call the ReadFile tool
             result = await session.call_tool(
-                "codemcp", {"command": "ReadFile", "file_path": test_file_path},
+                "codemcp",
+                {"command": "ReadFile", "file_path": test_file_path},
             )
 
             # Normalize the result for easier comparison
@@ -266,7 +267,9 @@ class MCPEndToEndTest(TestCase, unittest.IsolatedAsyncioTestCase):
 
             # Verify git state (working tree should be clean after automatic commit)
             status = subprocess.check_output(
-                ["git", "status"], cwd=self.temp_dir.name, env=self.env,
+                ["git", "status"],
+                cwd=self.temp_dir.name,
+                env=self.env,
             ).decode()
 
             # Use expect test to verify git status - should show clean working tree
@@ -287,12 +290,16 @@ nothing to commit, working tree clean
 
         # Add the file to git and commit it
         subprocess.run(
-            ["git", "add", "edit_file.txt"], cwd=self.temp_dir.name, env=self.env, check=False,
+            ["git", "add", "edit_file.txt"],
+            cwd=self.temp_dir.name,
+            env=self.env,
+            check=False,
         )
         subprocess.run(
             ["git", "commit", "-m", "Add file for editing"],
             cwd=self.temp_dir.name,
-            env=self.env, check=False,
+            env=self.env,
+            check=False,
         )
 
         # Edit the file using the EditFile command with proper context
@@ -330,7 +337,9 @@ nothing to commit, working tree clean
 
             # Verify git state shows file was committed
             status = subprocess.check_output(
-                ["git", "status"], cwd=self.temp_dir.name, env=self.env,
+                ["git", "status"],
+                cwd=self.temp_dir.name,
+                env=self.env,
             ).decode()
 
             # Use expect test to verify git status - should show as clean working tree
@@ -364,7 +373,8 @@ nothing to commit, working tree clean
         async with self.create_client_session() as session:
             # Call the LS tool
             result = await session.call_tool(
-                "codemcp", {"command": "LS", "file_path": test_dir},
+                "codemcp",
+                {"command": "LS", "file_path": test_dir},
             )
 
             # Normalize the result
@@ -391,7 +401,9 @@ nothing to commit, working tree clean
         print(f"Initial content: '{original_content}'")
 
         status = subprocess.check_output(
-            ["git", "status"], cwd=self.temp_dir.name, env=self.env,
+            ["git", "status"],
+            cwd=self.temp_dir.name,
+            env=self.env,
         ).decode()
         print(f"INITIAL GIT STATUS:\n{status}")
 
@@ -401,7 +413,8 @@ nothing to commit, working tree clean
                 cwd=self.temp_dir.name,
                 env=self.env,
                 stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE, check=False,
+                stderr=subprocess.PIPE,
+                check=False,
             )
             .stdout.decode()
             .strip()
@@ -452,7 +465,9 @@ nothing to commit, working tree clean
 
             # Check git status after the operation
             status_after = subprocess.check_output(
-                ["git", "status"], cwd=self.temp_dir.name, env=self.env,
+                ["git", "status"],
+                cwd=self.temp_dir.name,
+                env=self.env,
             ).decode()
             print(f"GIT STATUS AFTER EDIT:\n{status_after}")
 
@@ -462,7 +477,8 @@ nothing to commit, working tree clean
                     cwd=self.temp_dir.name,
                     env=self.env,
                     stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE, check=False,
+                    stderr=subprocess.PIPE,
+                    check=False,
                 )
                 .stdout.decode()
                 .strip()
@@ -476,7 +492,8 @@ nothing to commit, working tree clean
                     cwd=self.temp_dir.name,
                     env=self.env,
                     stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE, check=False,
+                    stderr=subprocess.PIPE,
+                    check=False,
                 )
                 .stdout.decode()
                 .strip()
@@ -505,7 +522,8 @@ nothing to commit, working tree clean
             if edit_succeeded:
                 # The file should have been modified
                 self.assertNotEqual(
-                    original_mtime, os.path.getmtime(untracked_file_path),
+                    original_mtime,
+                    os.path.getmtime(untracked_file_path),
                 )
 
                 # Check if the file is now tracked in git
@@ -531,7 +549,8 @@ nothing to commit, working tree clean
                         cwd=self.temp_dir.name,
                         env=self.env,
                         stdout=subprocess.PIPE,
-                        stderr=subprocess.PIPE, check=False,
+                        stderr=subprocess.PIPE,
+                        check=False,
                     )
                     .stdout.decode()
                     .strip()
@@ -557,7 +576,8 @@ nothing to commit, working tree clean
                                 cwd=self.temp_dir.name,
                                 env=self.env,
                                 stdout=subprocess.PIPE,
-                                stderr=subprocess.PIPE, check=False,
+                                stderr=subprocess.PIPE,
+                                check=False,
                             )
                             .stdout.decode()
                             .strip()
@@ -608,7 +628,8 @@ nothing to commit, working tree clean
                                 cwd=self.temp_dir.name,
                                 env=self.env,
                                 stdout=subprocess.PIPE,
-                                stderr=subprocess.PIPE, check=False,
+                                stderr=subprocess.PIPE,
+                                check=False,
                             )
                             .stdout.decode()
                             .strip()
@@ -670,7 +691,9 @@ nothing to commit, working tree clean
             if "Successfully wrote to" in result_text:
                 # The operation succeeded - check if the directory and file are now tracked in git
                 status_after = subprocess.check_output(
-                    ["git", "status"], cwd=self.temp_dir.name, env=self.env,
+                    ["git", "status"],
+                    cwd=self.temp_dir.name,
+                    env=self.env,
                 ).decode()
 
                 # The file should exist
@@ -727,7 +750,9 @@ nothing to commit, working tree clean
 
         # Verify the file is ignored
         status = subprocess.check_output(
-            ["git", "status"], cwd=self.temp_dir.name, env=self.env,
+            ["git", "status"],
+            cwd=self.temp_dir.name,
+            env=self.env,
         ).decode()
         self.assertNotIn("ignored.txt", status, "File should be ignored by git")
 
@@ -805,7 +830,8 @@ nothing to commit, working tree clean
 
         # Verify file was removed
         self.assertFalse(
-            os.path.exists(tracked_file_path), "File should be physically removed",
+            os.path.exists(tracked_file_path),
+            "File should be physically removed",
         )
 
         async with self.create_client_session() as session:
@@ -839,7 +865,9 @@ nothing to commit, working tree clean
 
                 # Check if the recreated file is tracked in git
                 status_after = subprocess.check_output(
-                    ["git", "status"], cwd=self.temp_dir.name, env=self.env,
+                    ["git", "status"],
+                    cwd=self.temp_dir.name,
+                    env=self.env,
                 ).decode()
 
                 # If the file is untracked or deleted, we have a problem
@@ -875,7 +903,8 @@ nothing to commit, working tree clean
             cwd=untracked_dir,
             env=self.env,
             stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE, check=False,
+            stderr=subprocess.PIPE,
+            check=False,
         )
         print(f"Git toplevel output: {git_toplevel.stdout.decode().strip()}")
         print(f"Git toplevel stderr: {git_toplevel.stderr.decode().strip()}")
@@ -932,7 +961,8 @@ nothing to commit, working tree clean
                 cwd=self.temp_dir.name,
                 env=self.env,
                 stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE, check=False,
+                stderr=subprocess.PIPE,
+                check=False,
             )
 
             commit_output = subprocess.run(
@@ -940,7 +970,8 @@ nothing to commit, working tree clean
                 cwd=self.temp_dir.name,
                 env=self.env,
                 stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE, check=False,
+                stderr=subprocess.PIPE,
+                check=False,
             )
 
             # Now check if the file is tracked
@@ -950,7 +981,8 @@ nothing to commit, working tree clean
                     cwd=self.temp_dir.name,
                     env=self.env,
                     stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE, check=False,
+                    stderr=subprocess.PIPE,
+                    check=False,
                 )
                 .stdout.decode()
                 .strip()
@@ -958,7 +990,8 @@ nothing to commit, working tree clean
 
             # Verify the file is tracked by git after our manual commit
             self.assertTrue(
-                ls_files_output, "Failed to add file to git even after manual commit",
+                ls_files_output,
+                "Failed to add file to git even after manual commit",
             )
 
     async def test_create_new_file_with_write_file(self):
@@ -971,7 +1004,8 @@ nothing to commit, working tree clean
             os.unlink(new_file_path)
 
         self.assertFalse(
-            os.path.exists(new_file_path), "Test file should not exist initially",
+            os.path.exists(new_file_path),
+            "Test file should not exist initially",
         )
 
         # Debug: Print git repository detection
@@ -985,7 +1019,8 @@ nothing to commit, working tree clean
             cwd=os.path.dirname(new_file_path),
             env=self.env,
             stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE, check=False,
+            stderr=subprocess.PIPE,
+            check=False,
         )
         print(f"Git toplevel output: {git_toplevel.stdout.decode().strip()}")
         print(f"Git toplevel stderr: {git_toplevel.stderr.decode().strip()}")
@@ -1039,7 +1074,8 @@ nothing to commit, working tree clean
                     cwd=self.temp_dir.name,
                     env=self.env,
                     stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE, check=False,
+                    stderr=subprocess.PIPE,
+                    check=False,
                 )
                 .stdout.decode()
                 .strip()
@@ -1047,14 +1083,16 @@ nothing to commit, working tree clean
 
             # The new file should be tracked in git
             self.assertTrue(
-                ls_files_output, "New file was created but not added to git",
+                ls_files_output,
+                "New file was created but not added to git",
             )
 
     async def test_write_to_untracked_file(self):
         """Test that writes to untracked files are rejected."""
         # Create an untracked file (not added to git)
         untracked_file_path = os.path.join(
-            self.temp_dir.name, "untracked_for_write.txt",
+            self.temp_dir.name,
+            "untracked_for_write.txt",
         )
         with open(untracked_file_path, "w") as f:
             f.write("Initial content in untracked file")
@@ -1070,7 +1108,8 @@ nothing to commit, working tree clean
                 cwd=self.temp_dir.name,
                 env=self.env,
                 stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE, check=False,
+                stderr=subprocess.PIPE,
+                check=False,
             )
             .stdout.decode()
             .strip()
@@ -1167,14 +1206,19 @@ nothing to commit, working tree clean
             outside_file_path,  # Direct absolute path outside the repo
             os.path.join(self.temp_dir.name, "..", "outside.txt"),  # Using .. to escape
             os.path.join(
-                self.temp_dir.name, "subdir", "..", "..", "outside.txt",
+                self.temp_dir.name,
+                "subdir",
+                "..",
+                "..",
+                "outside.txt",
             ),  # Multiple ..
         ]
 
         async with self.create_client_session() as session:
             for path in traversal_paths:
                 path_desc = path.replace(
-                    parent_dir, "/parent_dir",
+                    parent_dir,
+                    "/parent_dir",
                 )  # For better error messages
 
                 # Try to write to a file outside the repository

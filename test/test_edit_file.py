@@ -113,7 +113,9 @@ class TestEditFile(TestCase):
     def test_find_similar_file_directory_not_exists(self):
         """Test finding a similar file when directory doesn't exist"""
         non_existent_path = os.path.join(
-            self.temp_dir.name, "non_existent_dir", "file.txt",
+            self.temp_dir.name,
+            "non_existent_dir",
+            "file.txt",
         )
         result = find_similar_file(non_existent_path)
         self.assertIsNone(result)
@@ -212,7 +214,8 @@ class TestEditFile(TestCase):
             self.assertIn("print('START')", updated_file)
             # Should still contain the middle function unchanged
             self.assertIn(
-                "def middle():\n    # Middle section\n    print('middle')", updated_file,
+                "def middle():\n    # Middle section\n    print('middle')",
+                updated_file,
             )
         except ValueError:
             # Our test might not pass yet if the full dotdotdots implementation isn't complete
@@ -242,7 +245,9 @@ class TestEditFile(TestCase):
 
             # Test replace_most_similar_chunk directly
             updated_content = replace_most_similar_chunk(
-                content, old_string, new_string,
+                content,
+                old_string,
+                new_string,
             )
 
             if updated_content and updated_content != content:
@@ -367,7 +372,10 @@ class TestEditFile(TestCase):
 
         # Run the edit operation
         result = edit_file_content(
-            whitespace_file_path, old_string, new_string, timestamps,
+            whitespace_file_path,
+            old_string,
+            new_string,
+            timestamps,
         )
 
         # Check that the edit was successful
@@ -380,7 +388,8 @@ class TestEditFile(TestCase):
         # The new content should have replaced the old content,
         # and the empty line with whitespace should now be a clean empty line
         self.assertEqual(
-            "This has been edited\n\nThe empty line should be preserved\n", content,
+            "This has been edited\n\nThe empty line should be preserved\n",
+            content,
         )
 
     def test_edit_file_content_multiple_whitespace_only_lines(self):
@@ -405,7 +414,10 @@ class TestEditFile(TestCase):
 
         # Run the edit operation
         result = edit_file_content(
-            mixed_whitespace_path, old_string, new_string, timestamps,
+            mixed_whitespace_path,
+            old_string,
+            new_string,
+            timestamps,
         )
 
         # Check that the edit was successful
@@ -463,7 +475,10 @@ class TestEditFile(TestCase):
         timestamps = {self.test_file_path: os.stat(self.test_file_path).st_mtime + 1}
 
         result = edit_file_content(
-            self.test_file_path, old_string, new_string, timestamps,
+            self.test_file_path,
+            old_string,
+            new_string,
+            timestamps,
         )
 
         self.assertIn(f"Successfully edited {self.test_file_path}", result)
@@ -488,7 +503,10 @@ class TestEditFile(TestCase):
             f.write("Additional line\n")
 
         result = edit_file_content(
-            self.test_file_path, old_string, new_string, timestamps,
+            self.test_file_path,
+            old_string,
+            new_string,
+            timestamps,
         )
 
         self.assertIn("Error: File has been modified since read", result)
@@ -502,7 +520,10 @@ class TestEditFile(TestCase):
         timestamps = {"some_other_file.txt": 12345.0}
 
         result = edit_file_content(
-            self.test_file_path, old_string, new_string, timestamps,
+            self.test_file_path,
+            old_string,
+            new_string,
+            timestamps,
         )
 
         self.assertIn("Error: File has not been read yet", result)
@@ -518,7 +539,8 @@ class TestEditFile(TestCase):
 
         # We need to patch the function at the point where it's imported, not where it's defined
         with patch(
-            "codemcp.tools.edit_file.get_edit_snippet", return_value="MOCK SNIPPET",
+            "codemcp.tools.edit_file.get_edit_snippet",
+            return_value="MOCK SNIPPET",
         ):
             result = edit_file_content(self.test_file_path, old_string, new_string)
 

@@ -28,7 +28,10 @@ def normalize_file_path(file_path: str) -> str:
 
 
 def get_edit_snippet(
-    original_text: str, old_str: str, new_str: str, context_lines: int = 4,
+    original_text: str,
+    old_str: str,
+    new_str: str,
+    context_lines: int = 4,
 ) -> str:
     """Generate a snippet of the edited file showing the changes with line numbers.
 
@@ -54,7 +57,8 @@ def get_edit_snippet(
     # Calculate the start and end line numbers for the snippet
     start_line = max(0, replacement_line - context_lines)
     end_line = min(
-        len(edited_lines), replacement_line + context_lines + len(new_str.split("\n")),
+        len(edited_lines),
+        replacement_line + context_lines + len(new_str.split("\n")),
     )
 
     # Extract the snippet lines

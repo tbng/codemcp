@@ -240,7 +240,8 @@ async def codemcp(
         try:
             result = grep_files(pattern, path, include)
             return result.get(
-                "resultForAssistant", f"Found {result.get('numFiles', 0)} file(s)",
+                "resultForAssistant",
+                f"Found {result.get('numFiles', 0)} file(s)",
             )
         except Exception as e:
             return f"Error executing grep: {e!s}"

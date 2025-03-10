@@ -75,7 +75,9 @@ def find_similar_file(file_path: str) -> str | None:
 
 
 def apply_edit(
-    file_path: str, old_string: str, new_string: str,
+    file_path: str,
+    old_string: str,
+    new_string: str,
 ) -> tuple[list[dict], str]:
     """Apply an edit to a file using robust matching strategies.
 
@@ -174,7 +176,9 @@ def prep(content: str) -> tuple[str, list[str]]:
 
 
 def perfect_or_whitespace(
-    whole_lines: list[str], part_lines: list[str], replace_lines: list[str],
+    whole_lines: list[str],
+    part_lines: list[str],
+    replace_lines: list[str],
 ) -> str | None:
     """Try perfect match first, then try with whitespace flexibility.
 
@@ -194,7 +198,9 @@ def perfect_or_whitespace(
 
     # Try being flexible about leading whitespace
     res = replace_part_with_missing_leading_whitespace(
-        whole_lines, part_lines, replace_lines,
+        whole_lines,
+        part_lines,
+        replace_lines,
     )
     if res:
         return res
@@ -203,7 +209,9 @@ def perfect_or_whitespace(
 
 
 def perfect_replace(
-    whole_lines: list[str], part_lines: list[str], replace_lines: list[str],
+    whole_lines: list[str],
+    part_lines: list[str],
+    replace_lines: list[str],
 ) -> str | None:
     """Find an exact match of part_lines in whole_lines and replace with replace_lines.
 
@@ -229,7 +237,8 @@ def perfect_replace(
 
 
 def match_but_for_leading_whitespace(
-    whole_lines: list[str], part_lines: list[str],
+    whole_lines: list[str],
+    part_lines: list[str],
 ) -> str | None:
     """Check if lines match except for consistent leading whitespace.
 
@@ -261,7 +270,9 @@ def match_but_for_leading_whitespace(
 
 
 def replace_part_with_missing_leading_whitespace(
-    whole_lines: list[str], part_lines: list[str], replace_lines: list[str],
+    whole_lines: list[str],
+    part_lines: list[str],
+    replace_lines: list[str],
 ) -> str | None:
     """Handle case where search text is missing the exact leading whitespace.
 
@@ -289,7 +300,8 @@ def replace_part_with_missing_leading_whitespace(
 
     for i in range(len(whole_lines) - num_part_lines + 1):
         add_leading = match_but_for_leading_whitespace(
-            whole_lines[i : i + num_part_lines], part_lines,
+            whole_lines[i : i + num_part_lines],
+            part_lines,
         )
 
         if add_leading is None:
@@ -417,7 +429,9 @@ def replace_closest_edit_distance(
 
 
 def find_similar_lines(
-    search_lines: str, content_lines: str, threshold: float = 0.6,
+    search_lines: str,
+    content_lines: str,
+    threshold: float = 0.6,
 ) -> str:
     """Find lines in content that are similar to search_lines.
 
@@ -483,7 +497,9 @@ def replace_most_similar_chunk(whole: str, part: str, replace: str) -> str | Non
     if len(part_lines) > 2 and not part_lines[0].strip():
         skip_blank_line_part_lines = part_lines[1:]
         res = perfect_or_whitespace(
-            whole_lines, skip_blank_line_part_lines, replace_lines,
+            whole_lines,
+            skip_blank_line_part_lines,
+            replace_lines,
         )
         if res:
             return res
@@ -506,7 +522,10 @@ def replace_most_similar_chunk(whole: str, part: str, replace: str) -> str | Non
 
 
 def debug_string_comparison(
-    s1: str, s2: str, label1: str = "string1", label2: str = "string2",
+    s1: str,
+    s2: str,
+    label1: str = "string1",
+    label2: str = "string2",
 ) -> bool:
     """Thoroughly debug string comparison and identify differences.
 
@@ -639,7 +658,10 @@ def edit_file_content(
 
         # Debug string comparison using our thorough utility
         strings_are_different = debug_string_comparison(
-            old_string, new_string, "old_string", "new_string",
+            old_string,
+            new_string,
+            "old_string",
+            "new_string",
         )
 
         if not strings_are_different:

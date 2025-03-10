@@ -72,7 +72,10 @@ def ensure_directory_exists(file_path: str) -> None:
 
 
 def write_text_content(
-    file_path: str, content: str, encoding: str = "utf-8", line_endings: str = None,
+    file_path: str,
+    content: str,
+    encoding: str = "utf-8",
+    line_endings: str = None,
 ) -> None:
     """Write text content to a file with specified encoding and line endings.
 

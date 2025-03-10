@@ -12,7 +12,9 @@ from ..common import (
 
 
 def read_file_content(
-    file_path: str, offset: int | None = None, limit: int | None = None,
+    file_path: str,
+    offset: int | None = None,
+    limit: int | None = None,
 ) -> str:
     """Read a file's content with optional offset and limit.
 

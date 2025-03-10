@@ -24,7 +24,10 @@ Example:
 
 
 def git_grep(
-    pattern: str, path: str | None = None, include: str | None = None, signal=None,
+    pattern: str,
+    path: str | None = None,
+    include: str | None = None,
+    signal=None,
 ) -> list[str]:
     """Execute git grep to search for pattern in files.
 
@@ -131,7 +134,10 @@ def render_result_for_assistant(output: dict[str, Any]) -> str:
 
 
 def grep_files(
-    pattern: str, path: str | None = None, include: str | None = None, signal=None,
+    pattern: str,
+    path: str | None = None,
+    include: str | None = None,
+    signal=None,
 ) -> dict[str, Any]:
     """Search for a pattern in files within a directory.
 
