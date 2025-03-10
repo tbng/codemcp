@@ -263,6 +263,11 @@ def edit_file_content(
             file_path if os.path.isabs(file_path) else os.path.abspath(file_path)
         )
         
+        # Check if we have permission to edit this file
+        is_permitted, permission_message = check_edit_permission(full_file_path)
+        if not is_permitted:
+            return f"Error: {permission_message}"
+
         # First commit any pending changes
         commit_success, commit_message = commit_pending_changes(full_file_path)
         if not commit_success:
