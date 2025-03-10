@@ -33,8 +33,8 @@ class TestWriteFile(TestCase):
         with open(self.crlf_file_path, "wb") as f:
             f.write(b"This is a file\r\nWith CRLF line endings\r\n")
             
-        # Initialize git repository in the temporary directory
-        self._init_git_repo()
+        # Setup mock patches
+        self.setup_mocks()
         
     def _init_git_repo(self):
         """Initialize a git repository in the temporary directory and create a codemcp.toml file."""
