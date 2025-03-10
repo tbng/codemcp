@@ -10,17 +10,25 @@ from typing import Tuple, Optional
 def get_git_base_dir(file_path: str) -> Optional[str]:
     """
     Get the base directory of the git repository containing the file.
-    
+
     Args:
-        file_path: The path to the file
-        
+        file_path: The path to the file or directory
+
     Returns:
         The base directory of the git repository, or None if not in a git repository
     """
     try:
-        # Get the directory containing the file
-        directory = os.path.dirname(file_path) if os.path.isfile(file_path) else file_path
-        
+        # Get the directory containing the file - handle non-existent files
+        if os.path.exists(file_path):
+            directory = os.path.dirname(file_path) if os.path.isfile(file_path) else file_path
+        else:
+            # For non-existent files, use the parent directory
+            directory = os.path.dirname(file_path)
+            # If directory doesn't exist either, stop here
+            if not os.path.exists(directory):
+                logging.debug(f"Directory doesn't exist: {directory}")
+                return None
+
         # Run git command to get the top-level directory of the repository
         result = subprocess.run(
             ["git", "rev-parse", "--show-toplevel"],
@@ -30,7 +38,7 @@ def get_git_base_dir(file_path: str) -> Optional[str]:
             check=True,
             text=True,
         )
-        
+
         # Log command output and return the path
         git_base_dir = result.stdout.strip()
         logging.debug(f"Git base directory: {git_base_dir}")
