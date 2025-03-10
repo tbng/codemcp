@@ -35,6 +35,31 @@ class TestWriteFile(TestCase):
             
         # Initialize git repository in the temporary directory
         self._init_git_repo()
+        
+    def _init_git_repo(self):
+        """Initialize a git repository in the temporary directory and create a codemcp.toml file."""
+        temp_dir = self.temp_dir.name
+        
+        # Create codemcp.toml file
+        config_path = os.path.join(temp_dir, "codemcp.toml")
+        with open(config_path, "w") as f:
+            f.write("[codemcp]\nenabled = true\n")
+        
+        # Initialize git repository
+        subprocess.run(["git", "init"], cwd=temp_dir, check=True, 
+                      stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        
+        # Configure git for test environment
+        subprocess.run(["git", "config", "user.name", "Test User"], cwd=temp_dir, check=True,
+                      stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        subprocess.run(["git", "config", "user.email", "test@example.com"], cwd=temp_dir, check=True,
+                      stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        
+        # Add files and make initial commit
+        subprocess.run(["git", "add", "."], cwd=temp_dir, check=True,
+                      stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        subprocess.run(["git", "commit", "-m", "Initial commit for tests"], cwd=temp_dir, check=True,
+                      stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     def test_detect_file_encoding_utf8(self):
         """Test detecting UTF-8 encoding"""
