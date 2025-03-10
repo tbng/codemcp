@@ -14,10 +14,35 @@ class InitProjectTestCase(unittest.TestCase):
         # Create a temporary directory for testing
         self.test_dir = tempfile.TemporaryDirectory()
         self.dir_path = self.test_dir.name
+        
+        # Initialize git repository
+        self._init_git_repo()
 
     def tearDown(self):
         # Clean up temporary directory
         self.test_dir.cleanup()
+        
+    def _init_git_repo(self):
+        """Initialize a git repository in the temporary directory."""
+        # Initialize git repository
+        subprocess.run(["git", "init"], cwd=self.dir_path, check=True, 
+                      stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        
+        # Configure git for test environment
+        subprocess.run(["git", "config", "user.name", "Test User"], cwd=self.dir_path, check=True,
+                      stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        subprocess.run(["git", "config", "user.email", "test@example.com"], cwd=self.dir_path, check=True,
+                      stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        
+        # Add an initial file and commit to initialize the repository
+        initial_file = os.path.join(self.dir_path, "initial_file.txt")
+        with open(initial_file, "w") as f:
+            f.write("Initial file for git repository\n")
+            
+        subprocess.run(["git", "add", "."], cwd=self.dir_path, check=True,
+                      stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        subprocess.run(["git", "commit", "-m", "Initial commit for tests"], cwd=self.dir_path, check=True,
+                      stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     def test_init_project_no_rules_file(self):
         """Test initializing a project without a codemcp.toml file."""
