@@ -6,6 +6,7 @@ import logging
 from typing import Optional, Tuple
 
 from ..git import commit_changes, commit_pending_changes
+from ..access import check_edit_permission
 
 
 def detect_file_encoding(file_path: str) -> str:
