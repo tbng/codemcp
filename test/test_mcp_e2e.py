@@ -814,7 +814,7 @@ nothing to commit, working tree clean
                 
     async def test_create_new_file_with_write_file(self):
         """Test creating a new file that doesn't exist yet with WriteFile."""
-        # Path to a new file that doesn't exist yet
+        # Path to a new file that doesn't exist yet, within the git repository
         new_file_path = os.path.join(self.temp_dir.name, "completely_new_file.txt")
         
         # Make sure it doesn't exist
@@ -849,11 +849,13 @@ nothing to commit, working tree clean
             self.assertEqual(content, "This is a brand new file")
             
             # Verify the file was added to git
-            ls_files_output = subprocess.check_output(
+            ls_files_output = subprocess.run(
                 ["git", "ls-files", new_file_path],
                 cwd=self.temp_dir.name,
-                env=self.env
-            ).decode().strip()
+                env=self.env,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE
+            ).stdout.decode().strip()
             
             # The new file should be tracked in git
             self.assertTrue(ls_files_output, 
