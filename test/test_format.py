@@ -84,7 +84,7 @@ class TestFormatTool(unittest.TestCase):
         )
 
     @patch("codemcp.tools.format.is_git_repository")
-    @patch("subprocess.run")
+    @patch("codemcp.tools.format.run_command")
     def test_format_code_failure(self, mock_run, mock_is_git_repo):
         """Test format_code when the command fails."""
         # Mock git repository check
