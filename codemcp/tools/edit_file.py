@@ -147,25 +147,7 @@ def apply_edit(
     return patch, updated_file
 
 
-def write_text_content(
-    file_path: str, content: str, encoding: str = "utf-8", line_endings: str = "LF"
-) -> None:
-    """Write text content to a file with the specified encoding and line endings.
-
-    Args:
-        file_path: The path to the file
-        content: The content to write
-        encoding: The encoding to use
-        line_endings: The line endings to use ('CRLF' or 'LF')
-    """
-    # Normalize line endings
-    if line_endings == "CRLF":
-        content = content.replace("\n", "\r\n")
-    else:
-        content = content.replace("\r\n", "\n")
-
-    with open(file_path, "w", encoding=encoding) as f:
-        f.write(content)
+from .file_utils import write_text_content
 
 
 def prep(content: str) -> Tuple[str, List[str]]:
