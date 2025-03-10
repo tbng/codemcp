@@ -233,6 +233,26 @@ class MCPEndToEndTest(TestCase, unittest.IsolatedAsyncioTestCase):
         test_file_path = os.path.join(self.temp_dir.name, "new_file.txt")
         content = "New content\nLine 2"
         
+        # First add the file to git to make it tracked
+        with open(test_file_path, "w") as f:
+            f.write("")
+        
+        # Add it to git
+        subprocess.run(
+            ["git", "add", test_file_path],
+            cwd=self.temp_dir.name,
+            env=self.env,
+            check=True
+        )
+        
+        # Commit it
+        subprocess.run(
+            ["git", "commit", "-m", "Add empty file for WriteFile test"],
+            cwd=self.temp_dir.name,
+            env=self.env,
+            check=True
+        )
+
         async with self.create_client_session() as session:
             # Call the WriteFile tool
             result = await session.call_tool("codemcp", {
