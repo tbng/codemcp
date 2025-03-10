@@ -110,7 +110,7 @@ async def deskaid(
     ## InitProject directory_path
     
     Initializes a project by reading the .deskaidrules TOML file from the specified directory.
-    Returns a system prompt combined with the global_prompt from the .deskaidrules file.
+    Returns instructions which you should IMMEDIATELY follow before continuing.
 
     Args:
         ctx: The MCP context
