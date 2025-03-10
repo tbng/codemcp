@@ -144,7 +144,7 @@ async def codemcp(
     expected_params = {
         "ReadFile": {"file_path", "offset", "limit"},
         "WriteFile": {"file_path", "content", "description"},
-        "EditFile": {"file_path", "old_string", "new_string", "description", "old_str"},
+        "EditFile": {"file_path", "old_string", "new_string", "description", "old_str", "new_str"},
         "LS": {"file_path"},
         "InitProject": {"file_path"},
         "Grep": {"pattern", "path", "include"},
