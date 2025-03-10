@@ -6,6 +6,11 @@ import subprocess
 
 import toml
 
+__all__ = [
+    "get_git_base_dir",
+    "check_edit_permission",
+]
+
 
 def get_git_base_dir(file_path: str) -> str | None:
     """Get the base directory of the git repository containing the file.
