@@ -207,8 +207,9 @@ async def codemcp(
 
         # Accept either old_string or old_str (prefer old_string if both are provided)
         old_content = old_string or old_str or ""
-        new_str = new_string or ""
-        return edit_file_content(file_path, old_content, new_str, None, description)
+        # Accept either new_string or new_str (prefer new_string if both are provided)
+        new_content = new_string or new_str or ""
+        return edit_file_content(file_path, old_content, new_content, None, description)
 
     elif command == "LS":
         if file_path is None:
