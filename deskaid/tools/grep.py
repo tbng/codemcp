@@ -149,14 +149,9 @@ def grep_files(pattern: str, path: Optional[str] = None, include: Optional[str] 
             if os.environ.get("NODE_ENV") == "test":
                 matches_with_stats.sort(key=lambda x: x[0])
             else:
-                # Sort by modification time (newest first)
-                matches_with_stats.sort(key=lambda x: (x[1].st_mtime or 0), reverse=True)
-                
-                # Use filename as a tiebreaker
-                matches_with_stats = sorted(
-                    matches_with_stats,
-                    key=lambda x: x[0],
-                    reverse=False
+                # Sort by modification time (newest first), with filename as tiebreaker
+                matches_with_stats.sort(key=lambda x: 
+                    (-(x[1].st_mtime or 0), x[0])
                 )
                 
             matches = [match for match, _ in matches_with_stats]
