@@ -732,11 +732,11 @@ no changes added to commit (use "git add" and/or "git commit -a")
         untracked_file_path = os.path.join(self.temp_dir.name, "untracked_for_write.txt")
         with open(untracked_file_path, "w") as f:
             f.write("Initial content in untracked file")
-        
+
         # Verify the file exists but is not tracked by git
         file_exists = os.path.exists(untracked_file_path)
         self.assertTrue(file_exists, "Test file should exist on filesystem")
-        
+
         # Check that the file is untracked
         ls_files_output = subprocess.run(
             ["git", "ls-files", untracked_file_path],
@@ -745,14 +745,14 @@ no changes added to commit (use "git add" and/or "git commit -a")
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE
         ).stdout.decode().strip()
-        
+
         self.assertEqual(ls_files_output, "", "File should not be tracked by git")
-        
+
         # Save original content and modification time for comparison
         with open(untracked_file_path, "r") as f:
             original_content = f.read()
         original_mtime = os.path.getmtime(untracked_file_path)
-        
+
         async with self.create_client_session() as session:
             # Try to write to the untracked file
             new_content = "This content should not be written to untracked file"
@@ -762,26 +762,29 @@ no changes added to commit (use "git add" and/or "git commit -a")
                 "content": new_content,
                 "description": "Attempt to write to untracked file"
             })
-            
+
             # Normalize the result
             normalized_result = self.normalize_path(result)
-            
+
             # Verify that the operation was rejected
-            self.assertIn("Error", normalized_result, 
+            self.assertIn("Error", normalized_result,
                 "Write to untracked file should be rejected with an error")
             self.assertIn("not tracked by git", normalized_result,
                 "Error message should indicate the file is not tracked by git")
-            
+
             # Verify the file content was not changed
             with open(untracked_file_path, "r") as f:
                 current_content = f.read()
             self.assertEqual(current_content, original_content,
                 "File content should not have been changed")
-            
+
             # Verify file modification time was not changed
             current_mtime = os.path.getmtime(untracked_file_path)
             self.assertEqual(current_mtime, original_mtime,
                 "File modification time should not have changed")
+            
+        # Explicitly return None to avoid DeprecationWarning
+        return None
 
     async def test_path_traversal_attacks(self):
         """Test that codemcp properly prevents path traversal attacks."""
