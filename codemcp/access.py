@@ -39,16 +39,15 @@ def get_git_base_dir(file_path: str) -> str | None:
                 return None
 
         # Run git command to get the top-level directory of the repository
-        result = subprocess.run(
+        result = run_command(
             ["git", "rev-parse", "--show-toplevel"],
             cwd=directory,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            capture_output=True,
             check=True,
             text=True,
         )
 
-        # Log command output and return the path
+        # Return the path
         git_base_dir = result.stdout.strip()
         logging.debug(f"Git base directory: {git_base_dir}")
         return git_base_dir
