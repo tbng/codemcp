@@ -572,9 +572,10 @@ no changes added to commit (use "git add" and/or "git commit -a")
 
             # Normalize the result
             normalized_result = self.normalize_path(result)
-            
+            result_text = self.extract_text_from_result(normalized_result)
+
             # Check the actual behavior
-            if "Successfully wrote to" in normalized_result:
+            if "Successfully wrote to" in result_text:
                 # The operation succeeded - check if the directory and file are now tracked in git
                 status_after = subprocess.check_output(
                     ["git", "status"], 
