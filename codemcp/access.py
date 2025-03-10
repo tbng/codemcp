@@ -6,6 +6,8 @@ import subprocess
 
 import toml
 
+from .shell import run_command
+
 __all__ = [
     "get_git_base_dir",
     "check_edit_permission",
