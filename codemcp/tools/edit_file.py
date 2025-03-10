@@ -664,22 +664,40 @@ def edit_file_content(
 
         # Check if old_string exists in the file
         if old_string and old_string not in content:
-            # Fallback: Try matching after stripping trailing whitespace from lines
-            # We specifically focus on blank lines with whitespace
-            content_normalized = "\n".join([line.rstrip() if line.strip() == "" else line for line in content.split("\n")])
-            old_string_normalized = "\n".join([line.rstrip() if line.strip() == "" else line for line in old_string.split("\n")])
-
-            if old_string_normalized in content_normalized:
-                # Found match after normalizing whitespace-only lines
-                logger.debug(f"Found match after normalizing whitespace-only lines")
-                # We don't need to update old_string as we don't need to preserve the old whitespace
-            else:
-                return "Error: String to replace not found in file."
+            # Try advanced matching techniques
+            logger.debug("Direct match not found, trying advanced matching techniques...")
+            
+            # Test if replace_most_similar_chunk can find a match
+            test_match = replace_most_similar_chunk(content, old_string, new_string)
+            
+            if not test_match:
+                # If no match found, try to provide helpful suggestions
+                similar = find_similar_lines(old_string, content)
+                error_msg = "Error: String to replace not found in file."
+                
+                if similar:
+                    error_msg += f"\n\nDid you mean to match these lines?\n\n```\n{similar}\n```\n\nTip: Make sure whitespace, indentation, and exact characters match."
+                return error_msg
+                
+            # If we're here, we found a match using advanced techniques
+            logger.debug("Found match using advanced matching techniques")
 
         # Check for uniqueness of old_string
         if old_string and content.count(old_string) > 1:
-            matches = content.count(old_string)
-            return f"Error: Found {matches} matches of the string to replace. For safety, this tool only supports replacing exactly one occurrence at a time. Add more lines of context to your edit and try again."
+            # First try to use the dotdotdots approach which handles multiple matches by context
+            try:
+                test_result = try_dotdotdots(content, old_string, new_string)
+                if test_result:
+                    # If it worked with dotdotdots, we're good to proceed
+                    logger.debug("Successfully used dotdotdots strategy to handle multiple occurrences")
+                else:
+                    # Fall back to the original error message
+                    matches = content.count(old_string)
+                    return f"Error: Found {matches} matches of the string to replace. For safety, this tool only supports replacing exactly one occurrence at a time. Add more lines of context to your edit and try again."
+            except ValueError:
+                # If dotdotdots approach failed, give the original error message
+                matches = content.count(old_string)
+                return f"Error: Found {matches} matches of the string to replace. For safety, this tool only supports replacing exactly one occurrence at a time. Add more lines of context to your edit and try again."
 
         # Apply the edit
         patch, updated_file = apply_edit(full_file_path, old_string, new_string)
