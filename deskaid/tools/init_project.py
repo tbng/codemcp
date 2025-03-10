@@ -31,14 +31,14 @@ def init_project(directory: str) -> str:
         if not os.path.isdir(full_dir_path):
             return f"Error: Path is not a directory: {directory}"
 
-        # Build path to .deskaidrules file
-        rules_file_path = os.path.join(full_dir_path, ".deskaidrules")
+        # Build path to deskaid.toml file
+        rules_file_path = os.path.join(full_dir_path, "deskaid.toml")
 
         # Default system prompt
         system_prompt = "Do NOT attempt to run tests, let the user run them."
         global_prompt = ""
 
-        # Check if .deskaidrules file exists
+        # Check if deskaid.toml file exists
         if os.path.exists(rules_file_path):
             try:
                 with open(rules_file_path, "rb") as f:
