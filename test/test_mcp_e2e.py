@@ -474,9 +474,6 @@ no changes added to commit (use "git add" and/or "git commit -a")
                 else:
                     self.fail("SECURITY VULNERABILITY: No commit history found for the file after editing")
                 
-                print(f"Commit history for {untracked_file_path}: {git_log}")
-                breakpoint()
-                
                 if git_log:
                     # Get the first/earliest commit for this file
                     first_commit = git_log[-1] if git_log else None
