@@ -566,12 +566,17 @@ def edit_file_content(
     read_file_timestamps: Optional[Dict[str, float]] = None,
     description: str = "",
 ) -> str:
-    """Edit a file by replacing old_string with new_string.
+    """Edit a file by replacing old_string with new_string using robust matching strategies.
 
-    If the old_string is not found in the file, attempts a fallback mechanism
-    where trailing whitespace is stripped from blank lines (lines with only whitespace)
-    before matching. This helps match files where the only difference is in trailing
-    whitespace on otherwise empty lines.
+    Uses multiple matching strategies to find and replace text:
+    1. First tries exact matching
+    2. Then attempts to match with whitespace normalization
+    3. Handles leading whitespace differences
+    4. Supports ellipsis (...) notation for flexible matching
+    5. Uses fuzzy matching with SequenceMatcher as a last resort
+    
+    If a match fails, provides helpful suggestions with similar text found in the file.
+    For files with multiple matches, attempts to use context to identify the correct instance.
 
     Args:
         file_path: The absolute path to the file to edit
@@ -581,11 +586,14 @@ def edit_file_content(
         description: Short description of the change
 
     Returns:
-        A success message or an error message
-        
+        A success message or an error message with suggestions when appropriate
+
     Note:
         This function will reject attempts to edit files that are not tracked by git.
         Files must be tracked in the git repository before they can be edited.
+        
+        When multiple matches are found, add more context lines (before and after)
+        to uniquely identify the section you want to edit.
     """
     try:
         # Convert to absolute path if needed
