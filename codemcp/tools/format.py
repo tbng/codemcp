@@ -2,13 +2,13 @@
 
 import logging
 import os
-import subprocess
 from pathlib import Path
 import tomli
 from typing import List, Optional
 
 from ..common import normalize_file_path
 from ..git import is_git_repository, commit_changes
+from ..shell import run_command
 
 __all__ = [
     "format_code",
