@@ -35,7 +35,14 @@ def init_project(directory: str) -> str:
         rules_file_path = os.path.join(full_dir_path, "codemcp.toml")
 
         # Default system prompt
-        system_prompt = "Do NOT attempt to run tests, let the user run them."
+        # TODO: Figure out if we want Sonnet to make determinations about what
+        # goes in the global prompt.  The current ARCHITECTURE.md rule is
+        # mostly to make sure we don't lose important information that was
+        # conveyed in chats.
+        system_prompt = """\
+Do NOT attempt to run tests, let the user run them.
+If the user tells you a fact about the overall system that seems very important, add it to ARCHITECTURE.md.
+"""
         global_prompt = ""
 
         # Check if codemcp.toml file exists
