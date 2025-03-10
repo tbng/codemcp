@@ -7,6 +7,16 @@ MAX_LINES_TO_READ = 1000
 MAX_LINE_LENGTH = 1000
 MAX_OUTPUT_SIZE = 0.25 * 1024 * 1024  # 0.25MB in bytes
 
+__all__ = [
+    "MAX_LINES_TO_READ",
+    "MAX_LINE_LENGTH",
+    "MAX_OUTPUT_SIZE",
+    "is_image_file",
+    "get_image_format",
+    "normalize_file_path",
+    "get_edit_snippet",
+]
+
 
 def is_image_file(file_path: str) -> bool:
     """Check if a file is an image based on its MIME type."""
