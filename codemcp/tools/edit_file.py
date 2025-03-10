@@ -584,8 +584,9 @@ def edit_file_content(
         A success message or an error message
 
     Note:
-        This function will reject attempts to edit files that are not tracked by git.
-        Files must be tracked in the git repository before they can be edited.
+        This function allows creating new files when old_string is empty and the file doesn't exist.
+        For existing files, it will reject attempts to edit files that are not tracked by git.
+        Files must be tracked in the git repository before they can be modified.
     """
     try:
         # Convert to absolute path if needed
