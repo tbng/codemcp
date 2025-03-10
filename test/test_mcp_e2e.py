@@ -352,9 +352,12 @@ no changes added to commit (use "git add" and/or "git commit -a")
                 "description": "Attempt to modify untracked file"
             })
 
+            # Get the result content
+            result_content = result.content if hasattr(result, 'content') else str(result)
+            
             # Normalize the result
             normalized_result = self.normalize_path(result)
-            print(f"RESPONSE FROM SERVER:\n{normalized_result}")
+            print(f"RESPONSE FROM SERVER:\n{result_content}")
             
             # Check file after the operation
             if os.path.exists(untracked_file_path):
@@ -395,7 +398,10 @@ no changes added to commit (use "git add" and/or "git commit -a")
             
             # SECURITY CHECK: If editing untracked files succeeds, ensure they are added to git
             # so they can be properly tracked and reverted
-            if "Successfully edited" in normalized_result:
+            success_message = "Successfully edited" in result_content
+            print(f"Edit operation successful? {success_message}")
+            
+            if success_message:
                 # The file should have been modified
                 self.assertNotEqual(original_mtime, os.path.getmtime(untracked_file_path))
                 
