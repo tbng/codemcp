@@ -155,6 +155,7 @@ async def codemcp(
         },
         "LS": {"file_path"},
         "InitProject": {"file_path"},
+        "Format": {"file_path"},
         "Grep": {"pattern", "path", "include"},
     }
 
