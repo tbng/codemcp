@@ -46,10 +46,10 @@ def _get_format_command(project_dir: str) -> Optional[List[str]]:
 
 def _check_for_changes(project_dir: str) -> bool:
     """Check if formatting made any changes to the code.
-    
+
     Args:
         project_dir: The directory path to check
-        
+
     Returns:
         True if changes were detected, False otherwise
     """
@@ -63,7 +63,7 @@ def _check_for_changes(project_dir: str) -> bool:
             check=True,
             text=True,
         )
-        
+
         # If status output is not empty, there are changes
         return bool(status_result.stdout.strip())
     except Exception as e:
@@ -96,7 +96,7 @@ def format_code(project_dir: str) -> str:
 
         # Check if directory is in a git repository
         is_git_repo = is_git_repository(full_dir_path)
-        
+
         # If it's a git repo, check for changes before formatting
         had_changes_before = False
         if is_git_repo:
@@ -120,19 +120,20 @@ def format_code(project_dir: str) -> str:
             # Check if there are changes after formatting
             if is_git_repo:
                 has_changes_after = _check_for_changes(full_dir_path)
-                
+
                 # Only commit if new changes appeared after formatting
                 if has_changes_after and (has_changes_after != had_changes_before):
                     logging.info("Changes detected after formatting, committing")
                     success, commit_message = commit_changes(
-                        full_dir_path, 
-                        "Auto-commit formatting changes"
+                        full_dir_path, "Auto-commit formatting changes"
                     )
-                    
+
                     if success:
                         return f"Code formatting successful and changes committed:\n{result.stdout}"
                     else:
-                        logging.warning(f"Failed to commit formatting changes: {commit_message}")
+                        logging.warning(
+                            f"Failed to commit formatting changes: {commit_message}"
+                        )
                         return f"Code formatting successful but failed to commit changes:\n{result.stdout}\nCommit error: {commit_message}"
 
             return f"Code formatting successful:\n{result.stdout}"
