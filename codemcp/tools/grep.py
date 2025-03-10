@@ -8,6 +8,7 @@ from typing import Any
 
 from ..common import normalize_file_path
 from ..git import is_git_repository
+from ..shell import run_command
 
 __all__ = [
     "grep_files",
