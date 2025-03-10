@@ -103,7 +103,7 @@ def format_code(project_dir: str) -> str:
 
         # Run the format command
         try:
-            result = subprocess.run(
+            result = run_command(
                 format_command,
                 cwd=full_dir_path,
                 check=True,
@@ -111,10 +111,7 @@ def format_code(project_dir: str) -> str:
                 text=True,
             )
 
-            # Log the command output
-            logging.info(f"Format command output: {result.stdout}")
-            if result.stderr:
-                logging.warning(f"Format command stderr: {result.stderr}")
+            # Additional logging is already done by run_command
 
             # Check if there are changes after formatting
             if is_git_repo:
