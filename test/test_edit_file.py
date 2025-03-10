@@ -226,6 +226,28 @@ class TestEditFile(TestCase):
         result = edit_file_content(self.test_file_path, old_string, new_string)
 
         self.assertIn("Error: String to replace not found in file", result)
+        
+    def test_edit_file_content_trailing_whitespace_match(self):
+        """Test editing when the string is found after stripping trailing whitespace"""
+        # Create a test file with trailing whitespace at the end of lines
+        whitespace_file_path = os.path.join(self.temp_dir.name, "whitespace_test.txt")
+        with open(whitespace_file_path, "w", encoding="utf-8") as f:
+            f.write("This is a test file    \nWith trailing whitespace    \nAt the end of lines    \n")
+        
+        # Original string without trailing whitespace
+        old_string = "This is a test file\nWith trailing whitespace\nAt the end of lines"
+        new_string = "This has been edited\nAnd the whitespace\nShould be preserved"
+        
+        result = edit_file_content(whitespace_file_path, old_string, new_string)
+        
+        # Check that the edit was successful
+        self.assertIn(f"Successfully edited {whitespace_file_path}", result)
+        
+        # Read the file and verify the content was replaced
+        with open(whitespace_file_path, "r", encoding="utf-8") as f:
+            content = f.read()
+        
+        self.assertIn("This has been edited    \nAnd the whitespace    \nShould be preserved    \n", content)
 
     def test_edit_file_content_multiple_matches(self):
         """Test editing when there are multiple matches of the string to replace"""
