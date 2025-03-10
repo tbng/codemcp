@@ -85,10 +85,32 @@ def apply_edit(
     else:
         content = ""
     
-    # By the time we reach this function, old_string should be properly
-    # matched with the file content - either directly or using the 
-    # trailing whitespace stripping fallback in edit_file_content
-    updated_file = content.replace(old_string, new_string, 1)
+    # Try direct replacement first
+    if old_string in content:
+        updated_file = content.replace(old_string, new_string, 1)
+    else:
+        # Fallback for blank lines with whitespace
+        content_lines = content.split("\n")
+        old_string_lines = old_string.split("\n")
+        matched_indices = []
+        
+        # Find the start of the match in the normalized content
+        content_normalized = "\n".join([line.rstrip() if line.strip() == "" else line for line in content_lines])
+        old_string_normalized = "\n".join([line.rstrip() if line.strip() == "" else line for line in old_string_lines])
+        
+        match_start = content_normalized.find(old_string_normalized)
+        if match_start >= 0:
+            # Find the line number where the match starts
+            line_start = content_normalized[:match_start].count("\n")
+            
+            # Replace the matching block with the new content
+            new_content_lines = content_lines.copy()
+            new_content_lines[line_start:line_start + len(old_string_lines)] = new_string.split("\n")
+            
+            updated_file = "\n".join(new_content_lines)
+        else:
+            # This should not happen if edit_file_content already checked
+            updated_file = content
 
     # Create a simple patch structure
     # This is a simplified version of what the TS code does with the diff library
