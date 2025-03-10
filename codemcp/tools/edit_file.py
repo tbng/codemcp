@@ -581,8 +581,6 @@ def edit_file_content(
         )
 
         # Check file path and permissions
-        from .file_utils import check_file_path_and_permissions, check_git_tracking_for_existing_file
-        
         is_valid, error_message = check_file_path_and_permissions(full_file_path)
         if not is_valid:
             return error_message
