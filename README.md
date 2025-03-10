@@ -11,7 +11,7 @@ opinionated approach to implementing this functionality based on the coding
 use case:
 
 - Git is mandatory; we generate a commit for every edit so you can easily use
-  Git to rollback if the AI does something bad.  TODO: The MCP will ONLY write
+  Git to rollback if the AI does something bad.  The MCP will ONLY write
   to Git tracked files, so you are guaranteed to be able to rollback if
   necessary.
 
