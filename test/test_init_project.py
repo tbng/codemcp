@@ -51,13 +51,13 @@ class InitProjectTestCase(unittest.TestCase):
 
     def test_init_project_invalid_toml(self):
         """Test initializing a project with an invalid TOML file."""
-        # Create an invalid .deskaidrules file
-        rules_file_path = os.path.join(self.dir_path, ".deskaidrules")
+        # Create an invalid deskaid.toml file
+        rules_file_path = os.path.join(self.dir_path, "deskaid.toml")
         with open(rules_file_path, "w") as f:
             f.write('global_prompt = "This is an invalid TOML file\n')  # Missing closing quote
 
         result = init_project(self.dir_path)
-        self.assertTrue(result.startswith("Error reading .deskaidrules file"))
+        self.assertTrue(result.startswith("Error reading deskaid.toml file"))
 
 
 if __name__ == "__main__":
