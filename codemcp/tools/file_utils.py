@@ -6,6 +6,13 @@ import os
 from ..access import check_edit_permission
 from ..git import commit_pending_changes
 
+__all__ = [
+    "check_file_path_and_permissions",
+    "check_git_tracking_for_existing_file",
+    "ensure_directory_exists",
+    "write_text_content",
+]
+
 
 def check_file_path_and_permissions(file_path: str) -> tuple[bool, str | None]:
     """Check if the file path is valid and has the necessary permissions.
