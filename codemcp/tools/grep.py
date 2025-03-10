@@ -84,7 +84,7 @@ def git_grep(
         # Execute git grep command
         # Use explicit parameters to avoid confusion in mocking
         result = run_command(
-            args=args,
+            cmd=args,
             cwd=absolute_path,
             capture_output=True,
             text=True,
