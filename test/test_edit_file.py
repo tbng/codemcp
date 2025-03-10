@@ -264,7 +264,11 @@ class TestEditFile(TestCase):
         old_string = "This line has spaces\nThis line doesn't\nThis one does"
         new_string = "All of these lines\nHave been edited\nBy the test"
         
-        result = edit_file_content(mixed_whitespace_path, old_string, new_string)
+        # Use read_file_timestamps to avoid "file has not been read" error
+        timestamps = {mixed_whitespace_path: os.stat(mixed_whitespace_path).st_mtime + 1}
+        
+        # Run the edit operation
+        result = edit_file_content(mixed_whitespace_path, old_string, new_string, timestamps)
         
         # Check that the edit was successful
         self.assertIn(f"Successfully edited {mixed_whitespace_path}", result)
