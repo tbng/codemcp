@@ -10,6 +10,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from mcp.server.fastmcp import Context, FastMCP, Image
 
 from .tools.edit_file import edit_file_content
+from .tools.init_project import init_project
 from .tools.ls import ls_directory
 from .tools.read_file import read_file_content
 from .tools.write_file import write_file_content
