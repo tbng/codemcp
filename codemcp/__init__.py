@@ -17,6 +17,13 @@ from .tools.ls import ls_directory
 from .tools.read_file import read_file_content
 from .tools.write_file import write_file_content
 
+__all__ = [
+    "configure_logging",
+    "run",
+    "mcp",
+    "codemcp",
+]
+
 # Initialize FastMCP server
 mcp = FastMCP("codemcp")
 
