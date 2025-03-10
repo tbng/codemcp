@@ -9,7 +9,8 @@ import re
 import stat
 from typing import Dict, List, Optional, Tuple
 
-from ..common import commit_changes, commit_pending_changes, get_edit_snippet
+from ..common import get_edit_snippet
+from ..git import commit_changes, commit_pending_changes
 
 # Set up logger
 logger = logging.getLogger(__name__)
