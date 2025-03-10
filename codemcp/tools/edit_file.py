@@ -593,25 +593,22 @@ def edit_file_content(
         full_file_path = (
             file_path if os.path.isabs(file_path) else os.path.abspath(file_path)
         )
-        
-        # Check if we have permission to edit this file
-        is_permitted, permission_message = check_edit_permission(full_file_path)
-        if not is_permitted:
-            return f"Error: {permission_message}"
 
+        # Check file path and permissions
+        from .file_utils import check_file_path_and_permissions, check_git_tracking_for_existing_file
+        
+        is_valid, error_message = check_file_path_and_permissions(full_file_path)
+        if not is_valid:
+            return error_message
+        
         # Handle creating a new file - skip commit_pending_changes for non-existent files
         creating_new_file = old_string == "" and not os.path.exists(full_file_path)
         
         if not creating_new_file:
             # Only check commit_pending_changes for existing files
-            commit_success, commit_message = commit_pending_changes(full_file_path)
-            if not commit_success:
-                logging.debug(f"Failed to commit pending changes: {commit_message}")
-                # Check if the file is not tracked by git
-                if "not tracked by git" in commit_message:
-                    return f"Error: {commit_message}"
-            else:
-                logging.debug(f"Pending changes status: {commit_message}")
+            is_tracked, track_error = check_git_tracking_for_existing_file(full_file_path)
+            if not is_tracked:
+                return f"Error: {track_error}"
 
         # Debug string comparison using our thorough utility
         strings_are_different = debug_string_comparison(
