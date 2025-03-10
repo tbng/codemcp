@@ -127,8 +127,8 @@ class TestLS(TestCase):
         # Check that the expected files and directories are included
         self.assertIn("file1.txt", result_set)
         self.assertIn("file2.txt", result_set)
-        # Instead of checking for "subdir/" check for "subdir"
-        self.assertIn("subdir", result_set)
+        # Check for "subdir/" with trailing slash as directories have it appended
+        self.assertIn(f"subdir{os.sep}", result_set)
         # The subdir file is now included in the results from list_directory
         self.assertIn(os.path.join("subdir", "subdir_file.txt"), result_set)
 
