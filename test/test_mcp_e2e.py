@@ -412,9 +412,9 @@ no changes added to commit (use "git add" and/or "git commit -a")
                     edit_succeeded = True
             
             print(f"Edit operation successful? {edit_succeeded}")
-            
-            # We expect the edit to be successful - editing untracked files should be permitted
-            self.assertTrue(edit_succeeded, "POLICY ERROR: Editing untracked files should be permitted")
+
+            # With new policy, we expect the edit to fail since the file is not tracked
+            self.assertFalse(edit_succeeded, "POLICY ERROR: Editing untracked files should be rejected")
             
             # Edit was successful, now verify our security invariants
             if edit_succeeded:
