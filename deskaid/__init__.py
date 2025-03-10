@@ -27,8 +27,8 @@ async def deskaid(
     content: Optional[str] = None,
     old_string: Optional[str] = None,
     new_string: Optional[str] = None,
-    offset: Optional[str] = None,
-    limit: Optional[str] = None,
+    offset: Optional[int] = None,
+    limit: Optional[int] = None,
     description: Optional[str] = None,
 ) -> str:
     """
@@ -154,9 +154,7 @@ async def deskaid(
         if file_path is None:
             return "Error: file_path is required for ReadFile command"
 
-        offset_int = int(offset) if offset and offset.isdigit() else None
-        limit_int = int(limit) if limit and limit.isdigit() else None
-        return read_file_content(file_path, offset_int, limit_int)
+        return read_file_content(file_path, offset, limit)
 
     elif command == "WriteFile":
         if file_path is None:
