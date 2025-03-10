@@ -34,7 +34,7 @@ build-backend = "hatchling.build"
 
 [tool.ruff]
 # Enable the formatter
-target-version = "py310"
+target-version = "py312"
 line-length = 88
 indent-width = 4
 
