@@ -91,7 +91,7 @@ class TestFormatTool(unittest.TestCase):
         mock_is_git_repo.return_value = False
 
         # Mock failed subprocess run
-        mock_run.side_effect = Exception("Command failed")
+        mock_run.side_effect = subprocess.CalledProcessError(1, ["./run_format.sh"], stderr="Command failed")
 
         # Create a config file with format command
         format_command = ["./run_format.sh"]
