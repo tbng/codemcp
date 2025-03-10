@@ -701,25 +701,30 @@ if __name__ == "__main__":
     if sys.platform == "win32":
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
     
-    # FOR TESTING: Uncomment the next two lines to run ONLY test_edit_untracked_file
-    # sys.argv = [sys.argv[0]] if len(sys.argv) == 1 else [sys.argv[0]]
-    # sys.argv.append('test_edit_untracked_file')
+    # Create an event loop for running async tests
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
     
     # Check if a specific test was requested
     if len(sys.argv) > 1:
         test_name = sys.argv.pop(1)
-        # Configure test loader to run only specific test
-        loader = unittest.TestLoader()
-        suite = loader.loadTestsFromTestCase(MCPEndToEndTest)
+        print(f"Running test: {test_name}")
         
-        # Filter for just the specific test
-        filtered_suite = unittest.TestSuite()
-        for test in suite:
-            if test._testMethodName == test_name:
-                filtered_suite.addTest(test)
-        
-        # Run the test
-        runner = unittest.TextTestRunner(verbosity=2)
-        runner.run(filtered_suite)
+        # Find and run the specified test method
+        test_instance = MCPEndToEndTest(test_name)
+        test_instance.setUp()
+        try:
+            # Get the test method and run it
+            test_method = getattr(test_instance, test_name)
+            loop.run_until_complete(test_method())
+            print(f"Test {test_name} completed successfully")
+        except Exception as e:
+            print(f"Test {test_name} failed: {e}")
+            import traceback
+            traceback.print_exc()
+        finally:
+            test_instance.tearDown()
     else:
+        # For running all tests, we'll use the regular unittest framework
+        # with proper async support
         unittest.main()
