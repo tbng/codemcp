@@ -3,6 +3,7 @@
 import os
 import tempfile
 import unittest
+import subprocess
 from pathlib import Path
 
 from codemcp.tools import init_project
