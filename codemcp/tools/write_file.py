@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 
-import logging
 import os
-from typing import Optional, Tuple
 
 from ..git import commit_changes
 from .file_utils import (

@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 
 import os
-from pathlib import Path
-from typing import List, Optional
+from typing import List
 
 from ..common import normalize_file_path
 

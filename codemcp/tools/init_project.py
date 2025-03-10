@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 
 import os
-from pathlib import Path
-from typing import Optional
 
 import tomli
 

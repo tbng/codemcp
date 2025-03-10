@@ -5,7 +5,6 @@ import shutil
 import subprocess
 import tempfile
 import unittest
-from pathlib import Path
 
 from codemcp.access import check_edit_permission, get_git_base_dir
 

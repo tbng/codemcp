@@ -7,6 +7,6 @@ python -m ruff format codemcp/ test/
 
 # Run Ruff linting (optional)
 echo "Running Ruff linter..."
-python -m ruff check --fix --select I codemcp/ test/
+python -m ruff check --fix codemcp/ test/
 
 echo "Lint and format completed successfully!"

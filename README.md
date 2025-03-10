@@ -33,6 +33,8 @@ Major missing functionality that I plan to implement ASAP:
 
 - Explicitly add file to context
 
+- Make file executable tool
+
 - A few more of Claude Code's tools: glob, memory, notebook
 
 Things I NEVER intend to implement, for philosophical reasons:

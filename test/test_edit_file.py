@@ -3,11 +3,10 @@
 import os
 import tempfile
 import unittest
-from unittest.mock import MagicMock, mock_open, patch
+from unittest.mock import patch
 
 from expecttest import TestCase
 
-from codemcp.common import get_edit_snippet
 from codemcp.tools.edit_file import (
     apply_edit,
     detect_file_encoding,

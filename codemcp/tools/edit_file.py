@@ -2,15 +2,12 @@
 
 import difflib
 import hashlib
-import json
 import logging
 import math
 import os
 import re
-import stat
 from difflib import SequenceMatcher
-from pathlib import Path
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple
 
 from ..common import get_edit_snippet
 from ..git import commit_changes
@@ -513,7 +510,7 @@ def debug_string_comparison(
     length_same = len(s1) == len(s2)
     content_same = s1 == s2
 
-    logger.debug(f"String comparison debug:")
+    logger.debug("String comparison debug:")
     logger.debug(f"  Length same? {length_same} ({len(s1)} vs {len(s2)})")
     logger.debug(f"  Content same? {content_same}")
 
@@ -534,7 +531,7 @@ def debug_string_comparison(
         bytes2 = s2.encode("utf-8")
         if bytes1 != bytes2:
             logger.debug(
-                f"  Strings differ at byte level even though they appear equal as strings!"
+                "  Strings differ at byte level even though they appear equal as strings!"
             )
 
             # Find the first differing byte
@@ -549,7 +546,7 @@ def debug_string_comparison(
         diff = list(difflib.ndiff(s1.splitlines(), s2.splitlines()))
         changes = [d for d in diff if d.startswith("+ ") or d.startswith("- ")]
         if changes:
-            logger.debug(f"  Line differences (first 5):")
+            logger.debug("  Line differences (first 5):")
             for d in changes[:5]:
                 logger.debug(f"    {d}")
 

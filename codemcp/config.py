@@ -4,9 +4,8 @@ Configuration module for codemcp.
 This module provides access to user configuration stored in ~/.codemcprc in TOML format.
 """
 
-import os
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 import tomli
 

@@ -2,14 +2,11 @@
 
 import asyncio
 import os
-import shutil
 import subprocess
 import sys
 import tempfile
 import unittest
-import warnings
 from contextlib import asynccontextmanager
-from pathlib import Path
 
 from expecttest import TestCase
 from mcp import ClientSession, StdioServerParameters
@@ -868,7 +865,7 @@ nothing to commit, working tree clean
         new_file_path = os.path.join(untracked_dir, "new_file.txt")
 
         # Debug: Print git repository detection
-        print(f"\n\nTesting directory structure:")
+        print("\n\nTesting directory structure:")
         print(f"Temp dir: {self.temp_dir.name}")
         print(f"Untracked dir: {untracked_dir}")
         print(f"New file path: {new_file_path}")
@@ -979,7 +976,7 @@ nothing to commit, working tree clean
         )
 
         # Debug: Print git repository detection
-        print(f"\n\nTesting WriteFile for new file:")
+        print("\n\nTesting WriteFile for new file:")
         print(f"Temp dir: {self.temp_dir.name}")
         print(f"New file path: {new_file_path}")
 
