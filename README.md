@@ -102,13 +102,21 @@ verbosity = "INFO"  # Can be DEBUG, INFO, WARNING, ERROR, or CRITICAL
 
 In your repository, there is also a config file `codemcp.toml`.
 
-```
+```toml
 global_prompt = """
 Before beginning work on this feature, write a short haiku.  Do this only once.
 """
+
+[commands]
+format = ["./run_format.sh"]
 ```
 
-This prompt will be loaded when you initialize the project in chats.
+The `global_prompt` will be loaded when you initialize the project in chats.
+
+The `commands` section allows you to configure commands that Claude will run at specific points:
+- `format`: The command that will run at the end of a task to format code according to project standards.
+
+Commands are specified as arrays of strings that will be joined with spaces and executed in a shell context.
 
 ## Logging
 
