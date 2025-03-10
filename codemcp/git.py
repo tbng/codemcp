@@ -116,26 +116,13 @@ def commit_pending_changes(file_path: str) -> tuple[bool, str]:
                     text=True,
                 )
 
-                commit_snapshot_result = subprocess.run(
+                commit_snapshot_result = run_command(
                     ["git", "commit", "-m", "Snapshot before codemcp change"],
                     cwd=directory,
                     check=True,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
+                    capture_output=True,
                     text=True,
                 )
-
-                # Log command output
-                if commit_snapshot_result.stdout:
-                    logging.debug(
-                        "git commit snapshot output: %s",
-                        commit_snapshot_result.stdout.strip(),
-                    )
-                if commit_snapshot_result.stderr:
-                    logging.debug(
-                        "git commit snapshot stderr: %s",
-                        commit_snapshot_result.stderr.strip(),
-                    )
 
                 return True, "Committed pending changes"
 
