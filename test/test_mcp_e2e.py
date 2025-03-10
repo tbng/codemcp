@@ -876,19 +876,6 @@ if __name__ == "__main__":
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
 
-    # Check if a specific test was requested
-    if len(sys.argv) > 1:
-        test_name = sys.argv.pop(1)
-        print(f"Running test: {test_name}")
-
-        # Create a test suite with just this test
-        suite = unittest.TestSuite()
-        suite.addTest(MCPEndToEndTest(test_name))
-        
-        # Run the test using the standard unittest runner
-        runner = unittest.TextTestRunner()
-        runner.run(suite)
-    else:
-        # For running all tests, use the standard unittest framework
-        # IsolatedAsyncioTestCase will handle the async methods properly
-        unittest.main()
+    # Use the standard unittest framework
+    # IsolatedAsyncioTestCase will handle the async methods properly
+    unittest.main()
