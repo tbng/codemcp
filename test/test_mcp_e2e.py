@@ -701,4 +701,20 @@ if __name__ == "__main__":
     if sys.platform == "win32":
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
     
-    unittest.main()
+    # Check if a specific test was requested
+    if len(sys.argv) > 1 and sys.argv[1] == 'test_edit_untracked_file':
+        # Configure test loader to run only the untracked file test
+        loader = unittest.TestLoader()
+        suite = loader.loadTestsFromTestCase(MCPEndToEndTest)
+        
+        # Filter for just the test_edit_untracked_file test
+        filtered_suite = unittest.TestSuite()
+        for test in suite:
+            if test._testMethodName == 'test_edit_untracked_file':
+                filtered_suite.addTest(test)
+        
+        # Run the test
+        runner = unittest.TextTestRunner(verbosity=2)
+        runner.run(filtered_suite)
+    else:
+        unittest.main()
