@@ -130,9 +130,9 @@ class MCPEndToEndTest(TestCase, unittest.IsolatedAsyncioTestCase):
     async def test_list_tools(self):
         """Test listing available tools."""
         async with self.create_client_session() as session:
-            tools = await session.list_tools()
+            result = await session.list_tools()
             # Verify the codemcp tool is available
-            tool_names = [tool.name for tool in tools]
+            tool_names = [tool.name for tool in result.tools]
             self.assertIn("codemcp", tool_names)
 
     async def test_read_file(self):
