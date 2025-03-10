@@ -52,9 +52,10 @@ class TestGrepTool(unittest.TestCase):
         ]
         self.assertEqual(result, expected)
 
+    @mock.patch("deskaid.tools.grep.normalize_file_path", return_value="/test/path")
     @mock.patch("deskaid.tools.grep.is_git_repository", return_value=True)
     @mock.patch("subprocess.run")
-    def test_git_grep_with_include(self, mock_run, mock_is_git_repo):
+    def test_git_grep_with_include(self, mock_run, mock_is_git_repo, mock_normalize):
         # Setup mock
         mock_result = mock.MagicMock()
         mock_result.stdout = "file1.js\nfile2.js"
