@@ -6,6 +6,7 @@ import os
 from mcp.server.fastmcp import Context, FastMCP
 
 from .tools.edit_file import edit_file_content
+from .tools.format import format_code
 from .tools.grep import grep_files
 from .tools.init_project import init_project
 from .tools.ls import ls_directory
