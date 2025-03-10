@@ -163,6 +163,324 @@ def write_text_content(
         f.write(content)
 
 
+def prep(content: str) -> Tuple[str, List[str]]:
+    """Prepare content for comparison by ensuring it ends with a newline
+    and splitting into lines with preserved line endings.
+    
+    Args:
+        content: Text content to prepare
+        
+    Returns:
+        Tuple of (normalized content, list of lines with line endings)
+    """
+    if content and not content.endswith("\n"):
+        content += "\n"
+    lines = content.splitlines(keepends=True)
+    return content, lines
+
+
+def perfect_or_whitespace(whole_lines: List[str], part_lines: List[str], replace_lines: List[str]) -> Optional[str]:
+    """Try perfect match first, then try with whitespace flexibility.
+    
+    Args:
+        whole_lines: Original file lines with line endings
+        part_lines: Lines to find/replace with line endings
+        replace_lines: Replacement lines with line endings
+        
+    Returns:
+        Updated content if a match was found, None otherwise
+    """
+    # Try for a perfect match
+    res = perfect_replace(whole_lines, part_lines, replace_lines)
+    if res:
+        return res
+
+    # Try being flexible about leading whitespace
+    res = replace_part_with_missing_leading_whitespace(whole_lines, part_lines, replace_lines)
+    if res:
+        return res
+    
+    return None
+
+
+def perfect_replace(whole_lines: List[str], part_lines: List[str], replace_lines: List[str]) -> Optional[str]:
+    """Find an exact match of part_lines in whole_lines and replace with replace_lines.
+    
+    Args:
+        whole_lines: Original file lines with line endings
+        part_lines: Lines to find/replace with line endings
+        replace_lines: Replacement lines with line endings
+        
+    Returns:
+        Updated content if a perfect match was found, None otherwise
+    """
+    part_tup = tuple(part_lines)
+    part_len = len(part_lines)
+
+    for i in range(len(whole_lines) - part_len + 1):
+        whole_tup = tuple(whole_lines[i : i + part_len])
+        if part_tup == whole_tup:
+            res = whole_lines[:i] + replace_lines + whole_lines[i + part_len :]
+            return "".join(res)
+    
+    return None
+
+
+def match_but_for_leading_whitespace(whole_lines: List[str], part_lines: List[str]) -> Optional[str]:
+    """Check if lines match except for consistent leading whitespace.
+    
+    Args:
+        whole_lines: Original file lines subset
+        part_lines: Lines to find/replace
+        
+    Returns:
+        The consistent leading whitespace prefix to be added, or None if no match
+    """
+    num = len(whole_lines)
+
+    # does the non-whitespace all agree?
+    if not all(whole_lines[i].lstrip() == part_lines[i].lstrip() for i in range(num)):
+        return None
+
+    # are they all offset the same?
+    add = set(
+        whole_lines[i][: len(whole_lines[i]) - len(part_lines[i])]
+        for i in range(num)
+        if whole_lines[i].strip()
+    )
+
+    if len(add) != 1:
+        return None
+
+    return add.pop()
+
+
+def replace_part_with_missing_leading_whitespace(
+    whole_lines: List[str], part_lines: List[str], replace_lines: List[str]
+) -> Optional[str]:
+    """Handle case where search text is missing the exact leading whitespace.
+    
+    Args:
+        whole_lines: Original file lines with line endings
+        part_lines: Lines to find/replace with line endings
+        replace_lines: Replacement lines with line endings
+        
+    Returns:
+        Updated content if match was found after whitespace normalization, None otherwise
+    """
+    # Outdent everything in part_lines and replace_lines by the max fixed amount possible
+    leading = [len(p) - len(p.lstrip()) for p in part_lines if p.strip()] + [
+        len(p) - len(p.lstrip()) for p in replace_lines if p.strip()
+    ]
+
+    if leading and min(leading):
+        num_leading = min(leading)
+        part_lines = [p[num_leading:] if p.strip() else p for p in part_lines]
+        replace_lines = [p[num_leading:] if p.strip() else p for p in replace_lines]
+
+    # can we find an exact match not including the leading whitespace
+    num_part_lines = len(part_lines)
+
+    for i in range(len(whole_lines) - num_part_lines + 1):
+        add_leading = match_but_for_leading_whitespace(
+            whole_lines[i : i + num_part_lines], part_lines
+        )
+
+        if add_leading is None:
+            continue
+
+        replace_lines = [add_leading + rline if rline.strip() else rline for rline in replace_lines]
+        whole_lines = whole_lines[:i] + replace_lines + whole_lines[i + num_part_lines :]
+        return "".join(whole_lines)
+
+    return None
+
+
+def try_dotdotdots(whole: str, part: str, replace: str) -> Optional[str]:
+    """Handle search/replace blocks that use ... to match code sections.
+    
+    Args:
+        whole: Original file content
+        part: Text to find/replace  
+        replace: Replacement text
+        
+    Returns:
+        Updated content if dots matching was successful, None if no dots present,
+        raises ValueError if dots are inconsistent
+    """
+    dots_re = re.compile(r"(^\s*\.\.\.\n)", re.MULTILINE | re.DOTALL)
+
+    part_pieces = re.split(dots_re, part)
+    replace_pieces = re.split(dots_re, replace)
+
+    if len(part_pieces) != len(replace_pieces):
+        raise ValueError("Unpaired ... in search/replace block")
+
+    if len(part_pieces) == 1:
+        # no dots in this edit block, just return None
+        return None
+
+    # Compare odd strings in part_pieces and replace_pieces
+    all_dots_match = all(part_pieces[i] == replace_pieces[i] for i in range(1, len(part_pieces), 2))
+
+    if not all_dots_match:
+        raise ValueError("Unmatched ... in search/replace block")
+
+    part_pieces = [part_pieces[i] for i in range(0, len(part_pieces), 2)]
+    replace_pieces = [replace_pieces[i] for i in range(0, len(replace_pieces), 2)]
+
+    pairs = zip(part_pieces, replace_pieces)
+    for part, replace in pairs:
+        if not part and not replace:
+            continue
+
+        if not part and replace:
+            if not whole.endswith("\n"):
+                whole += "\n"
+            whole += replace
+            continue
+
+        if whole.count(part) == 0:
+            raise ValueError("Search text not found in file")
+        if whole.count(part) > 1:
+            raise ValueError("Multiple matches for search text - add more context")
+
+        whole = whole.replace(part, replace, 1)
+
+    return whole
+
+
+def replace_closest_edit_distance(
+    whole_lines: List[str], part: str, part_lines: List[str], replace_lines: List[str], similarity_thresh: float = 0.8
+) -> Optional[str]:
+    """Find and replace the chunk in whole_lines most similar to part_lines.
+    
+    Args:
+        whole_lines: Original file lines with line endings
+        part: Original search text as a single string
+        part_lines: Original search text split into lines with line endings
+        replace_lines: Replacement lines with line endings
+        similarity_thresh: Minimum similarity threshold (0.0-1.0)
+        
+    Returns:
+        Updated content if a similar enough match was found, None otherwise
+    """
+    max_similarity = 0
+    most_similar_chunk_start = -1
+    most_similar_chunk_end = -1
+
+    scale = 0.1
+    min_len = math.floor(len(part_lines) * (1 - scale))
+    max_len = math.ceil(len(part_lines) * (1 + scale))
+
+    for length in range(min_len, max_len):
+        for i in range(len(whole_lines) - length + 1):
+            chunk = whole_lines[i : i + length]
+            chunk = "".join(chunk)
+
+            similarity = SequenceMatcher(None, chunk, part).ratio()
+
+            if similarity > max_similarity:
+                max_similarity = similarity
+                most_similar_chunk_start = i
+                most_similar_chunk_end = i + length
+
+    if max_similarity < similarity_thresh:
+        return None
+
+    modified_whole = (
+        whole_lines[:most_similar_chunk_start]
+        + replace_lines
+        + whole_lines[most_similar_chunk_end:]
+    )
+    modified_whole = "".join(modified_whole)
+
+    return modified_whole
+
+
+def find_similar_lines(search_lines: str, content_lines: str, threshold: float = 0.6) -> str:
+    """Find lines in content that are similar to search_lines.
+    
+    Args:
+        search_lines: Text we're trying to match
+        content_lines: Content of the file to search in
+        threshold: Similarity threshold (0.0-1.0)
+        
+    Returns:
+        String containing the most similar lines, or empty string if none found
+    """
+    search_lines = search_lines.splitlines()
+    content_lines = content_lines.splitlines()
+
+    best_ratio = 0
+    best_match = None
+
+    for i in range(len(content_lines) - len(search_lines) + 1):
+        chunk = content_lines[i : i + len(search_lines)]
+        ratio = SequenceMatcher(None, search_lines, chunk).ratio()
+        if ratio > best_ratio:
+            best_ratio = ratio
+            best_match = chunk
+            best_match_i = i
+
+    if best_ratio < threshold:
+        return ""
+
+    if best_match[0] == search_lines[0] and best_match[-1] == search_lines[-1]:
+        return "\n".join(best_match)
+
+    N = 5
+    best_match_end = min(len(content_lines), best_match_i + len(search_lines) + N)
+    best_match_i = max(0, best_match_i - N)
+
+    best = content_lines[best_match_i:best_match_end]
+    return "\n".join(best)
+
+
+def replace_most_similar_chunk(whole: str, part: str, replace: str) -> Optional[str]:
+    """Best efforts to find the `part` lines in `whole` and replace them with `replace`.
+    
+    Args:
+        whole: Original file content
+        part: Text to find/replace  
+        replace: Replacement text
+        
+    Returns:
+        Updated content if a match was found, None otherwise
+    """
+    whole, whole_lines = prep(whole)
+    part, part_lines = prep(part)
+    replace, replace_lines = prep(replace)
+
+    # Try perfect match or whitespace-flexible match
+    res = perfect_or_whitespace(whole_lines, part_lines, replace_lines)
+    if res:
+        return res
+
+    # drop leading empty line, LLMs sometimes add them spuriously
+    if len(part_lines) > 2 and not part_lines[0].strip():
+        skip_blank_line_part_lines = part_lines[1:]
+        res = perfect_or_whitespace(whole_lines, skip_blank_line_part_lines, replace_lines)
+        if res:
+            return res
+
+    # Try to handle when it elides code with ...
+    try:
+        res = try_dotdotdots(whole, part, replace)
+        if res:
+            return res
+    except ValueError as e:
+        logger.debug(f"Dotdotdots matching failed: {str(e)}")
+        # continue with other matching strategies
+
+    # Try fuzzy matching
+    res = replace_closest_edit_distance(whole_lines, part, part_lines, replace_lines)
+    if res:
+        return res
+    
+    return None
+
+
 def debug_string_comparison(
     s1: str, s2: str, label1: str = "string1", label2: str = "string2"
 ) -> bool:
