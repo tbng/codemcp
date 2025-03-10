@@ -106,6 +106,11 @@ async def deskaid(
     ## LS directory_path
 
     Lists files and directories in a given path. The path parameter must be an absolute path, not a relative path. You should generally prefer the Glob and Grep tools, if you know which directories to search.
+    
+    ## InitProject directory_path
+    
+    Initializes a project by reading the .deskaidrules TOML file from the specified directory.
+    Returns a system prompt combined with the global_prompt from the .deskaidrules file.
 
     Args:
         ctx: The MCP context
