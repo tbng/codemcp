@@ -233,6 +233,12 @@ def commit_changes(file_path: str, description: str) -> Tuple[bool, str]:
             stderr=subprocess.PIPE,
             text=True,
         )
+        
+        # Log command output
+        if commit_result.stdout:
+            logging.debug("git commit output: %s", commit_result.stdout.strip())
+        if commit_result.stderr:
+            logging.debug("git commit stderr: %s", commit_result.stderr.strip())
 
         if commit_result.returncode != 0:
             return False, f"Failed to commit changes: {commit_result.stderr}"
