@@ -155,20 +155,13 @@ def commit_changes(file_path: str, description: str) -> tuple[bool, str]:
             return False, f"File does not exist: {file_path}"
 
         # Try to add the file to git
-        add_result = subprocess.run(
+        add_result = run_command(
             ["git", "add", file_path],
             cwd=directory,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            capture_output=True,
             text=True,
             check=False,
         )
-
-        # Log command output
-        if add_result.stdout:
-            logging.debug("git add file output: %s", add_result.stdout.strip())
-        if add_result.stderr:
-            logging.debug("git add file stderr: %s", add_result.stderr.strip())
 
         if add_result.returncode != 0:
             return False, f"Failed to add file to Git: {add_result.stderr}"
