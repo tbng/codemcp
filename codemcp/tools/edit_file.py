@@ -73,7 +73,7 @@ def find_similar_file(file_path: str) -> Optional[str]:
 def apply_edit(
     file_path: str, old_string: str, new_string: str
 ) -> Tuple[List[Dict], str]:
-    """Apply an edit to a file.
+    """Apply an edit to a file using robust matching strategies.
 
     Args:
         file_path: The path to the file
@@ -83,61 +83,66 @@ def apply_edit(
     Returns:
         A tuple of (patch, updated_file)
     """
-    # Simple patch implementation - in a real app, would use a proper diff library
     if os.path.exists(file_path):
         with open(file_path, "r", encoding=detect_file_encoding(file_path)) as f:
             content = f.read()
     else:
         content = ""
 
-    # Try direct replacement first
+    # For creating a new file, just return the new content
+    if not old_string.strip():
+        updated_file = new_string
+        old_lines = []
+        new_lines = new_string.split("\n")
+        
+        # Create a simple patch structure
+        patch = [{
+            "oldStart": 1,
+            "oldLines": 0,
+            "newStart": 1,
+            "newLines": len(new_lines),
+            "lines": [f"+{line}" for line in new_lines],
+        }]
+        
+        return patch, updated_file
+
+    # First try direct replacement (most common case and efficient)
     if old_string in content:
         updated_file = content.replace(old_string, new_string, 1)
     else:
-        # Fallback for blank lines with whitespace
-        content_lines = content.split("\n")
-        old_string_lines = old_string.split("\n")
-        matched_indices = []
-
-        # Find the start of the match in the normalized content
-        content_normalized = "\n".join([line.rstrip() if line.strip() == "" else line for line in content_lines])
-        old_string_normalized = "\n".join([line.rstrip() if line.strip() == "" else line for line in old_string_lines])
-
-        match_start = content_normalized.find(old_string_normalized)
-        if match_start >= 0:
-            # Find the line number where the match starts
-            line_start = content_normalized[:match_start].count("\n")
-
-            # Replace the matching block with the new content
-            new_content_lines = content_lines.copy()
-            new_content_lines[line_start:line_start + len(old_string_lines)] = new_string.split("\n")
-
-            updated_file = "\n".join(new_content_lines)
-        else:
-            # This should not happen if edit_file_content already checked
+        # Use the more robust replacement strategies
+        logger.debug("Direct match not found, trying advanced matching techniques...")
+        updated_file = replace_most_similar_chunk(content, old_string, new_string)
+        
+        # If we still couldn't match, return the original content
+        if not updated_file:
+            logger.debug("All matching techniques failed. No changes made.")
             updated_file = content
 
-    # Create a simple patch structure
-    # This is a simplified version of what the TS code does with the diff library
+    # Create a useful diff/patch structure
     patch = []
-    if old_string != new_string:
+    if content != updated_file:  # Only create a patch if there were actual changes
         old_lines = old_string.split("\n")
         new_lines = new_string.split("\n")
 
-        # Find the line number where the change occurs
-        before_text = content.split(old_string)[0]
-        line_num = before_text.count("\n")
+        # Try to find the line number where the change occurs
+        try:
+            # This is a simplification; for exact matches this works,
+            # but for fuzzy matches we would need a more sophisticated approach
+            before_text = content.split(old_string)[0]
+            line_num = before_text.count("\n")
+        except Exception:
+            # Fallback: just say it's at the start of the file
+            line_num = 0
 
-        patch.append(
-            {
-                "oldStart": line_num + 1,
-                "oldLines": len(old_lines),
-                "newStart": line_num + 1,
-                "newLines": len(new_lines),
-                "lines": [f"-{line}" for line in old_lines]
-                + [f"+{line}" for line in new_lines],
-            }
-        )
+        patch.append({
+            "oldStart": line_num + 1,
+            "oldLines": len(old_lines),
+            "newStart": line_num + 1,
+            "newLines": len(new_lines),
+            "lines": [f"-{line}" for line in old_lines] + 
+                     [f"+{line}" for line in new_lines],
+        })
 
     return patch, updated_file
 
