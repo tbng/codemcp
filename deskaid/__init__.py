@@ -216,6 +216,9 @@ async def deskaid(
         if pattern is None:
             return "Error: pattern is required for Grep command"
         
+        if path is None:
+            path = file_path
+            
         try:
             result = grep_files(pattern, path, include)
             return result.get("resultForAssistant", 
