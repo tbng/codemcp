@@ -77,20 +77,13 @@ def commit_pending_changes(file_path: str) -> tuple[bool, str]:
             )
 
         # Check if working directory has uncommitted changes
-        status_result = subprocess.run(
+        status_result = run_command(
             ["git", "status", "--porcelain"],
             cwd=directory,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            capture_output=True,
             check=True,
             text=True,
         )
-
-        # Log command output
-        if status_result.stdout:
-            logging.debug("git status output: %s", status_result.stdout.strip())
-        if status_result.stderr:
-            logging.debug("git status stderr: %s", status_result.stderr.strip())
 
         # If there are uncommitted changes (besides our target file), commit them first
         if status_result.stdout and file_is_tracked:
