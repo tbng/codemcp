@@ -898,9 +898,10 @@ no changes added to commit (use "git add" and/or "git commit -a")
                 
                 # Normalize the result
                 normalized_result = self.normalize_path(result)
-                
+                result_text = self.extract_text_from_result(normalized_result)
+
                 # Check if the operation was rejected (which it should be for security)
-                rejected = "Error" in normalized_result
+                rejected = "Error" in result_text
                 
                 # Verify the file wasn't created outside the repo boundary
                 file_created = os.path.exists(outside_file_path)
