@@ -274,22 +274,18 @@ class MCPEndToEndTest(TestCase, unittest.IsolatedAsyncioTestCase):
                 file_content = f.read()
             self.assertEqual(file_content, content)
             
-            # Verify git state (file should be untracked)
+            # Verify git state (working tree should be clean after automatic commit)
             status = subprocess.check_output(
-                ["git", "status"], 
-                cwd=self.temp_dir.name, 
+                ["git", "status"],
+                cwd=self.temp_dir.name,
                 env=self.env
             ).decode()
-            
-            # Use expect test to verify git status - should show as untracked
+
+            # Use expect test to verify git status - should show clean working tree
             self.assertExpectedInline(
                 status,
                 """On branch main
-Untracked files:
-  (use "git add <file>..." to include in what will be committed)
-	new_file.txt
-
-nothing added to commit but untracked files present (use "git add" to track)
+nothing to commit, working tree clean
 """
             )
     
