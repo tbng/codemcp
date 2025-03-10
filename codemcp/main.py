@@ -1,15 +1,10 @@
 #!/usr/bin/env python3
 
-import base64
 import logging
 import os
-import sys
-from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
 
-from mcp.server.fastmcp import Context, FastMCP, Image
+from mcp.server.fastmcp import Context, FastMCP
 
-from .access import check_edit_permission, get_git_base_dir
 from .tools.edit_file import edit_file_content
 from .tools.grep import grep_files
 from .tools.init_project import init_project
