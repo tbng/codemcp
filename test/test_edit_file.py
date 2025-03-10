@@ -256,8 +256,8 @@ class TestEditFile(TestCase):
             else:
                 # Skip the test if fuzzy matching isn't working as expected
                 self.skipTest("Fuzzy matching capability needs further tuning")
-        except:
-            self.skipTest("Fuzzy matching capability encountered an error")
+        except Exception as e:
+            self.skipTest(f"Fuzzy matching capability encountered an error: {e}")
 
     def test_write_text_content_lf(self):
         """Test writing text content with LF line endings"""
