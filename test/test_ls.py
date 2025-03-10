@@ -181,6 +181,12 @@ class TestLS(TestCase):
             if node.name == "subdir":
                 subdir_node = node
                 break
+                
+        # If subdir node wasn't found in the root level, it might be because
+        # we're checking the wrong node name - print all node names to debug
+        if subdir_node is None:
+            node_names = [node.name for node in tree_nodes]
+            print(f"DEBUG: Available node names at root level: {node_names}")
         
         # Check that the subdir node exists and has the correct type
         self.assertIsNotNone(subdir_node)
