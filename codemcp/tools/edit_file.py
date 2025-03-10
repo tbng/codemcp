@@ -19,6 +19,13 @@ from .file_utils import (
 # Set up logger
 logger = logging.getLogger(__name__)
 
+__all__ = [
+    "edit_file_content",
+    "detect_file_encoding",
+    "detect_line_endings",
+    "find_similar_file",
+]
+
 
 def detect_file_encoding(file_path: str) -> str:
     """Detect the encoding of a file.
