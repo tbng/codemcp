@@ -106,3 +106,4 @@ Edits a file by replacing old_string with new_string.
   than the limit)
 - More faithfully copy claude code's line numbering algorithm
 - Stop using catch all exceptions
+- Mocks - SUSPICOUS
