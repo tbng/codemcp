@@ -14,7 +14,7 @@ An MCP server for file operations that provides tools for reading, writing, and 
 ## Installation
 
 ```bash
-pip install "mcp[cli]"
+uv pip install codemcp
 ```
 
 ## Usage
