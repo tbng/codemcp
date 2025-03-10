@@ -772,6 +772,32 @@ nothing to commit, working tree clean
 
         # Path to a new file in the untracked directory
         new_file_path = os.path.join(untracked_dir, "new_file.txt")
+        
+        # Debug: Print git repository detection
+        print(f"\n\nTesting directory structure:")
+        print(f"Temp dir: {self.temp_dir.name}")
+        print(f"Untracked dir: {untracked_dir}")
+        print(f"New file path: {new_file_path}")
+        
+        # Check if git recognizes this directory
+        git_toplevel = subprocess.run(
+            ["git", "rev-parse", "--show-toplevel"],
+            cwd=untracked_dir,
+            env=self.env,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE
+        )
+        print(f"Git toplevel output: {git_toplevel.stdout.decode().strip()}")
+        print(f"Git toplevel stderr: {git_toplevel.stderr.decode().strip()}")
+        
+        # Make sure codemcp.toml exists in the repository root
+        config_path = os.path.join(self.temp_dir.name, "codemcp.toml")
+        print(f"Config path: {config_path}")
+        print(f"Config exists: {os.path.exists(config_path)}")
+        
+        if os.path.exists(config_path):
+            with open(config_path, "r") as f:
+                print(f"Config content: {f.read()}")
 
         async with self.create_client_session() as session:
             # Try to create a new file using EditFile with empty old_string
@@ -786,6 +812,9 @@ nothing to commit, working tree clean
             # Normalize the result
             normalized_result = self.normalize_path(result)
             result_text = self.extract_text_from_result(normalized_result)
+            
+            # Print the raw result to debug
+            print(f"\nResult from server: {result_text}")
 
             # Since we've changed the behavior, we now expect this to succeed
             self.assertIn("Successfully created", result_text)
