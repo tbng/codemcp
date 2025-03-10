@@ -72,6 +72,10 @@ def commit_pending_changes(file_path: str) -> Tuple[bool, str]:
             logging.debug("git ls-files stderr: %s", file_status.stderr.strip())
 
         file_is_tracked = file_status.returncode == 0
+        
+        # If the file is not tracked, return an error
+        if not file_is_tracked:
+            return False, "File is not tracked by git"
 
         # Check if working directory has uncommitted changes
         status_result = subprocess.run(
