@@ -15,8 +15,8 @@ from codemcp.tools.edit_file import (
     edit_file_content,
     find_similar_file,
     replace_most_similar_chunk,
-    write_text_content,
 )
+from codemcp.tools.file_utils import write_text_content
 
 
 class TestEditFile(TestCase):
