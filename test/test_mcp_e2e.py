@@ -47,19 +47,9 @@ class MCPEndToEndTest(TestCase, unittest.IsolatedAsyncioTestCase):
         # Initialize a git repository in the temp directory
         self.init_git_repo()
 
-    # Keep the old setUp method for backward compatibility
-    def setUp(self):
-        # This will allow the test to run with both unittest and pytest
-        pass
-
     async def asyncTearDown(self):
         """Async teardown to clean up after the test."""
         self.temp_dir.cleanup()
-
-    # Keep the old tearDown method for backward compatibility
-    def tearDown(self):
-        # This will be called by regular unittest
-        pass
 
     def init_git_repo(self):
         """Initialize a git repository for testing."""

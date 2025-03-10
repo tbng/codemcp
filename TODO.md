@@ -1,37 +1,38 @@
 BIGGEST PROBLEMS
-- Increasing the success rate of code patching
-  - Logging so I can repro these problems
 - Branchy git structure for ease of review
-- Fix the asyncio testing
+  - This is less pressing now with the 'git diff origin/main' trick
+- Audit the tests to make sure they actually do the right thing
 
+CODE QUAL
+- Whenever we do a subprocess call, we MUST log the stdout/stderr
+  - Add a wrapper here to make sure this consistently happens
+- Setup types
+- General logging to repro problems
+- Stop using catch all exceptions
 
+TOOLS: see README
 
-- Prevent edits to files which are not under version control
-- Add files to context
-- Set a base directory (so absolute paths aren't always required)
-- Import Aider system prompts
-- Load webpages
-- Run tests/lints/typecheck
+FEATURES
+- Diff review mode
 
-- LS - only use git ls-files
-- An "init" command that will feed the project prompt (per project config)
-- Add a system prompt command that will load instructions at the start of
-  convo
-
+HARD TO FIX
 - Deal with output length limit from Claude Desktop (cannot do an edit longer
   than the limit)
-- More faithfully copy claude code's line numbering algorithm
-- Stop using catch all exceptions
-- Mocks - SUSPICOUS
-- Use the Anthropic export data to do some token counting
 
+SHARPEN THE SAW
+- Use the Anthropic export data to do some token counting / analysis
+
+UNCLEAR PAYOFF
+- More faithfully copy claude code's line numbering algorithm
+
+LLM AFFORDANCE
 - Support this style of grep
 {
   `command`: `Grep`,
   `pattern`: `self\\.assertIn.*normalized_result`,
   `path`: `/Users/ezyang/Dev/codemcp/test/test_mcp_e2e.py`
 }
-
-hypothetical tool ideas
+- Figure out how to stop LLM from creating lots of random shell scripts to try
+  to execute commands
 - Regex search replace for refactor-y stuff (need to prompt this well, cuz LLM
   needs to review changes)

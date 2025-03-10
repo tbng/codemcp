@@ -31,6 +31,8 @@ Major missing functionality that I plan to implement ASAP:
 
 - Scrape webpage and add to context
 
+- Explicitly add file to context
+
 - A few more of Claude Code's tools: glob, memory, notebook
 
 Things I NEVER intend to implement, for philosophical reasons:
@@ -38,9 +40,9 @@ Things I NEVER intend to implement, for philosophical reasons:
 - Bash tool (instead, I want you to explicitly whitelist commands that are OK
   for the agent to run)
 
-- Recursive LLM calls (I'd like to support this, but I think there's no way to
-  do this without doing API calls, and I'm not that interested in adding API
-  support)
+I might write an API-driven version of this tool for when you hit the rate
+limit, but it might be better to just get someone to clone an open source
+version of Claude Desktop and then iterate off of that.
 
 This tool was bootstrapped into developing itself in three hours.  I'm still
 working out Sonnet 3.7's quirks for Python projects, so apologies for any
@@ -111,10 +113,3 @@ This prompt will be loaded when you initialize the project in chats.
 Logs are written to `~/.codemcp/codemcp.log`. The log level can be set in the configuration file or overridden with environment variables:
 
 - Set the log level in config: `verbosity = "DEBUG"` in `~/.codemcprc`
-
-## Known problems
-
-- Thinking mode doesn't work too well
-- Sonnet 3.7 will try very hard to execute commands, which doesn't work
-- You can't do an edit that is larger than Claude Desktop's output size limit.
-  If you do hit a limit try "Continue" first.
