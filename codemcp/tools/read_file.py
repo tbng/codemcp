@@ -9,6 +9,10 @@ from ..common import (
     normalize_file_path,
 )
 
+__all__ = [
+    "read_file_content",
+]
+
 
 def read_file_content(
     file_path: str,
