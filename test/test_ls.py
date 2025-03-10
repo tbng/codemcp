@@ -52,8 +52,8 @@ class TestLS(TestCase):
         with open(self.hidden_file_path, "w") as f:
             f.write("This is a hidden file\n")
             
-        # Initialize git repository in the temporary directory
-        self._init_git_repo()
+        # Setup mock patches
+        self.setup_mocks()
         
     def _init_git_repo(self):
         """Initialize a git repository in the temporary directory and create a codemcp.toml file."""
