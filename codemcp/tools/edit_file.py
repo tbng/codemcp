@@ -13,8 +13,12 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Union
 
 from ..common import get_edit_snippet
-from ..git import commit_changes, commit_pending_changes
-from ..access import check_edit_permission
+from ..git import commit_changes
+from .file_utils import (
+    check_file_path_and_permissions,
+    check_git_tracking_for_existing_file,
+    write_text_content
+)
 
 # Set up logger
 logger = logging.getLogger(__name__)
