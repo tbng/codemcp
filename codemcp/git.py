@@ -182,18 +182,13 @@ def commit_changes(file_path: str, description: str) -> tuple[bool, str]:
         if has_commits:
             # Check if there are any changes to commit after git add
             # Using git diff-index HEAD to check for staged changes against HEAD
-            diff_result = subprocess.run(
+            diff_result = run_command(
                 ["git", "diff-index", "--cached", "--quiet", "HEAD", "--", file_path],
                 cwd=directory,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
+                capture_output=True,
                 text=True,
                 check=False,
             )
-
-            # Log command output (only stderr since stdout would be empty with --quiet flag)
-            if diff_result.stderr:
-                logging.debug("git diff-index stderr: %s", diff_result.stderr.strip())
 
             # If diff-index returns 0, there are no changes to commit for this file
             if diff_result.returncode == 0:
