@@ -168,8 +168,9 @@ async def codemcp(
             "pattern": pattern,
             "path": path,
             "include": include,
-            # Include old_str as a parameter
+            # Include backward compatibility parameters 
             "old_str": old_str,
+            "new_str": new_str,
         }.items()
         if value is not None
     }
