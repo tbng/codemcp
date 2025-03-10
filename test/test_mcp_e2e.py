@@ -853,23 +853,25 @@ no changes added to commit (use "git add" and/or "git commit -a")
 if __name__ == "__main__":
     if sys.platform == "win32":
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
-    
+
     # Create an event loop for running async tests
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
-    
+
     # Check if a specific test was requested
     if len(sys.argv) > 1:
         test_name = sys.argv.pop(1)
         print(f"Running test: {test_name}")
-        
+
         # Find and run the specified test method
         test_instance = MCPEndToEndTest(test_name)
         test_instance.setUp()
         try:
             # Get the test method and run it
             test_method = getattr(test_instance, test_name)
-            loop.run_until_complete(test_method())
+            result = loop.run_until_complete(test_method())
+            if result is not None:
+                print(f"Warning: Test {test_name} returned a non-None value: {result}")
             print(f"Test {test_name} completed successfully")
         except Exception as e:
             print(f"Test {test_name} failed: {e}")
