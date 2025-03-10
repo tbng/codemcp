@@ -211,6 +211,11 @@ def edit_file_content(
     description: str = "",
 ) -> str:
     """Edit a file by replacing old_string with new_string.
+    
+    If the old_string is not found in the file, attempts a fallback mechanism
+    where trailing whitespace is stripped from each line before matching.
+    If a match is found after stripping trailing whitespace, the original
+    text from the file (with its original whitespace) will be used for replacement.
 
     Args:
         file_path: The absolute path to the file to edit
