@@ -139,13 +139,35 @@ def commit_changes(file_path: str, description: str) -> Tuple[bool, str]:
 
             if changed_files:
                 # Commit other changes first with a default message
-                subprocess.run(["git", "add", "."], cwd=directory, check=True)
+                add_result = subprocess.run(
+                    ["git", "add", "."], 
+                    cwd=directory, 
+                    check=True,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    text=True
+                )
+                
+                # Log command output
+                if add_result.stdout:
+                    logging.debug("git add output: %s", add_result.stdout.strip())
+                if add_result.stderr:
+                    logging.debug("git add stderr: %s", add_result.stderr.strip())
 
-                subprocess.run(
+                commit_snapshot_result = subprocess.run(
                     ["git", "commit", "-m", "Snapshot before deskaid change"],
                     cwd=directory,
                     check=True,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    text=True
                 )
+                
+                # Log command output
+                if commit_snapshot_result.stdout:
+                    logging.debug("git commit snapshot output: %s", commit_snapshot_result.stdout.strip())
+                if commit_snapshot_result.stderr:
+                    logging.debug("git commit snapshot stderr: %s", commit_snapshot_result.stderr.strip())
 
         # Add the specified file
         add_result = subprocess.run(
