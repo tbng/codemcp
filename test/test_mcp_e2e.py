@@ -419,10 +419,50 @@ no changes added to commit (use "git add" and/or "git commit -a")
                 is_tracked = bool(ls_files_after)
                 print(f"Is file tracked after edit? {is_tracked}")
                 
-                # POTENTIAL ISSUE: If the file remains untracked after editing succeeds,
-                # we have lost the original content forever without git history
-                self.assertTrue(is_tracked, 
-                    "SECURITY VULNERABILITY: File was edited but not added to git")
+                # CRITICAL SECURITY CHECK: Can we recover the original content from git history?
+                # If we can't, then we've lost the ability to revert to the original state
+                print("\nAttempting to recover original file content from git history...")
+                
+                # Get commit history for the file
+                git_log = subprocess.run(
+                    ["git", "log", "--pretty=format:%H", untracked_file_path],
+                    cwd=self.temp_dir.name,
+                    env=self.env,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE
+                ).stdout.decode().strip().split('\n')
+                
+                print(f"Commit history for {untracked_file_path}: {git_log}")
+                
+                if git_log:
+                    # Get the first/earliest commit for this file
+                    first_commit = git_log[-1] if git_log else None
+                    print(f"First commit that includes this file: {first_commit}")
+                    
+                    if first_commit:
+                        # Try to extract the original content
+                        original_content_from_git = subprocess.run(
+                            ["git", "show", f"{first_commit}:{os.path.basename(untracked_file_path)}"],
+                            cwd=self.temp_dir.name,
+                            env=self.env,
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE
+                        ).stdout.decode().strip()
+                        
+                        print(f"Content from first commit: '{original_content_from_git}'")
+                        
+                        # POTENTIAL SECURITY ISSUE:
+                        # If we can't recover the original content, or if the first commit already has 
+                        # the modified content, then we've lost the original untracked content forever
+                        original_content_recoverable = (original_content_from_git == original_content)
+                        print(f"Original content recoverable from git? {original_content_recoverable}")
+                        
+                        self.assertEqual(original_content_from_git, original_content,
+                            "SECURITY VULNERABILITY: Original content of untracked file was lost during edit")
+                    else:
+                        self.fail("SECURITY VULNERABILITY: File is tracked but has no commits in git history")
+                else:
+                    self.fail("SECURITY VULNERABILITY: No commit history found for the file after editing")
 
     async def test_write_file_outside_tracked_paths(self):
         """Test that codemcp properly handles writing to paths outside tracked paths."""
