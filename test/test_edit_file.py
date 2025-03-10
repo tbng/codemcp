@@ -238,7 +238,11 @@ class TestEditFile(TestCase):
         old_string = "This is a test file\nWith trailing whitespace\nAt the end of lines"
         new_string = "This has been edited\nAnd the whitespace\nShould be preserved"
         
-        result = edit_file_content(whitespace_file_path, old_string, new_string)
+        # Use read_file_timestamps to avoid "file has not been read" error
+        timestamps = {whitespace_file_path: os.stat(whitespace_file_path).st_mtime + 1}
+        
+        # Run the edit operation
+        result = edit_file_content(whitespace_file_path, old_string, new_string, timestamps)
         
         # Check that the edit was successful
         self.assertIn(f"Successfully edited {whitespace_file_path}", result)
