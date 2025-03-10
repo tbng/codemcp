@@ -91,6 +91,12 @@ def commit_changes(file_path: str, description: str) -> Tuple[bool, str]:
             stderr=subprocess.PIPE,
             text=True,
         )
+        
+        # Log command output
+        if file_status.stdout:
+            logging.debug("git ls-files output: %s", file_status.stdout.strip())
+        if file_status.stderr:
+            logging.debug("git ls-files stderr: %s", file_status.stderr.strip())
 
         file_is_tracked = file_status.returncode == 0
 
@@ -103,6 +109,12 @@ def commit_changes(file_path: str, description: str) -> Tuple[bool, str]:
             check=True,
             text=True,
         )
+        
+        # Log command output
+        if status_result.stdout:
+            logging.debug("git status output: %s", status_result.stdout.strip())
+        if status_result.stderr:
+            logging.debug("git status stderr: %s", status_result.stderr.strip())
 
         # If there are uncommitted changes (besides our target file), commit them first
         if status_result.stdout and file_is_tracked:
