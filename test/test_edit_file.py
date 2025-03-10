@@ -492,7 +492,7 @@ class TestEditFile(TestCase):
             f.write("This is an untracked file")
             
         # Override the commit_pending_changes mock to simulate an untracked file
-        with patch('codemcp.tools.edit_file.commit_pending_changes') as mock_pending:
+        with patch('codemcp.tools.file_utils.commit_pending_changes') as mock_pending:
             # Simulate the subprocess.run result for an untracked file
             mock_pending.return_value = (False, "File is not tracked by git. Please add the file to git tracking first using 'git add <file>'")
             
