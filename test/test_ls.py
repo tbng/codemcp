@@ -4,7 +4,7 @@ import os
 import re
 import tempfile
 import unittest
-import subprocess
+from unittest.mock import patch, MagicMock
 
 from expecttest import TestCase
 
