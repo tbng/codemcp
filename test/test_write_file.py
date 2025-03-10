@@ -31,6 +31,9 @@ class TestWriteFile(TestCase):
         self.crlf_file_path = os.path.join(self.temp_dir.name, "crlf_file.txt")
         with open(self.crlf_file_path, "wb") as f:
             f.write(b"This is a file\r\nWith CRLF line endings\r\n")
+            
+        # Initialize git repository in the temporary directory
+        self._init_git_repo()
 
     def test_detect_file_encoding_utf8(self):
         """Test detecting UTF-8 encoding"""
