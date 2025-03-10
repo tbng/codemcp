@@ -11,6 +11,7 @@ from typing import Dict, List, Optional, Tuple
 
 from ..common import get_edit_snippet
 from ..git import commit_changes, commit_pending_changes
+from ..access import check_edit_permission
 
 # Set up logger
 logger = logging.getLogger(__name__)
