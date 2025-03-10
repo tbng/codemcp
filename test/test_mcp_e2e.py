@@ -160,11 +160,7 @@ class MCPEndToEndTest(TestCase, unittest.IsolatedAsyncioTestCase):
                             exc = exc.exceptions[0]
                         raise exc from None
                     else:
-                        # Log that we have multiple exceptions
-                        print(f"WARNING: Multiple exceptions occurred: {len(eg.exceptions)}")
-                        for i, exc in enumerate(eg.exceptions):
-                            print(f"Exception {i+1}: {exc}")
-                        # Re-raise the original exception group
+                        # Re-raise the original exception group with multiple exceptions
                         raise
         except ExceptionGroup as eg:
             # Same pattern for the outer exception handler
@@ -174,9 +170,7 @@ class MCPEndToEndTest(TestCase, unittest.IsolatedAsyncioTestCase):
                     exc = exc.exceptions[0]
                 raise exc from None
             else:
-                print(f"WARNING: Multiple exceptions occurred: {len(eg.exceptions)}")
-                for i, exc in enumerate(eg.exceptions):
-                    print(f"Exception {i+1}: {exc}")
+                # Re-raise the original exception group with multiple exceptions
                 raise
 
     async def test_list_tools(self):
