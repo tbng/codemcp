@@ -245,9 +245,11 @@ class TestEditFile(TestCase):
 
         write_text_content(test_path, content, encoding="utf-8", line_endings="LF")
 
+        # Read the binary content to check actual line endings
         with open(test_path, "rb") as f:
             written_content = f.read()
 
+        # Should contain LF (b'\n') but not CRLF (b'\r\n')
         self.assertIn(b"\n", written_content)
         self.assertNotIn(b"\r\n", written_content)
 
@@ -258,9 +260,11 @@ class TestEditFile(TestCase):
 
         write_text_content(test_path, content, encoding="utf-8", line_endings="CRLF")
 
+        # Read the binary content to check actual line endings
         with open(test_path, "rb") as f:
             written_content = f.read()
 
+        # Should contain CRLF (b'\r\n') and not lone LF (b'\n\n')
         self.assertIn(b"\r\n", written_content)
         self.assertNotIn(b"\n\n", written_content)
 
