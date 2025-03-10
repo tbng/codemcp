@@ -852,6 +852,31 @@ nothing to commit, working tree clean
             
         self.assertFalse(os.path.exists(new_file_path), "Test file should not exist initially")
         
+        # Debug: Print git repository detection
+        print(f"\n\nTesting WriteFile for new file:")
+        print(f"Temp dir: {self.temp_dir.name}")
+        print(f"New file path: {new_file_path}")
+        
+        # Check if git recognizes this directory
+        git_toplevel = subprocess.run(
+            ["git", "rev-parse", "--show-toplevel"],
+            cwd=os.path.dirname(new_file_path),
+            env=self.env,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE
+        )
+        print(f"Git toplevel output: {git_toplevel.stdout.decode().strip()}")
+        print(f"Git toplevel stderr: {git_toplevel.stderr.decode().strip()}")
+        
+        # Make sure codemcp.toml exists in the repository root
+        config_path = os.path.join(self.temp_dir.name, "codemcp.toml")
+        print(f"Config path: {config_path}")
+        print(f"Config exists: {os.path.exists(config_path)}")
+        
+        if os.path.exists(config_path):
+            with open(config_path, "r") as f:
+                print(f"Config content: {f.read()}")
+        
         async with self.create_client_session() as session:
             # Create a new file
             result = await session.call_tool("codemcp", {
@@ -864,6 +889,9 @@ nothing to commit, working tree clean
             # Normalize the result
             normalized_result = self.normalize_path(result)
             result_text = self.extract_text_from_result(normalized_result)
+            
+            # Print the raw result to debug
+            print(f"\nResult from server: {result_text}")
             
             # Check that the operation succeeded
             self.assertIn("Successfully wrote to", result_text)
