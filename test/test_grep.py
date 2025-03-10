@@ -13,6 +13,13 @@ from deskaid.tools.grep import git_grep, grep_files
 
 
 class TestGrepTool(unittest.TestCase):
+    def setUp(self):
+        # Set testing environment variable
+        self.env_patcher = mock.patch.dict(os.environ, {"DESKAID_TESTING": "1"})
+        self.env_patcher.start()
+        
+    def tearDown(self):
+        self.env_patcher.stop()
     @mock.patch("deskaid.tools.grep.is_git_repository", return_value=True)
     @mock.patch("subprocess.run")
     def test_git_grep_basic(self, mock_run, mock_is_git_repo):
