@@ -75,7 +75,7 @@ def commit_pending_changes(file_path: str) -> Tuple[bool, str]:
         
         # If the file is not tracked, return an error
         if not file_is_tracked:
-            return False, "File is not tracked by git"
+            return False, "File is not tracked by git. Please add the file to git tracking first using 'git add <file>'"
 
         # Check if working directory has uncommitted changes
         status_result = subprocess.run(
