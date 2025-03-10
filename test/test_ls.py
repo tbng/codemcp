@@ -217,8 +217,8 @@ class TestLS(TestCase):
         # Create a list of nodes for the root level
         root_list = [root_node]
 
-        # Print the tree
-        result = print_tree(root_list)
+        # Print the tree with a cwd parameter
+        result = print_tree(root_list, cwd="/tmp/test")
 
         # Check that the output has the expected content
         self.assertIn("root", result)
@@ -226,6 +226,8 @@ class TestLS(TestCase):
         self.assertIn("file2.txt", result)
         self.assertIn("subdir", result)
         self.assertIn("subfile.txt", result)
+        # Also check that cwd was included
+        self.assertIn("/tmp/test", result)
 
 
 if __name__ == "__main__":
