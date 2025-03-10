@@ -50,9 +50,9 @@ class InitProjectTestCase(unittest.TestCase):
             f.write('global_prompt = "This is a custom global prompt."\n')
 
         result = init_project(self.dir_path)
-        # Instead of exact matching, check that it contains both the essential instructions
-        # and the custom global prompt
-        self.assertIn("Do NOT attempt to run tests, let the user run them.", result)
+        # Check for a stable part of the system prompt and the custom global prompt
+        self.assertIn("# Tests", result)
+        self.assertIn("We do NOT support running tests", result)
         self.assertIn("This is a custom global prompt.", result)
 
     def test_init_project_invalid_directory(self):
