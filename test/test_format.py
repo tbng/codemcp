@@ -71,7 +71,7 @@ class TestFormatTool(unittest.TestCase):
             cwd=self.project_dir,
             check=True,
             capture_output=True,
-            text=True
+            text=True,
         )
 
     @patch("subprocess.run")

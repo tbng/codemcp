@@ -86,22 +86,24 @@ class InitProjectTestCase(unittest.TestCase):
         # Create a codemcp.toml file without format command
         rules_file_path = os.path.join(self.dir_path, "codemcp.toml")
         with open(rules_file_path, "w") as f:
-            f.write('global_prompt = "This is a global prompt without formatter config."\n')
+            f.write(
+                'global_prompt = "This is a global prompt without formatter config."\n'
+            )
 
         result = init_project(self.dir_path)
         self.assertIn("This is a global prompt without formatter config.", result)
         self.assertNotIn("run code formatting using the Format tool", result)
-        
+
     def test_format_exposed_when_configured(self):
         """Test that the format command is exposed in the system prompt when a formatter is configured."""
         # Create a codemcp.toml file with format command
         rules_file_path = os.path.join(self.dir_path, "codemcp.toml")
         with open(rules_file_path, "w") as f:
-            f.write('''
+            f.write("""
 global_prompt = "This is a global prompt with formatter config."
 [commands]
 format = ["./run_format.sh"]
-''')
+""")
 
         result = init_project(self.dir_path)
         self.assertIn("This is a global prompt with formatter config.", result)

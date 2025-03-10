@@ -54,18 +54,18 @@ def format_code(project_dir: str) -> str:
     """
     try:
         full_dir_path = normalize_file_path(project_dir)
-        
+
         if not os.path.exists(full_dir_path):
             return f"Error: Directory does not exist: {project_dir}"
-        
+
         if not os.path.isdir(full_dir_path):
             return f"Error: Path is not a directory: {project_dir}"
-        
+
         format_command = _get_format_command(full_dir_path)
-        
+
         if not format_command:
             return "Error: No format command configured in codemcp.toml"
-        
+
         # Run the format command
         try:
             result = subprocess.run(
@@ -73,20 +73,22 @@ def format_code(project_dir: str) -> str:
                 cwd=full_dir_path,
                 check=True,
                 capture_output=True,
-                text=True
+                text=True,
             )
-            
+
             # Log the command output
             logging.info(f"Format command output: {result.stdout}")
             if result.stderr:
                 logging.warning(f"Format command stderr: {result.stderr}")
-            
+
             return f"Code formatting successful:\n{result.stdout}"
         except subprocess.CalledProcessError as e:
-            error_msg = f"Format command failed with exit code {e.returncode}:\n{e.stderr}"
+            error_msg = (
+                f"Format command failed with exit code {e.returncode}:\n{e.stderr}"
+            )
             logging.error(error_msg)
             return f"Error: {error_msg}"
-    
+
     except Exception as e:
         error_msg = f"Error formatting code: {e}"
         logging.error(error_msg)

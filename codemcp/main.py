@@ -123,9 +123,9 @@ async def codemcp(
 
     Initializes a project by reading the .codemcprules TOML file from the specified directory.
     Returns instructions which you should IMMEDIATELY follow before continuing.
-    
+
     ## Format directory_path
-    
+
     Formats code according to the format command specified in the codemcp.toml file.
     Use this to ensure code follows the project's style guidelines.
 
@@ -231,11 +231,11 @@ async def codemcp(
             return "Error: file_path is required for InitProject command"
 
         return init_project(file_path)
-    
+
     if command == "Format":
         if file_path is None:
             return "Error: file_path is required for Format command"
-        
+
         return format_code(file_path)
 
     if command == "Grep":
