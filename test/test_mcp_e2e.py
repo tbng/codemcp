@@ -82,8 +82,13 @@ class MCPEndToEndTest(TestCase):
     def normalize_path(self, text):
         """Normalize temporary directory paths in output text."""
         if self.temp_dir and self.temp_dir.name:
+            # Handle CallToolResult objects by converting to string first
+            if hasattr(text, 'content'):
+                # This is a CallToolResult object, extract the content
+                text = text.content
             # Replace the actual temp dir path with a fixed placeholder
-            return text.replace(self.temp_dir.name, "/tmp/test_dir")
+            if isinstance(text, str):
+                return text.replace(self.temp_dir.name, "/tmp/test_dir")
         return text
 
     @asynccontextmanager
