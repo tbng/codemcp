@@ -699,8 +699,13 @@ def edit_file_content(
                 matches = content.count(old_string)
                 return f"Error: Found {matches} matches of the string to replace. For safety, this tool only supports replacing exactly one occurrence at a time. Add more lines of context to your edit and try again."
 
-        # Apply the edit
+        # Apply the edit with advanced matching if needed
         patch, updated_file = apply_edit(full_file_path, old_string, new_string)
+        
+        # If no changes were made (which should never happen at this point), 
+        # log a warning but continue
+        if content == updated_file and old_string.strip():
+            logger.warning("No changes were made despite passing all checks. This is unexpected.")
 
         # Create directory if it doesn't exist
         directory = os.path.dirname(full_file_path)
