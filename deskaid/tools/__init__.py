@@ -1,4 +1,5 @@
 from .edit_file import edit_file_content
+from .grep import grep_files
 from .init_project import init_project
 from .ls import ls_directory
 from .read_file import read_file_content
@@ -10,4 +11,5 @@ __all__ = [
     "edit_file_content",
     "ls_directory",
     "init_project",
+    "grep_files",
 ]
