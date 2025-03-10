@@ -39,8 +39,8 @@ class TestReadFile(TestCase):
             for i in range(1, MAX_LINES_TO_READ + 100):
                 f.write(f"Line {i}\n")
                 
-        # Initialize git repository in the temporary directory
-        self._init_git_repo()
+        # Setup mock patches
+        self.setup_mocks()
         
     def _init_git_repo(self):
         """Initialize a git repository in the temporary directory and create a codemcp.toml file."""
