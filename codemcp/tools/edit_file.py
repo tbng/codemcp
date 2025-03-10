@@ -151,7 +151,7 @@ def apply_edit(
     return patch, updated_file
 
 
-from .file_utils import write_text_content
+
 
 
 def prep(content: str) -> Tuple[str, List[str]]:
