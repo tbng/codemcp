@@ -229,7 +229,7 @@ class MCPEndToEndTest(TestCase, unittest.IsolatedAsyncioTestCase):
             self.assertNotIn("Line 4", result_text)
     
     async def test_write_file(self):
-        """Test the WriteFile command."""
+        """Test the WriteFile command, which writes to a file and automatically commits the changes."""
         test_file_path = os.path.join(self.temp_dir.name, "new_file.txt")
         content = "New content\nLine 2"
         
