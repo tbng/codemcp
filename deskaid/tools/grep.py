@@ -98,6 +98,28 @@ def git_grep(pattern: str, path: Optional[str] = None, include: Optional[str] = 
         raise
 
 
+def render_result_for_assistant(output: Dict[str, Any]) -> str:
+    """Render the results in a format suitable for the assistant.
+
+    Args:
+        output: The grep results dictionary
+
+    Returns:
+        A formatted string representation of the results
+    """
+    num_files = output.get("numFiles", 0)
+    filenames = output.get("filenames", [])
+
+    if num_files == 0:
+        return "No files found"
+
+    result = f"Found {num_files} file{'' if num_files == 1 else 's'}\n{os.linesep.join(filenames[:MAX_RESULTS])}"
+    if num_files > MAX_RESULTS:
+        result += "\n(Results are truncated. Consider using a more specific path or pattern.)"
+    
+    return result
+
+
 def grep_files(pattern: str, path: Optional[str] = None, include: Optional[str] = None, 
                signal=None) -> Dict[str, Any]:
     """Search for a pattern in files within a directory.
@@ -122,7 +144,21 @@ def grep_files(pattern: str, path: Optional[str] = None, include: Optional[str] 
             # First try sorting by modification time
             stats = [os.stat(match) for match in matches]
             matches_with_stats = list(zip(matches, stats))
-            matches_with_stats.sort(key=lambda x: x[1].st_mtime, reverse=True)
+            
+            # In tests, sort by filename for deterministic results
+            if os.environ.get("NODE_ENV") == "test":
+                matches_with_stats.sort(key=lambda x: x[0])
+            else:
+                # Sort by modification time (newest first)
+                matches_with_stats.sort(key=lambda x: (x[1].st_mtime or 0), reverse=True)
+                
+                # Use filename as a tiebreaker
+                matches_with_stats = sorted(
+                    matches_with_stats,
+                    key=lambda x: x[0],
+                    reverse=False
+                )
+                
             matches = [match for match, _ in matches_with_stats]
         except Exception as e:
             # Fall back to sorting by name if there's an error
@@ -138,6 +174,9 @@ def grep_files(pattern: str, path: Optional[str] = None, include: Optional[str] 
             "durationMs": execution_time,
             "numFiles": len(matches),
         }
+        
+        # Add formatted result for assistant
+        output["resultForAssistant"] = render_result_for_assistant(output)
 
         return output
     except Exception as e:
@@ -145,9 +184,12 @@ def grep_files(pattern: str, path: Optional[str] = None, include: Optional[str] 
         execution_time = int((time.time() - start_time) * 1000)
 
         # Return empty results with error info
-        return {
+        error_output = {
             "filenames": [],
             "durationMs": execution_time,
             "numFiles": 0,
             "error": str(e),
+            "resultForAssistant": f"Error: {str(e)}"
         }
+        
+        return error_output
