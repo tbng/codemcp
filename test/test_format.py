@@ -251,7 +251,7 @@ class TestFormatTool(unittest.TestCase):
         self.assertIn("Code formatting successful but failed to commit changes", result)
         self.assertIn("Failed to commit changes", result)
 
-        # Verify subprocess.run was called for the format command
+        # Verify run_command was called for the format command
         mock_run.assert_called_once()
 
         # Verify commit_changes was called
