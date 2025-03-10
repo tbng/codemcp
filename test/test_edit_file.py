@@ -227,16 +227,16 @@ class TestEditFile(TestCase):
 
         self.assertIn("Error: String to replace not found in file", result)
         
-    def test_edit_file_content_trailing_whitespace_match(self):
-        """Test editing when the string is found after stripping trailing whitespace"""
-        # Create a test file with trailing whitespace at the end of lines
+    def test_edit_file_content_whitespace_only_lines(self):
+        """Test editing content with whitespace-only lines"""
+        # Create a test file with empty lines that have whitespace
         whitespace_file_path = os.path.join(self.temp_dir.name, "whitespace_test.txt")
         with open(whitespace_file_path, "w", encoding="utf-8") as f:
-            f.write("This is a test file    \nWith trailing whitespace    \nAt the end of lines    \n")
+            f.write("This is a test file\n    \nWith an empty line that has spaces\n")
         
-        # Original string without trailing whitespace
-        old_string = "This is a test file\nWith trailing whitespace\nAt the end of lines"
-        new_string = "This has been edited\nAnd the whitespace\nShould be preserved"
+        # Original string with a clean empty line
+        old_string = "This is a test file\n\nWith an empty line that has spaces"
+        new_string = "This has been edited\n\nThe empty line should be preserved"
         
         # Use read_file_timestamps to avoid "file has not been read" error
         timestamps = {whitespace_file_path: os.stat(whitespace_file_path).st_mtime + 1}
@@ -251,7 +251,9 @@ class TestEditFile(TestCase):
         with open(whitespace_file_path, "r", encoding="utf-8") as f:
             content = f.read()
         
-        self.assertIn("This has been edited    \nAnd the whitespace    \nShould be preserved    \n", content)
+        # The new content should have replaced the old content,
+        # and the empty line with whitespace should now be a clean empty line
+        self.assertEqual("This has been edited\n\nThe empty line should be preserved\n", content)
         
     def test_edit_file_content_mixed_whitespace_match(self):
         """Test editing when only some lines have trailing whitespace"""
