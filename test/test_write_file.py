@@ -3,8 +3,7 @@
 import os
 import tempfile
 import unittest
-from unittest.mock import mock_open, patch
-import subprocess
+from unittest.mock import mock_open, patch, MagicMock
 
 from expecttest import TestCase
 
