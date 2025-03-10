@@ -474,15 +474,6 @@ no changes added to commit (use "git add" and/or "git commit -a")
                 else:
                     self.fail("SECURITY VULNERABILITY: No commit history found for the file after editing")
                 
-                # Get commit history for the file
-                git_log = subprocess.run(
-                    ["git", "log", "--pretty=format:%H", untracked_file_path],
-                    cwd=self.temp_dir.name,
-                    env=self.env,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE
-                ).stdout.decode().strip().split('\n')
-                
                 print(f"Commit history for {untracked_file_path}: {git_log}")
                 breakpoint()
                 
