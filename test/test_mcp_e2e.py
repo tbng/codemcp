@@ -64,9 +64,14 @@ class MCPEndToEndTest(TestCase):
         readme_path = os.path.join(self.temp_dir.name, "README.md")
         with open(readme_path, "w") as f:
             f.write("# Test Repository\n")
-        
+            
+        # Create a codemcp.toml file in the repo root (required for permission checks)
+        codemcp_toml_path = os.path.join(self.temp_dir.name, "codemcp.toml")
+        with open(codemcp_toml_path, "w") as f:
+            f.write('[project]\nname = "test-project"\n')
+
         subprocess.run(
-            ["git", "add", "README.md"], 
+            ["git", "add", "README.md", "codemcp.toml"],
             cwd=self.temp_dir.name, 
             env=self.env, 
             check=True
