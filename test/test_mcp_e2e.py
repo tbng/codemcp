@@ -814,13 +814,7 @@ no changes added to commit (use "git add" and/or "git commit -a")
             normalized_result = self.normalize_path(result)
             
             # Extract the text content for assertions
-            result_text = ""
-            if isinstance(normalized_result, list) and len(normalized_result) > 0 and hasattr(normalized_result[0], 'text'):
-                result_text = normalized_result[0].text
-            elif isinstance(normalized_result, str):
-                result_text = normalized_result
-            else:
-                result_text = str(normalized_result)
+            result_text = self.extract_text_from_result(normalized_result)
 
             # Verify that the operation was rejected
             self.assertIn("Error", result_text,
