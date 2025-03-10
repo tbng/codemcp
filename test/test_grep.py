@@ -104,7 +104,7 @@ class TestGrepTool(unittest.TestCase):
 
     @mock.patch("codemcp.tools.grep.normalize_file_path", return_value="/test/path")
     @mock.patch("codemcp.tools.grep.is_git_repository", return_value=True)
-    @mock.patch("subprocess.run")
+    @mock.patch("codemcp.tools.grep.run_command")
     def test_git_grep_no_matches(self, mock_run, mock_is_git_repo, mock_normalize):
         # Setup mock for no matches found
         mock_result = mock.MagicMock()
