@@ -169,8 +169,13 @@ def commit_changes(file_path: str, description: str) -> Tuple[bool, str]:
             return False, "File is not in a Git repository"
 
         directory = os.path.dirname(file_path)
-
-        # Add the specified file
+        
+        # Add the specified file to git
+        # Check if file exists first
+        if not os.path.exists(file_path):
+            return False, f"File does not exist: {file_path}"
+            
+        # Try to add the file to git
         add_result = subprocess.run(
             ["git", "add", file_path],
             cwd=directory,
