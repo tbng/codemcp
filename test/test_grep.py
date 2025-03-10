@@ -124,7 +124,8 @@ class TestGrepTool(unittest.TestCase):
 
     @mock.patch("deskaid.tools.grep.git_grep")
     @mock.patch("os.stat")
-    def test_grep_files_success(self, mock_stat, mock_git_grep):
+    @mock.patch("os.environ.get", return_value="1")  # Simulate test environment
+    def test_grep_files_success(self, mock_env_get, mock_stat, mock_git_grep):
         # Setup mocks
         mock_git_grep.return_value = [
             "/test/path/file1.py",
