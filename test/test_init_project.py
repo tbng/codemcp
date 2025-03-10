@@ -24,9 +24,9 @@ class InitProjectTestCase(unittest.TestCase):
         self.assertEqual(result, "Do NOT attempt to run tests, let the user run them.")
 
     def test_init_project_with_rules_file(self):
-        """Test initializing a project with a .deskaidrules file."""
-        # Create a .deskaidrules file with a global_prompt
-        rules_file_path = os.path.join(self.dir_path, ".deskaidrules")
+        """Test initializing a project with a deskaid.toml file."""
+        # Create a deskaid.toml file with a global_prompt
+        rules_file_path = os.path.join(self.dir_path, "deskaid.toml")
         with open(rules_file_path, "w") as f:
             f.write('global_prompt = "This is a custom global prompt."\n')
 
