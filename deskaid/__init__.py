@@ -124,6 +124,7 @@ async def deskaid(
         "WriteFile": {"file_path", "content", "description"},
         "EditFile": {"file_path", "old_string", "new_string", "description"},
         "LS": {"file_path"},
+        "InitProject": {"file_path"},
     }
 
     # Check if command exists
