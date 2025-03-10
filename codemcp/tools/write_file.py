@@ -104,15 +104,19 @@ def write_file_content(file_path: str, content: str, description: str = "") -> s
         if not is_permitted:
             return f"Error: {permission_message}"
 
-        # First commit any pending changes
-        commit_success, commit_message = commit_pending_changes(file_path)
-        if not commit_success:
-            logging.debug(f"Failed to commit pending changes: {commit_message}")
-            # Check if the file is not tracked by git
-            if "not tracked by git" in commit_message:
-                return f"Error: {commit_message}"
-        else:
-            logging.debug(f"Pending changes status: {commit_message}")
+        # Check if the file exists
+        file_exists = os.path.exists(file_path)
+
+        if file_exists:
+            # Only check commit_pending_changes for existing files
+            commit_success, commit_message = commit_pending_changes(file_path)
+            if not commit_success:
+                logging.debug(f"Failed to commit pending changes: {commit_message}")
+                # Check if the file is not tracked by git
+                if "not tracked by git" in commit_message:
+                    return f"Error: {commit_message}"
+            else:
+                logging.debug(f"Pending changes status: {commit_message}")
 
         # Get directory and ensure it exists
         directory = os.path.dirname(file_path)
