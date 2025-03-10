@@ -383,7 +383,7 @@ class TestEditFile(TestCase):
             content = f.read()
         
         # The whitespace-only lines should be replaced with the new content
-        self.assertEqual("The file now has\n\nno more empty lines\nwith whitespace", content)
+        self.assertEqual("The file now has\n\nno more empty lines\nwith whitespace\n", content)
 
     def test_edit_file_content_multiple_matches(self):
         """Test editing when there are multiple matches of the string to replace"""
