@@ -433,6 +433,7 @@ no changes added to commit (use "git add" and/or "git commit -a")
                 ).stdout.decode().strip().split('\n')
                 
                 print(f"Commit history for {untracked_file_path}: {git_log}")
+                breakpoint()
                 
                 if git_log:
                     # Get the first/earliest commit for this file
