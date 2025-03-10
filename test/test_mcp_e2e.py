@@ -349,11 +349,12 @@ no changes added to commit (use "git add" and/or "git commit -a")
 
             # Normalize the result
             normalized_result = self.normalize_path(result)
+            result_text = self.extract_text_from_result(normalized_result)
 
             # Verify the result includes all files and directories
-            self.assertIn("file1.txt", normalized_result)
-            self.assertIn("file2.txt", normalized_result)
-            self.assertIn("subdirectory", normalized_result)
+            self.assertIn("file1.txt", result_text)
+            self.assertIn("file2.txt", result_text)
+            self.assertIn("subdirectory", result_text)
             
     async def test_edit_untracked_file(self):
         """Test that codemcp properly handles editing files that aren't tracked by git."""
