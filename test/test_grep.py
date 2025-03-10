@@ -147,8 +147,8 @@ class TestGrepTool(unittest.TestCase):
         
         mock_stat.side_effect = [mock_stat3, mock_stat2, mock_stat1]
         
-        # Set test environment variable
-        with mock.patch.dict(os.environ, {"NODE_ENV": "test"}):
+        # Set test environment variables
+        with mock.patch.dict(os.environ, {"NODE_ENV": "test", "DESKAID_TESTING": "1"}):
             result = grep_files("pattern", "/test/path")
         
         # Assertions
