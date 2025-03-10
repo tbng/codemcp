@@ -31,10 +31,10 @@ class TestWriteFile(TestCase):
         self.crlf_file_path = os.path.join(self.temp_dir.name, "crlf_file.txt")
         with open(self.crlf_file_path, "wb") as f:
             f.write(b"This is a file\r\nWith CRLF line endings\r\n")
-            
+
         # Setup mock patches
         self.setup_mocks()
-        
+
     def setup_mocks(self):
         """Setup mocks for git functions to bypass repository checks"""
         # Create patch for git repository check
@@ -42,25 +42,25 @@ class TestWriteFile(TestCase):
         self.mock_is_git_repo = self.is_git_repo_patch.start()
         self.mock_is_git_repo.return_value = True
         self.addCleanup(self.is_git_repo_patch.stop)
-        
+
         # Create patch for git base directory
         self.git_base_dir_patch = patch('codemcp.access.get_git_base_dir')
         self.mock_git_base_dir = self.git_base_dir_patch.start()
         self.mock_git_base_dir.return_value = self.temp_dir.name
         self.addCleanup(self.git_base_dir_patch.stop)
-        
+
         # Create patch for commit operations
         self.commit_changes_patch = patch('codemcp.tools.write_file.commit_changes')
         self.mock_commit_changes = self.commit_changes_patch.start()
         self.mock_commit_changes.return_value = (True, "Mocked commit success")
         self.addCleanup(self.commit_changes_patch.stop)
-        
+
         # Create patch for pending commit operations
         self.commit_pending_patch = patch('codemcp.tools.write_file.commit_pending_changes')
         self.mock_commit_pending = self.commit_pending_patch.start()
         self.mock_commit_pending.return_value = (True, "No pending changes to commit")
         self.addCleanup(self.commit_pending_patch.stop)
-        
+
         # Create a mock codemcp.toml file to satisfy permission check
         config_path = os.path.join(self.temp_dir.name, "codemcp.toml")
         with open(config_path, "w") as f:
@@ -192,6 +192,25 @@ class TestWriteFile(TestCase):
 
         self.assertIn("Error writing file", result)
         self.assertIn("Test exception", result)
+
+    def test_write_file_content_untracked_file(self):
+        """Test that writing to an untracked file is rejected"""
+        # Override the commit_pending_changes mock to simulate an untracked file
+        with patch('codemcp.tools.write_file.commit_pending_changes') as mock_pending:
+            # Simulate the subprocess.run result for an untracked file
+            mock_pending.return_value = (False, "File is not tracked by git")
+            
+            # Attempt to write to the "untracked" file
+            abs_path = os.path.abspath(os.path.join(self.temp_dir.name, "untracked_file.txt"))
+            content = "Content that should not be written"
+            
+            result = write_file_content(abs_path, content)
+            
+            # Verify that the write was rejected
+            self.assertIn("Error: File is not tracked by git", result)
+            
+            # Verify that the file was not created
+            self.assertFalse(os.path.exists(abs_path))
 
 
 if __name__ == "__main__":
