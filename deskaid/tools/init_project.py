@@ -11,11 +11,11 @@ from ..common import normalize_file_path
 
 def init_project(directory: str) -> str:
     """
-    Initialize a project by reading the .deskaidrules TOML file and returning
+    Initialize a project by reading the deskaid.toml TOML file and returning
     a combined system prompt.
 
     Args:
-        directory: The directory path containing the .deskaidrules file
+        directory: The directory path containing the deskaid.toml file
 
     Returns:
         A string containing the system prompt plus any global_prompt from the config
