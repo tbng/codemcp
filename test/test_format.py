@@ -126,7 +126,7 @@ class TestFormatTool(unittest.TestCase):
         self.assertIn("Error: Directory does not exist", result)
         mock_is_git_repo.assert_not_called()
 
-    @patch("subprocess.run")
+    @patch("codemcp.tools.format.run_command")
     def test_check_for_changes(self, mock_run):
         """Test _check_for_changes function."""
         # Test case 1: Changes detected
