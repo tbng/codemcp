@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import os
-from typing import Optional
 
 from ..common import (
     MAX_LINE_LENGTH,

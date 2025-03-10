@@ -7,7 +7,6 @@ import math
 import os
 import re
 from difflib import SequenceMatcher
-from typing import Dict, List, Optional, Tuple
 
 from ..common import get_edit_snippet
 from ..git import commit_changes

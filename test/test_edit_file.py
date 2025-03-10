@@ -153,7 +153,6 @@ class TestEditFile(TestCase):
     def test_apply_edit_non_existent_file(self):
         """Test applying an edit to a non-existent file"""
         non_existent_path = os.path.join(self.temp_dir.name, "non_existent.txt")
-        old_string = ""
         new_string = "New content for a new file"
 
         # Handle the empty separator case by directly testing the expected behavior
@@ -430,11 +429,11 @@ class TestEditFile(TestCase):
         # The whitespace-only lines should be replaced with the new content
         # Read with binary mode to ensure we're comparing the actual content
         with open(mixed_whitespace_path, "rb") as f:
-            binary_content = f.read()
+            f.read()
 
         # For debugging
         expected = "The file now has\n\nno more empty lines\nwith whitespace\n"
-        expected_bytes = expected.encode("utf-8")
+        expected.encode("utf-8")
 
         # Check if the content has the expected newlines
         self.assertEqual(expected, content)

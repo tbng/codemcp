@@ -2,7 +2,6 @@
 
 import logging
 import os
-from typing import Optional, Tuple
 
 from ..access import check_edit_permission
 from ..git import commit_pending_changes

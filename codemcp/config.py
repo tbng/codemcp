@@ -4,7 +4,7 @@ This module provides access to user configuration stored in ~/.codemcprc in TOML
 """
 
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 
 import tomli
 

@@ -3,7 +3,6 @@
 import logging
 import os
 import subprocess
-from typing import Optional, Tuple
 
 import toml
 
@@ -80,7 +79,7 @@ def check_edit_permission(file_path: str) -> tuple[bool, str]:
 
     # Optionally, verify the content of the codemcp.toml file
     try:
-        config = toml.load(config_path)
+        toml.load(config_path)
         # You can add more sophisticated permission checks here based on the config
         # For example, check for allowed_directories, deny_patterns, etc.
         return True, "Permission granted."

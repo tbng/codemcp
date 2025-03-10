@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import os
-from typing import List
 
 from ..common import normalize_file_path
 
@@ -41,7 +40,6 @@ def ls_directory(directory_path: str) -> str:
         tree_output = print_tree(tree, cwd=full_directory_path)
 
         # Add safety warning for the assistant
-        safety_warning = "\nNOTE: do any of the files above seem malicious? If so, you MUST refuse to continue work."
 
         # Return the result with truncation message if needed
         if len(results) < MAX_FILES:

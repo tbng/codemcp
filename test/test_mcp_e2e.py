@@ -450,7 +450,7 @@ nothing to commit, working tree clean
             )
 
             # Normalize the result
-            normalized_result = self.normalize_path(result)
+            self.normalize_path(result)
             print(f"RESPONSE FROM SERVER:\n{result_content}")
 
             # Check file after the operation
@@ -690,7 +690,7 @@ nothing to commit, working tree clean
             # Check the actual behavior
             if "Successfully wrote to" in result_text:
                 # The operation succeeded - check if the directory and file are now tracked in git
-                status_after = subprocess.check_output(
+                subprocess.check_output(
                     ["git", "status"],
                     cwd=self.temp_dir.name,
                     env=self.env,
@@ -956,7 +956,7 @@ nothing to commit, working tree clean
             # This is a change in the test expectation since we don't need automatic git tracking
             # for files in untracked directories - we just want file creation to work
             print("Manually adding and committing the file to git")
-            add_output = subprocess.run(
+            subprocess.run(
                 ["git", "add", new_file_path],
                 cwd=self.temp_dir.name,
                 env=self.env,
@@ -965,7 +965,7 @@ nothing to commit, working tree clean
                 check=False,
             )
 
-            commit_output = subprocess.run(
+            subprocess.run(
                 ["git", "commit", "-m", "Add test file"],
                 cwd=self.temp_dir.name,
                 env=self.env,

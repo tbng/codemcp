@@ -3,7 +3,6 @@
 import logging
 import os
 import subprocess
-from typing import Tuple
 
 from .common import normalize_file_path
 

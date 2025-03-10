@@ -4,7 +4,7 @@ import logging
 import os
 import subprocess
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from ..common import normalize_file_path
 from ..git import is_git_repository
