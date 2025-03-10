@@ -200,6 +200,7 @@ async def codemcp(
         if description is None:
             return "Error: description is required for EditFile command"
         if old_string is None and old_str is None:
+            # TODO: I want telemetry to tell me when this occurs.
             return "Error: Either old_string or old_str is required for EditFile command (use empty string for new file creation)"
 
         # Accept either old_string or old_str (prefer old_string if both are provided)
