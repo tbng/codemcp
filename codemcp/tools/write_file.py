@@ -94,6 +94,11 @@ def write_file_content(file_path: str, content: str, description: str = "") -> s
     try:
         if not os.path.isabs(file_path):
             return f"Error: File path must be absolute, not relative: {file_path}"
+            
+        # Check if we have permission to edit this file
+        is_permitted, permission_message = check_edit_permission(file_path)
+        if not is_permitted:
+            return f"Error: {permission_message}"
 
         # First commit any pending changes
         commit_success, commit_message = commit_pending_changes(file_path)
