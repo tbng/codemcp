@@ -4,6 +4,7 @@ import os
 import re
 import tempfile
 import unittest
+import subprocess
 
 from expecttest import TestCase
 
