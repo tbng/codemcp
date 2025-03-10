@@ -485,6 +485,58 @@ no changes added to commit (use "git add" and/or "git commit -a")
                 normalized_result,
                 """Error: Cannot create file in untracked directory."""
             )
+            
+    async def test_path_traversal_attacks(self):
+        """Test that codemcp prevents path traversal attacks."""
+        # Create a file in the git repo that we'll try to access from outside
+        test_file_path = os.path.join(self.temp_dir.name, "target.txt")
+        with open(test_file_path, "w") as f:
+            f.write("Target file content")
+            
+        # Add and commit the file
+        subprocess.run(
+            ["git", "add", "target.txt"],
+            cwd=self.temp_dir.name,
+            env=self.env,
+            check=True
+        )
+        
+        subprocess.run(
+            ["git", "commit", "-m", "Add target file"],
+            cwd=self.temp_dir.name,
+            env=self.env,
+            check=True
+        )
+        
+        # Create a directory outside of the repo
+        parent_dir = os.path.dirname(self.temp_dir.name)
+        outside_file_path = os.path.join(parent_dir, "outside.txt")
+        
+        # Try various path traversal techniques
+        traversal_paths = [
+            outside_file_path,  # Direct absolute path outside the repo
+            os.path.join(self.temp_dir.name, "..", "outside.txt"),  # Using .. to escape
+            os.path.join(self.temp_dir.name, "subdir", "..", "..", "outside.txt"),  # Multiple ..
+        ]
+        
+        async with self.create_client_session() as session:
+            for path in traversal_paths:
+                # Try to write to a file outside the repository
+                result = await session.call_tool("codemcp", {
+                    "command": "WriteFile",
+                    "file_path": path,
+                    "content": "This should not be allowed to write outside the repo",
+                    "description": "Attempt path traversal attack"
+                })
+                
+                # Normalize the result
+                normalized_result = self.normalize_path(result)
+                
+                # Check that the operation was rejected
+                self.assertIn("Error", normalized_result)
+                
+                # Verify the file wasn't created
+                self.assertFalse(os.path.exists(outside_file_path))
 
 
 if __name__ == "__main__":
