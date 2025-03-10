@@ -107,9 +107,10 @@ class TestGrepTool(unittest.TestCase):
         # Assert correct empty result
         self.assertEqual(result, [])
 
+    @mock.patch("deskaid.tools.grep.normalize_file_path", return_value="/test/path")
     @mock.patch("deskaid.tools.grep.is_git_repository", return_value=True)
     @mock.patch("subprocess.run")
-    def test_git_grep_error(self, mock_run, mock_is_git_repo):
+    def test_git_grep_error(self, mock_run, mock_is_git_repo, mock_normalize):
         # Setup mock for error
         mock_result = mock.MagicMock()
         mock_result.stdout = ""
