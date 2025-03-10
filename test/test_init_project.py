@@ -6,7 +6,7 @@ import unittest
 from unittest.mock import patch, MagicMock
 from pathlib import Path
 
-from codemcp.tools import init_project
+from codemcp.tools.init_project import init_project
 
 
 class InitProjectTestCase(unittest.TestCase):
