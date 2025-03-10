@@ -201,7 +201,7 @@ async def codemcp(
             return "Error: description is required for EditFile command"
 
         # Accept either old_string or old_str (prefer old_string if both are provided)
-        old_content = old_string or provided_params.get("old_str", "") or ""
+        old_content = old_string or old_str or ""
         new_str = new_string or ""
         return edit_file_content(file_path, old_content, new_str, None, description)
 
