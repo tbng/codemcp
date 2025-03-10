@@ -866,44 +866,7 @@ no changes added to commit (use "git add" and/or "git commit -a")
                     os.unlink(outside_file_path)
 
 
-class AsyncTestRunner(unittest.TextTestRunner):
-    """Custom test runner for handling async test methods."""
-    
-    def run(self, test):
-        """Run the test with async support."""
-        loop = asyncio.get_event_loop()
-        # Create a new event loop if there isn't one already
-        if loop.is_closed():
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-        return super().run(test)
-
-class AsyncTest(unittest.TestCase):
-    """Base class for async tests."""
-    
-    def run(self, result=None):
-        """Run the test with async support."""
-        self._result = result
-        return super().run(result)
-    
-    def _callTestMethod(self, method):
-        """Call the test method, awaiting it if it's a coroutine."""
-        try:
-            # Call the method
-            method_result = method()
-            
-            # If the result is a coroutine, ensure it gets awaited
-            if asyncio.iscoroutine(method_result):
-                loop = asyncio.get_event_loop()
-                return loop.run_until_complete(method_result)
-            
-            return method_result
-        except Exception as e:
-            # Capture the exception
-            raise e
-
-# Apply the async test base class to our test class
-MCPEndToEndTest.__bases__ = (AsyncTest,)
+# Since we're now using unittest.IsolatedAsyncioTestCase, we don't need these custom classes anymore
 
 if __name__ == "__main__":
     if sys.platform == "win32":
