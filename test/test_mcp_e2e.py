@@ -456,6 +456,35 @@ no changes added to commit (use "git add" and/or "git commit -a")
                 normalized_result,
                 """Error: File has been removed from git index and cannot be edited."""
             )
+            
+    async def test_create_file_with_edit_file_in_untracked_dir(self):
+        """Test that codemcp prevents creating new files with EditFile in untracked directories."""
+        # Create an untracked subdirectory
+        untracked_dir = os.path.join(self.temp_dir.name, "untracked_subdir")
+        os.makedirs(untracked_dir, exist_ok=True)
+        
+        # Path to a new file in the untracked directory
+        new_file_path = os.path.join(untracked_dir, "new_file.txt")
+        
+        async with self.create_client_session() as session:
+            # Try to create a new file using EditFile with empty old_string
+            result = await session.call_tool("codemcp", {
+                "command": "EditFile",
+                "file_path": new_file_path,
+                "old_string": "",
+                "new_string": "This file should not be created in untracked dir",
+                "description": "Attempt to create file in untracked dir with EditFile"
+            })
+            
+            # Normalize the result
+            normalized_result = self.normalize_path(result)
+            
+            # Current implementation might incorrectly allow this
+            # EditFile with empty old_string is allowed to create new files in any directory
+            self.assertExpectedInline(
+                normalized_result,
+                """Error: Cannot create file in untracked directory."""
+            )
 
 
 if __name__ == "__main__":
