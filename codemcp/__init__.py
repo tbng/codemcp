@@ -199,9 +199,10 @@ async def codemcp(
         if description is None:
             return "Error: description is required for EditFile command"
 
-        old_str = old_string or ""
+        # Accept either old_string or old_str (prefer old_string if both are provided)
+        old_content = old_string or provided_params.get("old_str", "") or ""
         new_str = new_string or ""
-        return edit_file_content(file_path, old_str, new_str, None, description)
+        return edit_file_content(file_path, old_content, new_str, None, description)
 
     elif command == "LS":
         if file_path is None:
