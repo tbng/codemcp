@@ -5,7 +5,7 @@ import sys
 import logging
 from typing import Optional, Tuple
 
-from ..common import commit_changes, commit_pending_changes
+from ..git import commit_changes, commit_pending_changes
 
 
 def detect_file_encoding(file_path: str) -> str:
