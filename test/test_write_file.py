@@ -4,6 +4,7 @@ import os
 import tempfile
 import unittest
 from unittest.mock import mock_open, patch
+import subprocess
 
 from expecttest import TestCase
 
