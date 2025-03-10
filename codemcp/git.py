@@ -5,6 +5,7 @@ import os
 import subprocess
 
 from .common import normalize_file_path
+from .shell import run_command
 
 __all__ = [
     "is_git_repository",
