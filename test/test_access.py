@@ -86,9 +86,10 @@ class TestAccess(unittest.TestCase):
         base_dir_from_root_file = get_git_base_dir(self.test_file_path)
         base_dir_from_sub_file = get_git_base_dir(sub_file_path)
         
+        # Use os.path.realpath to resolve symlinks (needed on macOS where /var is a symlink to /private/var)
         # Both should return the test directory (git root)
-        self.assertEqual(os.path.normpath(base_dir_from_root_file), os.path.normpath(self.test_dir))
-        self.assertEqual(os.path.normpath(base_dir_from_sub_file), os.path.normpath(self.test_dir))
+        self.assertEqual(os.path.realpath(base_dir_from_root_file), os.path.realpath(self.test_dir))
+        self.assertEqual(os.path.realpath(base_dir_from_sub_file), os.path.realpath(self.test_dir))
         
     def test_permission_check_without_config(self):
         """Test that permission is denied when no codemcp.toml exists."""
