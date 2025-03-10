@@ -9,6 +9,14 @@ from typing import Any
 from ..common import normalize_file_path
 from ..git import is_git_repository
 
+__all__ = [
+    "grep_files",
+    "git_grep",
+    "render_result_for_assistant",
+    "TOOL_NAME_FOR_PROMPT",
+    "DESCRIPTION",
+]
+
 # Define constants
 MAX_RESULTS = 100
 TOOL_NAME_FOR_PROMPT = "Grep"
