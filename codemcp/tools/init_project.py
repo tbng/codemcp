@@ -66,10 +66,12 @@ If the user tells you a fact about the overall system that seems very important,
             except Exception as e:
                 return f"Error reading codemcp.toml file: {e!s}"
 
-        # Combine system prompt and global prompt
+        # Combine system prompt, global prompt, and format command
         combined_prompt = system_prompt
         if global_prompt:
             combined_prompt += "\n\n" + global_prompt
+        if format_command_str:
+            combined_prompt += format_command_str
 
         return combined_prompt
     except Exception as e:
