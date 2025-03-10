@@ -17,7 +17,7 @@ from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 
 
-class MCPEndToEndTest(TestCase):
+class MCPEndToEndTest(TestCase, unittest.IsolatedAsyncioTestCase):
     """End-to-end test for codemcp using MCP client."""
 
     def setUp(self):
