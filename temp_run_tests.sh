@@ -4,4 +4,5 @@
 cd "$(dirname "$0")"
 
 # Run the tests with verbose output
-python -m pytest test/test_edit_file.py -v
+chmod +x run_trailing_whitespace_tests.sh
+./run_trailing_whitespace_tests.sh
