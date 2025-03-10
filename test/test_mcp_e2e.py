@@ -299,6 +299,8 @@ no changes added to commit (use "git add" and/or "git commit -a")
             
     async def test_edit_untracked_file(self):
         """Test that codemcp properly handles editing files that aren't tracked by git."""
+        print("\n\n=== TEST: Editing Untracked File ===")
+        
         # Create a file but don't commit it to git
         untracked_file_path = os.path.join(self.temp_dir.name, "untracked.txt")
         original_content = "Untracked file content"
@@ -306,29 +308,85 @@ no changes added to commit (use "git add" and/or "git commit -a")
             f.write(original_content)
 
         # Verify the file exists but is not tracked
+        print(f"Initial file path: {untracked_file_path}")
+        print(f"Initial content: '{original_content}'")
+        
         status = subprocess.check_output(
             ["git", "status"], 
             cwd=self.temp_dir.name, 
             env=self.env
         ).decode()
+        print(f"INITIAL GIT STATUS:\n{status}")
+        
+        ls_files_before = subprocess.run(
+            ["git", "ls-files", untracked_file_path],
+            cwd=self.temp_dir.name,
+            env=self.env,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE
+        ).stdout.decode().strip()
+        print(f"INITIAL GIT LS-FILES: '{ls_files_before}'")
+        
         self.assertIn("Untracked files:", status)
         self.assertIn("untracked.txt", status)
 
         # Save the original modification time to check if file was modified
         original_mtime = os.path.getmtime(untracked_file_path)
+        print(f"Original mtime: {original_mtime}")
 
         async with self.create_client_session() as session:
             # Try to edit the untracked file
+            new_content = "Modified untracked content"
+            print(f"Attempting to modify with new content: '{new_content}'")
+            
             result = await session.call_tool("codemcp", {
                 "command": "EditFile",
                 "file_path": untracked_file_path,
                 "old_string": "Untracked file content",
-                "new_string": "Modified untracked content",
+                "new_string": new_content,
                 "description": "Attempt to modify untracked file"
             })
 
             # Normalize the result
             normalized_result = self.normalize_path(result)
+            print(f"RESPONSE FROM SERVER:\n{normalized_result}")
+            
+            # Check file after the operation
+            if os.path.exists(untracked_file_path):
+                with open(untracked_file_path, "r") as f:
+                    actual_content = f.read()
+                print(f"File content after edit: '{actual_content}'")
+                new_mtime = os.path.getmtime(untracked_file_path)
+                print(f"New mtime: {new_mtime}, Changed: {original_mtime != new_mtime}")
+            else:
+                print("File doesn't exist anymore!")
+            
+            # Check git status after the operation
+            status_after = subprocess.check_output(
+                ["git", "status"], 
+                cwd=self.temp_dir.name, 
+                env=self.env
+            ).decode()
+            print(f"GIT STATUS AFTER EDIT:\n{status_after}")
+            
+            ls_files_after = subprocess.run(
+                ["git", "ls-files", untracked_file_path],
+                cwd=self.temp_dir.name,
+                env=self.env,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE
+            ).stdout.decode().strip()
+            print(f"GIT LS-FILES AFTER EDIT: '{ls_files_after}'")
+            
+            # Run git diff to see changes
+            diff_output = subprocess.run(
+                ["git", "diff", "--cached", untracked_file_path],
+                cwd=self.temp_dir.name,
+                env=self.env,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE
+            ).stdout.decode().strip()
+            print(f"GIT DIFF OUTPUT:\n{diff_output}")
             
             # SECURITY CHECK: If editing untracked files succeeds, ensure they are added to git
             # so they can be properly tracked and reverted
@@ -338,19 +396,16 @@ no changes added to commit (use "git add" and/or "git commit -a")
                 
                 # Read the new content
                 with open(untracked_file_path, "r") as f:
-                    new_content = f.read()
-                self.assertEqual(new_content, "Modified untracked content")
+                    new_content_read = f.read()
+                self.assertEqual(new_content_read, "Modified untracked content")
                 
                 # Check if the file is now tracked in git
-                status_after = subprocess.check_output(
-                    ["git", "status"], 
-                    cwd=self.temp_dir.name, 
-                    env=self.env
-                ).decode()
+                is_tracked = bool(ls_files_after)
+                print(f"Is file tracked after edit? {is_tracked}")
                 
                 # POTENTIAL ISSUE: If the file remains untracked after editing succeeds,
                 # we have lost the original content forever without git history
-                self.assertNotIn("untracked.txt", status_after, 
+                self.assertTrue(is_tracked, 
                     "SECURITY VULNERABILITY: File was edited but not added to git")
 
     async def test_write_file_outside_tracked_paths(self):
