@@ -248,6 +248,28 @@ class TestEditFile(TestCase):
             content = f.read()
         
         self.assertIn("This has been edited    \nAnd the whitespace    \nShould be preserved    \n", content)
+        
+    def test_edit_file_content_mixed_whitespace_match(self):
+        """Test editing when only some lines have trailing whitespace"""
+        # Create a test file with mixed trailing whitespace patterns
+        mixed_whitespace_path = os.path.join(self.temp_dir.name, "mixed_whitespace.txt")
+        with open(mixed_whitespace_path, "w", encoding="utf-8") as f:
+            f.write("This line has spaces    \nThis line doesn't\nThis one does    \n")
+        
+        # Original string without any trailing whitespace
+        old_string = "This line has spaces\nThis line doesn't\nThis one does"
+        new_string = "All of these lines\nHave been edited\nBy the test"
+        
+        result = edit_file_content(mixed_whitespace_path, old_string, new_string)
+        
+        # Check that the edit was successful
+        self.assertIn(f"Successfully edited {mixed_whitespace_path}", result)
+        
+        # Read the file and verify the content was replaced while preserving original whitespace
+        with open(mixed_whitespace_path, "r", encoding="utf-8") as f:
+            content = f.read()
+        
+        self.assertIn("All of these lines    \nHave been edited\nBy the test    \n", content)
 
     def test_edit_file_content_multiple_matches(self):
         """Test editing when there are multiple matches of the string to replace"""
