@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
 
 import os
-import sys
 import logging
 from typing import Optional, Tuple
 
-from ..git import commit_changes, commit_pending_changes
-from ..access import check_edit_permission
+from ..git import commit_changes
+from .file_utils import (
+    check_file_path_and_permissions,
+    check_git_tracking_for_existing_file,
+    write_text_content
+)
 
 
 def detect_file_encoding(file_path: str) -> str:
@@ -27,6 +30,9 @@ def detect_file_encoding(file_path: str) -> str:
     except UnicodeDecodeError:
         # If utf-8 fails, default to binary mode
         return "latin-1"  # A safe fallback
+    except FileNotFoundError:
+        # For non-existent files, default to utf-8
+        return "utf-8"
 
 
 def detect_line_endings(file_path: str) -> str:
@@ -61,25 +67,6 @@ def detect_repo_line_endings(directory: str) -> str:
     return os.linesep
 
 
-def write_text_content(
-    file_path: str, content: str, encoding: str = "utf-8", line_endings: str = None
-) -> None:
-    """Write text content to a file with specified encoding and line endings.
-
-    Args:
-        file_path: The path to the file
-        content: The content to write
-        encoding: The encoding to use
-        line_endings: The line endings to use
-    """
-    if line_endings and line_endings != "\n":
-        # Normalize to \n first, then replace with desired line endings
-        content = content.replace("\r\n", "\n").replace("\n", line_endings)
-
-    with open(file_path, "w", encoding=encoding) as f:
-        f.write(content)
-
-
 def write_file_content(file_path: str, content: str, description: str = "") -> str:
     """Write content to a file.
 
@@ -97,33 +84,15 @@ def write_file_content(file_path: str, content: str, description: str = "") -> s
         Files must be tracked in the git repository before they can be modified.
     """
     try:
-        if not os.path.isabs(file_path):
-            return f"Error: File path must be absolute, not relative: {file_path}"
+        # Validate file path and permissions
+        is_valid, error_message = check_file_path_and_permissions(file_path)
+        if not is_valid:
+            return error_message
             
-        # Check if we have permission to edit this file
-        is_permitted, permission_message = check_edit_permission(file_path)
-        if not is_permitted:
-            return f"Error: {permission_message}"
-
-        # Check if the file exists
-        file_exists = os.path.exists(file_path)
-
-        if file_exists:
-            # Only check commit_pending_changes for existing files
-            commit_success, commit_message = commit_pending_changes(file_path)
-            if not commit_success:
-                logging.debug(f"Failed to commit pending changes: {commit_message}")
-                # Check if the file is not tracked by git
-                if "not tracked by git" in commit_message:
-                    return f"Error: {commit_message}"
-            else:
-                logging.debug(f"Pending changes status: {commit_message}")
-
-        # Get directory and ensure it exists
-        directory = os.path.dirname(file_path)
-        if not os.path.exists(directory):
-            # Create directory instead of returning an error
-            os.makedirs(directory, exist_ok=True)
+        # Check git tracking for existing files
+        is_tracked, track_error = check_git_tracking_for_existing_file(file_path)
+        if not is_tracked:
+            return f"Error: {track_error}"
 
         # Determine encoding and line endings
         old_file_exists = os.path.exists(file_path)
@@ -132,7 +101,7 @@ def write_file_content(file_path: str, content: str, description: str = "") -> s
         if old_file_exists:
             line_endings = detect_line_endings(file_path)
         else:
-            line_endings = detect_repo_line_endings(directory)
+            line_endings = detect_repo_line_endings(os.path.dirname(file_path))
 
         # Write the content with proper encoding and line endings
         write_text_content(file_path, content, encoding, line_endings)
