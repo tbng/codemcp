@@ -10,6 +10,7 @@ from unittest import mock
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from codemcp.tools.grep import git_grep, grep_files
+from codemcp.shell import run_command
 
 
 class TestGrepTool(unittest.TestCase):
