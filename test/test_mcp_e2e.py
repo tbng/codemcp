@@ -115,6 +115,22 @@ class MCPEndToEndTest(TestCase, unittest.IsolatedAsyncioTestCase):
             if isinstance(text, str):
                 return text.replace(self.temp_dir.name, "/tmp/test_dir")
         return text
+        
+    def extract_text_from_result(self, result):
+        """Extract text content from various result formats for assertions.
+        
+        Args:
+            result: The result object (could be string, list of TextContent, etc.)
+            
+        Returns:
+            str: The extracted text content
+        """
+        if isinstance(result, list) and len(result) > 0 and hasattr(result[0], 'text'):
+            return result[0].text
+        elif isinstance(result, str):
+            return result
+        else:
+            return str(result)
 
     @asynccontextmanager
     async def create_client_session(self):
