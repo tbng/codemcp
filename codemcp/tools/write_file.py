@@ -92,8 +92,9 @@ def write_file_content(file_path: str, content: str, description: str = "") -> s
         A success message or an error message
 
     Note:
-        This function will reject attempts to write to files that are not tracked by git.
-        Files must be tracked in the git repository before they can be written to.
+        This function allows creating new files that don't exist yet.
+        For existing files, it will reject attempts to write to files that are not tracked by git.
+        Files must be tracked in the git repository before they can be modified.
     """
     try:
         if not os.path.isabs(file_path):
