@@ -7,6 +7,7 @@ import tempfile
 import unittest
 
 from codemcp.access import check_edit_permission, get_git_base_dir
+from codemcp.shell import run_command
 
 
 class TestAccess(unittest.TestCase):
