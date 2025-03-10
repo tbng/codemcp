@@ -403,21 +403,31 @@ no changes added to commit (use "git add" and/or "git commit -a")
             
             # SECURITY CHECK: If editing untracked files succeeds, ensure they are added to git
             # so they can be properly tracked and reverted
-            success_message = "Successfully edited" in result_content
-            print(f"Edit operation successful? {success_message}")
+            # First, let's detect if the edit was successful by checking the file content
+            edit_succeeded = False
+            if os.path.exists(untracked_file_path):
+                with open(untracked_file_path, "r") as f:
+                    current_content = f.read()
+                if current_content == "Modified untracked content":
+                    edit_succeeded = True
             
-            if success_message:
+            print(f"Edit operation successful? {edit_succeeded}")
+            
+            # We expect the edit to be successful - editing untracked files should be permitted
+            self.assertTrue(edit_succeeded, "POLICY ERROR: Editing untracked files should be permitted")
+            
+            # Edit was successful, now verify our security invariants
+            if edit_succeeded:
                 # The file should have been modified
                 self.assertNotEqual(original_mtime, os.path.getmtime(untracked_file_path))
-                
-                # Read the new content
-                with open(untracked_file_path, "r") as f:
-                    new_content_read = f.read()
-                self.assertEqual(new_content_read, "Modified untracked content")
                 
                 # Check if the file is now tracked in git
                 is_tracked = bool(ls_files_after)
                 print(f"Is file tracked after edit? {is_tracked}")
+                
+                # The file MUST be tracked after editing
+                self.assertTrue(is_tracked, 
+                    "SECURITY VULNERABILITY: File was edited but not added to git")
                 
                 # CRITICAL SECURITY CHECK: Can we recover the original content from git history?
                 # If we can't, then we've lost the ability to revert to the original state
