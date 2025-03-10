@@ -152,6 +152,9 @@ async def deskaid(
             "offset": offset,
             "limit": limit,
             "description": description,
+            "pattern": pattern,
+            "path": path,
+            "include": include,
         }.items()
         if value is not None
     }
