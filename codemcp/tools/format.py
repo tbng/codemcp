@@ -55,12 +55,11 @@ def _check_for_changes(project_dir: str) -> bool:
     """
     try:
         # Check if working directory has uncommitted changes
-        status_result = subprocess.run(
+        status_result = run_command(
             ["git", "status", "--porcelain"],
             cwd=project_dir,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
             check=True,
+            capture_output=True,
             text=True,
         )
 
