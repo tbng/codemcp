@@ -55,8 +55,8 @@ class TestWriteFile(TestCase):
         self.mock_commit_changes.return_value = (True, "Mocked commit success")
         self.addCleanup(self.commit_changes_patch.stop)
 
-        # Create patch for pending commit operations
-        self.commit_pending_patch = patch('codemcp.tools.write_file.commit_pending_changes')
+        # Create patch for pending commit operations - patch in file_utils now
+        self.commit_pending_patch = patch('codemcp.tools.file_utils.commit_pending_changes')
         self.mock_commit_pending = self.commit_pending_patch.start()
         self.mock_commit_pending.return_value = (True, "No pending changes to commit")
         self.addCleanup(self.commit_pending_patch.stop)
