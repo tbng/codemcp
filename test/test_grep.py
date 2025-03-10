@@ -154,7 +154,8 @@ class TestGrepTool(unittest.TestCase):
         self.assertIn("Found 3 files", result["resultForAssistant"])
 
     @mock.patch("deskaid.tools.grep.git_grep")
-    def test_grep_files_empty_result(self, mock_git_grep):
+    @mock.patch("os.environ.get", return_value="1")  # Simulate test environment
+    def test_grep_files_empty_result(self, mock_env_get, mock_git_grep):
         # Setup mock for no matches
         mock_git_grep.return_value = []
         
