@@ -12,8 +12,8 @@ from codemcp.tools.write_file import (
     detect_line_endings,
     detect_repo_line_endings,
     write_file_content,
-    write_text_content,
 )
+from codemcp.tools.file_utils import write_text_content
 
 
 class TestWriteFile(TestCase):
