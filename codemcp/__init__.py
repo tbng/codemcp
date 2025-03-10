@@ -9,13 +9,13 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from mcp.server.fastmcp import Context, FastMCP, Image
 
+from .access import check_edit_permission, get_git_base_dir
 from .tools.edit_file import edit_file_content
 from .tools.grep import grep_files
 from .tools.init_project import init_project
 from .tools.ls import ls_directory
 from .tools.read_file import read_file_content
 from .tools.write_file import write_file_content
-from .access import check_edit_permission, get_git_base_dir
 
 # Initialize FastMCP server
 mcp = FastMCP("codemcp")
@@ -113,19 +113,19 @@ async def codemcp(
     ## LS directory_path
 
     Lists files and directories in a given path. The path parameter must be an absolute path, not a relative path. You should generally prefer the Glob and Grep tools, if you know which directories to search.
-    
+
     ## Grep pattern path include?
-    
+
     Searches for files containing a specified pattern (regular expression) using git grep.
     Files with a match are returned, up to a maximum of 100 files.
     Note that this tool only works inside git repositories.
-    
+
     Example:
       Grep "function.*hello" /path/to/repo  # Find files containing functions with "hello" in their name
       Grep "console\\.log" /path/to/repo --include="*.js"  # Find JS files with console.log statements
-    
+
     ## InitProject directory_path
-    
+
     Initializes a project by reading the .codemcprules TOML file from the specified directory.
     Returns instructions which you should IMMEDIATELY follow before continuing.
 
@@ -144,7 +144,14 @@ async def codemcp(
     expected_params = {
         "ReadFile": {"file_path", "offset", "limit"},
         "WriteFile": {"file_path", "content", "description"},
-        "EditFile": {"file_path", "old_string", "new_string", "description", "old_str", "new_str"},
+        "EditFile": {
+            "file_path",
+            "old_string",
+            "new_string",
+            "description",
+            "old_str",
+            "new_str",
+        },
         "LS": {"file_path"},
         "InitProject": {"file_path"},
         "Grep": {"pattern", "path", "include"},
@@ -168,7 +175,7 @@ async def codemcp(
             "pattern": pattern,
             "path": path,
             "include": include,
-            # Include backward compatibility parameters 
+            # Include backward compatibility parameters
             "old_str": old_str,
             "new_str": new_str,
         }.items()
@@ -216,24 +223,25 @@ async def codemcp(
             return "Error: file_path is required for LS command"
 
         return ls_directory(file_path)
-        
+
     elif command == "InitProject":
         if file_path is None:
             return "Error: file_path is required for InitProject command"
 
         return init_project(file_path)
-        
+
     elif command == "Grep":
         if pattern is None:
             return "Error: pattern is required for Grep command"
-        
+
         if path is None:
             path = file_path
-            
+
         try:
             result = grep_files(pattern, path, include)
-            return result.get("resultForAssistant", 
-                            f"Found {result.get('numFiles', 0)} file(s)")
+            return result.get(
+                "resultForAssistant", f"Found {result.get('numFiles', 0)} file(s)"
+            )
         except Exception as e:
             return f"Error executing grep: {str(e)}"
 

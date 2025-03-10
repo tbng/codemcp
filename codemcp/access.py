@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 
+import logging
 import os
 import subprocess
-import logging
+from typing import Optional, Tuple
+
 import toml
-from typing import Tuple, Optional
 
 
 def get_git_base_dir(file_path: str) -> Optional[str]:
@@ -20,7 +21,9 @@ def get_git_base_dir(file_path: str) -> Optional[str]:
     try:
         # Get the directory containing the file - handle non-existent files
         if os.path.exists(file_path):
-            directory = os.path.dirname(file_path) if os.path.isfile(file_path) else file_path
+            directory = (
+                os.path.dirname(file_path) if os.path.isfile(file_path) else file_path
+            )
         else:
             # For non-existent files, use the parent directory
             directory = os.path.dirname(file_path)
@@ -52,20 +55,20 @@ def check_edit_permission(file_path: str) -> Tuple[bool, str]:
     """
     Check if editing the file is permitted based on the presence of codemcp.toml
     in the git repository's root directory.
-    
+
     Args:
         file_path: The path to the file to edit
-        
+
     Returns:
         A tuple of (is_permitted, message)
     """
     # Get the git base directory
     git_base_dir = get_git_base_dir(file_path)
-    
+
     # If not in a git repository, deny access
     if not git_base_dir:
         return False, "File is not in a git repository. Permission denied."
-    
+
     # Check for codemcp.toml in the git base directory
     config_path = os.path.join(git_base_dir, "codemcp.toml")
     if not os.path.exists(config_path):
@@ -74,7 +77,7 @@ def check_edit_permission(file_path: str) -> Tuple[bool, str]:
             "Please create a codemcp.toml file in the root directory of your project "
             "to enable editing files with codemcp."
         )
-    
+
     # Optionally, verify the content of the codemcp.toml file
     try:
         config = toml.load(config_path)

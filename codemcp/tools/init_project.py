@@ -50,7 +50,7 @@ If the user tells you a fact about the overall system that seems very important,
             try:
                 with open(rules_file_path, "rb") as f:
                     rules_config = tomli.load(f)
-                
+
                 # Extract global_prompt if it exists
                 if "global_prompt" in rules_config:
                     global_prompt = rules_config["global_prompt"]

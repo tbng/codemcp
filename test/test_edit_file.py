@@ -45,32 +45,34 @@ class TestEditFile(TestCase):
             f.write("This is the base similar file\n")
         with open(self.similar_file_alt_path, "w", encoding="utf-8") as f:
             f.write("This is the alternative similar file\n")
-            
+
         # Setup mock patches
         self.setup_mocks()
-        
+
     def setup_mocks(self):
         """Setup mocks for git functions to bypass repository checks"""
         # Create patch for git repository check
-        self.is_git_repo_patch = patch('codemcp.git.is_git_repository')
+        self.is_git_repo_patch = patch("codemcp.git.is_git_repository")
         self.mock_is_git_repo = self.is_git_repo_patch.start()
         self.mock_is_git_repo.return_value = True
         self.addCleanup(self.is_git_repo_patch.stop)
 
         # Create patch for git base directory
-        self.git_base_dir_patch = patch('codemcp.access.get_git_base_dir')
+        self.git_base_dir_patch = patch("codemcp.access.get_git_base_dir")
         self.mock_git_base_dir = self.git_base_dir_patch.start()
         self.mock_git_base_dir.return_value = self.temp_dir.name
         self.addCleanup(self.git_base_dir_patch.stop)
 
         # Create patch for commit operations
-        self.commit_changes_patch = patch('codemcp.tools.edit_file.commit_changes')
+        self.commit_changes_patch = patch("codemcp.tools.edit_file.commit_changes")
         self.mock_commit_changes = self.commit_changes_patch.start()
         self.mock_commit_changes.return_value = (True, "Mocked commit success")
         self.addCleanup(self.commit_changes_patch.stop)
 
         # Create patch for pending commit operations
-        self.commit_pending_patch = patch('codemcp.tools.file_utils.commit_pending_changes')
+        self.commit_pending_patch = patch(
+            "codemcp.tools.file_utils.commit_pending_changes"
+        )
         self.mock_commit_pending = self.commit_pending_patch.start()
         self.mock_commit_pending.return_value = (True, "No pending changes to commit")
         self.addCleanup(self.commit_pending_patch.stop)
@@ -168,67 +170,82 @@ class TestEditFile(TestCase):
             ]
             self.assertEqual(len(patch), 1)
             self.assertEqual(updated_file, new_string)
-            
+
     def test_apply_edit_with_leading_whitespace(self):
         """Test applying edit with different leading whitespace"""
         # Create a test file with consistent indentation
         indented_file_path = os.path.join(self.temp_dir.name, "indented.py")
         with open(indented_file_path, "w", encoding="utf-8") as f:
-            f.write("def example():\n    first_line = 1\n    second_line = 2\n    third_line = 3\n")
-        
+            f.write(
+                "def example():\n    first_line = 1\n    second_line = 2\n    third_line = 3\n"
+            )
+
         # Search text with missing indentation
         old_string = "first_line = 1\nsecond_line = 2"
         new_string = "first_line = 10\nsecond_line = 20"
-        
+
         # The function should handle the indentation difference
         patch, updated_file = apply_edit(indented_file_path, old_string, new_string)
-        
+
         # Check if the indentation is preserved in the result
-        self.assertIn("def example():\n    first_line = 10\n    second_line = 20\n    third_line = 3\n", updated_file)
-    
+        self.assertIn(
+            "def example():\n    first_line = 10\n    second_line = 20\n    third_line = 3\n",
+            updated_file,
+        )
+
     def test_apply_edit_with_ellipsis(self):
         """Test applying edit using ellipsis"""
         # Create a test file with content between sections we want to keep
         ellipsis_file_path = os.path.join(self.temp_dir.name, "ellipsis.py")
         with open(ellipsis_file_path, "w", encoding="utf-8") as f:
-            f.write("def start():\n    # This is the start\n    print('start')\n\ndef middle():\n    # Middle section\n    print('middle')\n\ndef end():\n    # This is the end\n    print('end')\n")
-        
+            f.write(
+                "def start():\n    # This is the start\n    print('start')\n\ndef middle():\n    # Middle section\n    print('middle')\n\ndef end():\n    # This is the end\n    print('end')\n"
+            )
+
         # Use ellipsis to replace just the middle function
         old_string = "def start():\n    # This is the start\n    print('start')\n\n...\n\ndef end():"
         new_string = "def start():\n    # This is the start\n    print('START')\n\n...\n\ndef end():"
-        
+
         # The function should match the start and end sections and only replace the 'start' print
         try:
             patch, updated_file = apply_edit(ellipsis_file_path, old_string, new_string)
             # Should contain the updated 'START' print statement
             self.assertIn("print('START')", updated_file)
             # Should still contain the middle function unchanged
-            self.assertIn("def middle():\n    # Middle section\n    print('middle')", updated_file)
+            self.assertIn(
+                "def middle():\n    # Middle section\n    print('middle')", updated_file
+            )
         except ValueError:
             # Our test might not pass yet if the full dotdotdots implementation isn't complete
             # This is fine for this PR
             self.skipTest("Dotdotdots matching not fully implemented yet")
-    
+
     def test_apply_edit_fuzzy_matching(self):
         """Test applying edit with fuzzy matching for small text differences"""
         # Create a test file with text that has minor differences from what we'll search for
         fuzzy_file_path = os.path.join(self.temp_dir.name, "fuzzy.txt")
         with open(fuzzy_file_path, "w", encoding="utf-8") as f:
-            f.write("This is some text that will be searched\nwith fuzzy matching because there are\nsmall differences in spacing and punctuation.\n")
-        
+            f.write(
+                "This is some text that will be searched\nwith fuzzy matching because there are\nsmall differences in spacing and punctuation.\n"
+            )
+
         # Manually test if the fuzzy matching capability works
         try:
             # Using fuzzy matching directly to confirm it works as expected
             with open(fuzzy_file_path, "r", encoding="utf-8") as f:
                 content = f.read()
-            
+
             # Search text that's closer to the actual content
             old_string = "This is some text that will be searched\nwith fuzzy matching because there are"
-            new_string = "This text has been replaced\nusing the fuzzy matching algorithm"
-            
+            new_string = (
+                "This text has been replaced\nusing the fuzzy matching algorithm"
+            )
+
             # Test replace_most_similar_chunk directly
-            updated_content = replace_most_similar_chunk(content, old_string, new_string)
-            
+            updated_content = replace_most_similar_chunk(
+                content, old_string, new_string
+            )
+
             if updated_content and updated_content != content:
                 # If fuzzy matching works, our test passes
                 self.assertIn("This text has been replaced", updated_content)
@@ -334,51 +351,63 @@ class TestEditFile(TestCase):
         result = edit_file_content(self.test_file_path, old_string, new_string)
 
         self.assertIn("Error: String to replace not found in file", result)
-        
+
     def test_edit_file_content_whitespace_only_lines(self):
         """Test editing content with whitespace-only lines"""
         # Create a test file with empty lines that have whitespace
         whitespace_file_path = os.path.join(self.temp_dir.name, "whitespace_test.txt")
         with open(whitespace_file_path, "w", encoding="utf-8") as f:
             f.write("This is a test file\n    \nWith an empty line that has spaces\n")
-        
+
         # Original string with a clean empty line
         old_string = "This is a test file\n\nWith an empty line that has spaces"
         new_string = "This has been edited\n\nThe empty line should be preserved"
-        
+
         # Use read_file_timestamps to avoid "file has not been read" error
         timestamps = {whitespace_file_path: os.stat(whitespace_file_path).st_mtime + 1}
-        
+
         # Run the edit operation
-        result = edit_file_content(whitespace_file_path, old_string, new_string, timestamps)
-        
+        result = edit_file_content(
+            whitespace_file_path, old_string, new_string, timestamps
+        )
+
         # Check that the edit was successful
         self.assertIn(f"Successfully edited {whitespace_file_path}", result)
-        
+
         # Read the file and verify the content was replaced
         with open(whitespace_file_path, "r", encoding="utf-8") as f:
             content = f.read()
-        
+
         # The new content should have replaced the old content,
         # and the empty line with whitespace should now be a clean empty line
-        self.assertEqual("This has been edited\n\nThe empty line should be preserved\n", content)
-        
+        self.assertEqual(
+            "This has been edited\n\nThe empty line should be preserved\n", content
+        )
+
     def test_edit_file_content_multiple_whitespace_only_lines(self):
         """Test editing content with multiple whitespace-only lines"""
         # Create a test file with multiple empty lines that have whitespace
         mixed_whitespace_path = os.path.join(self.temp_dir.name, "mixed_whitespace.txt")
         with open(mixed_whitespace_path, "w", encoding="utf-8") as f:
-            f.write("This file has\n  \nmultiple empty lines\n\t\nwith different whitespace\n   \n")
+            f.write(
+                "This file has\n  \nmultiple empty lines\n\t\nwith different whitespace\n   \n"
+            )
 
         # Original string with clean empty lines
-        old_string = "This file has\n\nmultiple empty lines\n\nwith different whitespace\n\n"
+        old_string = (
+            "This file has\n\nmultiple empty lines\n\nwith different whitespace\n\n"
+        )
         new_string = "The file now has\n\nno more empty lines\nwith whitespace"
 
         # Use read_file_timestamps to avoid "file has not been read" error
-        timestamps = {mixed_whitespace_path: os.stat(mixed_whitespace_path).st_mtime + 1}
+        timestamps = {
+            mixed_whitespace_path: os.stat(mixed_whitespace_path).st_mtime + 1
+        }
 
         # Run the edit operation
-        result = edit_file_content(mixed_whitespace_path, old_string, new_string, timestamps)
+        result = edit_file_content(
+            mixed_whitespace_path, old_string, new_string, timestamps
+        )
 
         # Check that the edit was successful
         self.assertIn(f"Successfully edited {mixed_whitespace_path}", result)
@@ -391,11 +420,11 @@ class TestEditFile(TestCase):
         # Read with binary mode to ensure we're comparing the actual content
         with open(mixed_whitespace_path, "rb") as f:
             binary_content = f.read()
-        
+
         # For debugging
         expected = "The file now has\n\nno more empty lines\nwith whitespace\n"
-        expected_bytes = expected.encode('utf-8')
-        
+        expected_bytes = expected.encode("utf-8")
+
         # Check if the content has the expected newlines
         self.assertEqual(expected, content)
 
@@ -496,33 +525,36 @@ class TestEditFile(TestCase):
 
             self.assertIn("MOCK SNIPPET", result)
 
-
     def test_edit_untracked_file(self):
         """Test editing when the file is not tracked in git"""
         # Create a file but don't add it to git tracking
         untracked_path = os.path.join(self.temp_dir.name, "untracked.txt")
         with open(untracked_path, "w", encoding="utf-8") as f:
             f.write("This is an untracked file")
-            
+
         # Override the commit_pending_changes mock to simulate an untracked file
-        with patch('codemcp.tools.file_utils.commit_pending_changes') as mock_pending:
+        with patch("codemcp.tools.file_utils.commit_pending_changes") as mock_pending:
             # Simulate the subprocess.run result for an untracked file
-            mock_pending.return_value = (False, "File is not tracked by git. Please add the file to git tracking first using 'git add <file>'")
-            
+            mock_pending.return_value = (
+                False,
+                "File is not tracked by git. Please add the file to git tracking first using 'git add <file>'",
+            )
+
             # Attempt to edit the untracked file
             old_string = "This is an untracked file"
             new_string = "This shouldn't work"
-            
+
             result = edit_file_content(untracked_path, old_string, new_string)
-            
+
             # Verify that the edit was rejected
             self.assertIn("Error: File is not tracked by git", result)
             self.assertIn("Please add the file to git tracking", result)
-            
+
             # Verify that the file content was not changed
             with open(untracked_path, "r", encoding="utf-8") as f:
                 content = f.read()
             self.assertEqual(content, old_string)
+
 
 if __name__ == "__main__":
     unittest.main()

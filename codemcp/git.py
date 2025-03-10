@@ -72,10 +72,13 @@ def commit_pending_changes(file_path: str) -> Tuple[bool, str]:
             logging.debug("git ls-files stderr: %s", file_status.stderr.strip())
 
         file_is_tracked = file_status.returncode == 0
-        
+
         # If the file is not tracked, return an error
         if not file_is_tracked:
-            return False, "File is not tracked by git. Please add the file to git tracking first using 'git add <file>'"
+            return (
+                False,
+                "File is not tracked by git. Please add the file to git tracking first using 'git add <file>'",
+            )
 
         # Check if working directory has uncommitted changes
         status_result = subprocess.run(
@@ -122,7 +125,7 @@ def commit_pending_changes(file_path: str) -> Tuple[bool, str]:
                     check=True,
                     stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE,
-                    text=True
+                    text=True,
                 )
 
                 # Log command output
@@ -137,14 +140,20 @@ def commit_pending_changes(file_path: str) -> Tuple[bool, str]:
                     check=True,
                     stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE,
-                    text=True
+                    text=True,
                 )
 
                 # Log command output
                 if commit_snapshot_result.stdout:
-                    logging.debug("git commit snapshot output: %s", commit_snapshot_result.stdout.strip())
+                    logging.debug(
+                        "git commit snapshot output: %s",
+                        commit_snapshot_result.stdout.strip(),
+                    )
                 if commit_snapshot_result.stderr:
-                    logging.debug("git commit snapshot stderr: %s", commit_snapshot_result.stderr.strip())
+                    logging.debug(
+                        "git commit snapshot stderr: %s",
+                        commit_snapshot_result.stderr.strip(),
+                    )
 
                 return True, "Committed pending changes"
 
@@ -169,12 +178,12 @@ def commit_changes(file_path: str, description: str) -> Tuple[bool, str]:
             return False, "File is not in a Git repository"
 
         directory = os.path.dirname(file_path)
-        
+
         # Add the specified file to git
         # Check if file exists first
         if not os.path.exists(file_path):
             return False, f"File does not exist: {file_path}"
-            
+
         # Try to add the file to git
         add_result = subprocess.run(
             ["git", "add", file_path],
@@ -205,9 +214,13 @@ def commit_changes(file_path: str, description: str) -> Tuple[bool, str]:
 
         # Log command output
         if rev_parse_result.stdout:
-            logging.debug("git rev-parse HEAD output: %s", rev_parse_result.stdout.strip())
+            logging.debug(
+                "git rev-parse HEAD output: %s", rev_parse_result.stdout.strip()
+            )
         if rev_parse_result.stderr:
-            logging.debug("git rev-parse HEAD stderr: %s", rev_parse_result.stderr.strip())
+            logging.debug(
+                "git rev-parse HEAD stderr: %s", rev_parse_result.stderr.strip()
+            )
 
         has_commits = rev_parse_result.returncode == 0
 
@@ -229,7 +242,10 @@ def commit_changes(file_path: str, description: str) -> Tuple[bool, str]:
 
             # If diff-index returns 0, there are no changes to commit for this file
             if diff_result.returncode == 0:
-                return True, "No changes to commit (file is identical to what's already committed)"
+                return (
+                    True,
+                    "No changes to commit (file is identical to what's already committed)",
+                )
 
         # Commit the change
         commit_result = subprocess.run(

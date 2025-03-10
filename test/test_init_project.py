@@ -3,8 +3,8 @@
 import os
 import tempfile
 import unittest
-from unittest.mock import patch, MagicMock
 from pathlib import Path
+from unittest.mock import MagicMock, patch
 
 from codemcp.tools.init_project import init_project
 
@@ -14,24 +14,24 @@ class InitProjectTestCase(unittest.TestCase):
         # Create a temporary directory for testing
         self.test_dir = tempfile.TemporaryDirectory()
         self.dir_path = self.test_dir.name
-        
+
         # Setup mock patches
         self.setup_mocks()
 
     def tearDown(self):
         # Clean up temporary directory
         self.test_dir.cleanup()
-        
+
     def setup_mocks(self):
         """Setup mocks for git functions to bypass repository checks"""
         # Create patch for git repository check
-        self.is_git_repo_patch = patch('codemcp.git.is_git_repository')
+        self.is_git_repo_patch = patch("codemcp.git.is_git_repository")
         self.mock_is_git_repo = self.is_git_repo_patch.start()
         self.mock_is_git_repo.return_value = True
         self.addCleanup(self.is_git_repo_patch.stop)
-        
+
         # Create patch for git base directory
-        self.git_base_dir_patch = patch('codemcp.access.get_git_base_dir')
+        self.git_base_dir_patch = patch("codemcp.access.get_git_base_dir")
         self.mock_git_base_dir = self.git_base_dir_patch.start()
         self.mock_git_base_dir.return_value = self.dir_path
         self.addCleanup(self.git_base_dir_patch.stop)
@@ -50,7 +50,7 @@ class InitProjectTestCase(unittest.TestCase):
             f.write('global_prompt = "This is a custom global prompt."\n')
 
         result = init_project(self.dir_path)
-        # Instead of exact matching, check that it contains both the essential instructions 
+        # Instead of exact matching, check that it contains both the essential instructions
         # and the custom global prompt
         self.assertIn("Do NOT attempt to run tests, let the user run them.", result)
         self.assertIn("This is a custom global prompt.", result)
@@ -75,7 +75,9 @@ class InitProjectTestCase(unittest.TestCase):
         # Create an invalid codemcp.toml file
         rules_file_path = os.path.join(self.dir_path, "codemcp.toml")
         with open(rules_file_path, "w") as f:
-            f.write('global_prompt = "This is an invalid TOML file\n')  # Missing closing quote
+            f.write(
+                'global_prompt = "This is an invalid TOML file\n'
+            )  # Missing closing quote
 
         result = init_project(self.dir_path)
         self.assertTrue(result.startswith("Error reading codemcp.toml file"))

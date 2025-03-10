@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 
-import os
 import logging
+import os
 from typing import Optional, Tuple
 
 from ..git import commit_changes
 from .file_utils import (
     check_file_path_and_permissions,
     check_git_tracking_for_existing_file,
-    write_text_content
+    write_text_content,
 )
 
 
@@ -88,7 +88,7 @@ def write_file_content(file_path: str, content: str, description: str = "") -> s
         is_valid, error_message = check_file_path_and_permissions(file_path)
         if not is_valid:
             return error_message
-            
+
         # Check git tracking for existing files
         is_tracked, track_error = check_git_tracking_for_existing_file(file_path)
         if not is_tracked:

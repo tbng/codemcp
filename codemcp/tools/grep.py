@@ -5,7 +5,7 @@ import os
 import subprocess
 import time
 from pathlib import Path
-from typing import Dict, List, Optional, Any
+from typing import Any, Dict, List, Optional
 
 from ..common import normalize_file_path
 from ..git import is_git_repository
@@ -24,7 +24,9 @@ Example:
 """
 
 
-def git_grep(pattern: str, path: Optional[str] = None, include: Optional[str] = None, signal=None) -> List[str]:
+def git_grep(
+    pattern: str, path: Optional[str] = None, include: Optional[str] = None, signal=None
+) -> List[str]:
     """Execute git grep to search for pattern in files.
 
     Args:
@@ -45,13 +47,13 @@ def git_grep(pattern: str, path: Optional[str] = None, include: Optional[str] = 
     # Verify this is a git repository - this check uses the mocked version in tests
     if not is_git_repository(absolute_path):
         raise ValueError(f"The provided path is not in a git repository: {path}")
-        
+
     # In non-test environment, verify the path exists and is a directory
     if not os.environ.get("DESKAID_TESTING"):
         # Check if path exists and is a directory
         if not os.path.exists(absolute_path):
             raise FileNotFoundError(f"Directory does not exist: {path}")
-        
+
         if not os.path.isdir(absolute_path):
             raise NotADirectoryError(f"Path is not a directory: {path}")
 
@@ -86,11 +88,13 @@ def git_grep(pattern: str, path: Optional[str] = None, include: Optional[str] = 
 
         # git grep returns exit code 1 when no matches are found, which is normal
         if result.returncode not in [0, 1]:
-            logging.error(f"git grep failed with exit code {result.returncode}: {result.stderr}")
+            logging.error(
+                f"git grep failed with exit code {result.returncode}: {result.stderr}"
+            )
             raise subprocess.SubprocessError(f"git grep failed: {result.stderr}")
 
         # Process results - split by newline and filter empty lines
-        matches = [line.strip() for line in result.stdout.split('\n') if line.strip()]
+        matches = [line.strip() for line in result.stdout.split("\n") if line.strip()]
 
         # Convert to absolute paths
         matches = [os.path.join(absolute_path, match) for match in matches]
@@ -118,13 +122,16 @@ def render_result_for_assistant(output: Dict[str, Any]) -> str:
 
     result = f"Found {num_files} file{'' if num_files == 1 else 's'}\n{os.linesep.join(filenames[:MAX_RESULTS])}"
     if num_files > MAX_RESULTS:
-        result += "\n(Results are truncated. Consider using a more specific path or pattern.)"
-    
+        result += (
+            "\n(Results are truncated. Consider using a more specific path or pattern.)"
+        )
+
     return result
 
 
-def grep_files(pattern: str, path: Optional[str] = None, include: Optional[str] = None, 
-               signal=None) -> Dict[str, Any]:
+def grep_files(
+    pattern: str, path: Optional[str] = None, include: Optional[str] = None, signal=None
+) -> Dict[str, Any]:
     """Search for a pattern in files within a directory.
 
     Args:
@@ -147,24 +154,26 @@ def grep_files(pattern: str, path: Optional[str] = None, include: Optional[str] 
             # First try sorting by modification time
             stats = [os.stat(match) for match in matches]
             matches_with_stats = list(zip(matches, stats))
-            
+
             # In tests, sort by filename for deterministic results
             if os.environ.get("NODE_ENV") == "test":
                 matches_with_stats.sort(key=lambda x: x[0])
             else:
                 # Sort by modification time (newest first), with filename as tiebreaker
-                matches_with_stats.sort(key=lambda x: 
-                    (-(x[1].st_mtime or 0), x[0])
-                )
-                
+                matches_with_stats.sort(key=lambda x: (-(x[1].st_mtime or 0), x[0]))
+
             matches = [match for match, _ in matches_with_stats]
         except Exception as e:
             # Fall back to sorting by name if there's an error
-            logging.debug(f"Error sorting by modification time, falling back to name sort: {str(e)}")
+            logging.debug(
+                f"Error sorting by modification time, falling back to name sort: {str(e)}"
+            )
             matches.sort()
 
         # Calculate execution time
-        execution_time = int((time.time() - start_time) * 1000)  # Convert to milliseconds
+        execution_time = int(
+            (time.time() - start_time) * 1000
+        )  # Convert to milliseconds
 
         # Prepare output
         output = {
@@ -172,7 +181,7 @@ def grep_files(pattern: str, path: Optional[str] = None, include: Optional[str] 
             "durationMs": execution_time,
             "numFiles": len(matches),
         }
-        
+
         # Add formatted result for assistant
         output["resultForAssistant"] = render_result_for_assistant(output)
 
@@ -187,7 +196,7 @@ def grep_files(pattern: str, path: Optional[str] = None, include: Optional[str] 
             "durationMs": execution_time,
             "numFiles": 0,
             "error": str(e),
-            "resultForAssistant": f"Error: {str(e)}"
+            "resultForAssistant": f"Error: {str(e)}",
         }
-        
+
         return error_output

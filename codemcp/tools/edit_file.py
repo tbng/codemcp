@@ -17,7 +17,7 @@ from ..git import commit_changes
 from .file_utils import (
     check_file_path_and_permissions,
     check_git_tracking_for_existing_file,
-    write_text_content
+    write_text_content,
 )
 
 # Set up logger
@@ -98,16 +98,18 @@ def apply_edit(
         updated_file = new_string
         old_lines = []
         new_lines = new_string.split("\n")
-        
+
         # Create a simple patch structure
-        patch = [{
-            "oldStart": 1,
-            "oldLines": 0,
-            "newStart": 1,
-            "newLines": len(new_lines),
-            "lines": [f"+{line}" for line in new_lines],
-        }]
-        
+        patch = [
+            {
+                "oldStart": 1,
+                "oldLines": 0,
+                "newStart": 1,
+                "newLines": len(new_lines),
+                "lines": [f"+{line}" for line in new_lines],
+            }
+        ]
+
         return patch, updated_file
 
     # First try direct replacement (most common case and efficient)
@@ -117,7 +119,7 @@ def apply_edit(
         # Use the more robust replacement strategies
         logger.debug("Direct match not found, trying advanced matching techniques...")
         updated_file = replace_most_similar_chunk(content, old_string, new_string)
-        
+
         # If we still couldn't match, return the original content
         if not updated_file:
             logger.debug("All matching techniques failed. No changes made.")
@@ -139,28 +141,27 @@ def apply_edit(
             # Fallback: just say it's at the start of the file
             line_num = 0
 
-        patch.append({
-            "oldStart": line_num + 1,
-            "oldLines": len(old_lines),
-            "newStart": line_num + 1,
-            "newLines": len(new_lines),
-            "lines": [f"-{line}" for line in old_lines] + 
-                     [f"+{line}" for line in new_lines],
-        })
+        patch.append(
+            {
+                "oldStart": line_num + 1,
+                "oldLines": len(old_lines),
+                "newStart": line_num + 1,
+                "newLines": len(new_lines),
+                "lines": [f"-{line}" for line in old_lines]
+                + [f"+{line}" for line in new_lines],
+            }
+        )
 
     return patch, updated_file
-
-
-
 
 
 def prep(content: str) -> Tuple[str, List[str]]:
     """Prepare content for comparison by ensuring it ends with a newline
     and splitting into lines with preserved line endings.
-    
+
     Args:
         content: Text content to prepare
-        
+
     Returns:
         Tuple of (normalized content, list of lines with line endings)
     """
@@ -170,14 +171,16 @@ def prep(content: str) -> Tuple[str, List[str]]:
     return content, lines
 
 
-def perfect_or_whitespace(whole_lines: List[str], part_lines: List[str], replace_lines: List[str]) -> Optional[str]:
+def perfect_or_whitespace(
+    whole_lines: List[str], part_lines: List[str], replace_lines: List[str]
+) -> Optional[str]:
     """Try perfect match first, then try with whitespace flexibility.
-    
+
     Args:
         whole_lines: Original file lines with line endings
         part_lines: Lines to find/replace with line endings
         replace_lines: Replacement lines with line endings
-        
+
     Returns:
         Updated content if a match was found, None otherwise
     """
@@ -187,21 +190,25 @@ def perfect_or_whitespace(whole_lines: List[str], part_lines: List[str], replace
         return res
 
     # Try being flexible about leading whitespace
-    res = replace_part_with_missing_leading_whitespace(whole_lines, part_lines, replace_lines)
+    res = replace_part_with_missing_leading_whitespace(
+        whole_lines, part_lines, replace_lines
+    )
     if res:
         return res
-    
+
     return None
 
 
-def perfect_replace(whole_lines: List[str], part_lines: List[str], replace_lines: List[str]) -> Optional[str]:
+def perfect_replace(
+    whole_lines: List[str], part_lines: List[str], replace_lines: List[str]
+) -> Optional[str]:
     """Find an exact match of part_lines in whole_lines and replace with replace_lines.
-    
+
     Args:
         whole_lines: Original file lines with line endings
         part_lines: Lines to find/replace with line endings
         replace_lines: Replacement lines with line endings
-        
+
     Returns:
         Updated content if a perfect match was found, None otherwise
     """
@@ -213,17 +220,19 @@ def perfect_replace(whole_lines: List[str], part_lines: List[str], replace_lines
         if part_tup == whole_tup:
             res = whole_lines[:i] + replace_lines + whole_lines[i + part_len :]
             return "".join(res)
-    
+
     return None
 
 
-def match_but_for_leading_whitespace(whole_lines: List[str], part_lines: List[str]) -> Optional[str]:
+def match_but_for_leading_whitespace(
+    whole_lines: List[str], part_lines: List[str]
+) -> Optional[str]:
     """Check if lines match except for consistent leading whitespace.
-    
+
     Args:
         whole_lines: Original file lines subset
         part_lines: Lines to find/replace
-        
+
     Returns:
         The consistent leading whitespace prefix to be added, or None if no match
     """
@@ -250,12 +259,12 @@ def replace_part_with_missing_leading_whitespace(
     whole_lines: List[str], part_lines: List[str], replace_lines: List[str]
 ) -> Optional[str]:
     """Handle case where search text is missing the exact leading whitespace.
-    
+
     Args:
         whole_lines: Original file lines with line endings
         part_lines: Lines to find/replace with line endings
         replace_lines: Replacement lines with line endings
-        
+
     Returns:
         Updated content if match was found after whitespace normalization, None otherwise
     """
@@ -280,8 +289,12 @@ def replace_part_with_missing_leading_whitespace(
         if add_leading is None:
             continue
 
-        replace_lines = [add_leading + rline if rline.strip() else rline for rline in replace_lines]
-        whole_lines = whole_lines[:i] + replace_lines + whole_lines[i + num_part_lines :]
+        replace_lines = [
+            add_leading + rline if rline.strip() else rline for rline in replace_lines
+        ]
+        whole_lines = (
+            whole_lines[:i] + replace_lines + whole_lines[i + num_part_lines :]
+        )
         return "".join(whole_lines)
 
     return None
@@ -289,12 +302,12 @@ def replace_part_with_missing_leading_whitespace(
 
 def try_dotdotdots(whole: str, part: str, replace: str) -> Optional[str]:
     """Handle search/replace blocks that use ... to match code sections.
-    
+
     Args:
         whole: Original file content
-        part: Text to find/replace  
+        part: Text to find/replace
         replace: Replacement text
-        
+
     Returns:
         Updated content if dots matching was successful, None if no dots present,
         raises ValueError if dots are inconsistent
@@ -312,7 +325,9 @@ def try_dotdotdots(whole: str, part: str, replace: str) -> Optional[str]:
         return None
 
     # Compare odd strings in part_pieces and replace_pieces
-    all_dots_match = all(part_pieces[i] == replace_pieces[i] for i in range(1, len(part_pieces), 2))
+    all_dots_match = all(
+        part_pieces[i] == replace_pieces[i] for i in range(1, len(part_pieces), 2)
+    )
 
     if not all_dots_match:
         raise ValueError("Unmatched ... in search/replace block")
@@ -342,17 +357,21 @@ def try_dotdotdots(whole: str, part: str, replace: str) -> Optional[str]:
 
 
 def replace_closest_edit_distance(
-    whole_lines: List[str], part: str, part_lines: List[str], replace_lines: List[str], similarity_thresh: float = 0.8
+    whole_lines: List[str],
+    part: str,
+    part_lines: List[str],
+    replace_lines: List[str],
+    similarity_thresh: float = 0.8,
 ) -> Optional[str]:
     """Find and replace the chunk in whole_lines most similar to part_lines.
-    
+
     Args:
         whole_lines: Original file lines with line endings
         part: Original search text as a single string
         part_lines: Original search text split into lines with line endings
         replace_lines: Replacement lines with line endings
         similarity_thresh: Minimum similarity threshold (0.0-1.0)
-        
+
     Returns:
         Updated content if a similar enough match was found, None otherwise
     """
@@ -389,14 +408,16 @@ def replace_closest_edit_distance(
     return modified_whole
 
 
-def find_similar_lines(search_lines: str, content_lines: str, threshold: float = 0.6) -> str:
+def find_similar_lines(
+    search_lines: str, content_lines: str, threshold: float = 0.6
+) -> str:
     """Find lines in content that are similar to search_lines.
-    
+
     Args:
         search_lines: Text we're trying to match
         content_lines: Content of the file to search in
         threshold: Similarity threshold (0.0-1.0)
-        
+
     Returns:
         String containing the most similar lines, or empty string if none found
     """
@@ -430,12 +451,12 @@ def find_similar_lines(search_lines: str, content_lines: str, threshold: float =
 
 def replace_most_similar_chunk(whole: str, part: str, replace: str) -> Optional[str]:
     """Best efforts to find the `part` lines in `whole` and replace them with `replace`.
-    
+
     Args:
         whole: Original file content
-        part: Text to find/replace  
+        part: Text to find/replace
         replace: Replacement text
-        
+
     Returns:
         Updated content if a match was found, None otherwise
     """
@@ -451,7 +472,9 @@ def replace_most_similar_chunk(whole: str, part: str, replace: str) -> Optional[
     # drop leading empty line, LLMs sometimes add them spuriously
     if len(part_lines) > 2 and not part_lines[0].strip():
         skip_blank_line_part_lines = part_lines[1:]
-        res = perfect_or_whitespace(whole_lines, skip_blank_line_part_lines, replace_lines)
+        res = perfect_or_whitespace(
+            whole_lines, skip_blank_line_part_lines, replace_lines
+        )
         if res:
             return res
 
@@ -468,7 +491,7 @@ def replace_most_similar_chunk(whole: str, part: str, replace: str) -> Optional[
     res = replace_closest_edit_distance(whole_lines, part, part_lines, replace_lines)
     if res:
         return res
-    
+
     return None
 
 
@@ -534,11 +557,17 @@ def debug_string_comparison(
         s1_no_trailing = "\n".join([line.rstrip() for line in s1.splitlines()])
         s2_no_trailing = "\n".join([line.rstrip() for line in s2.splitlines()])
         if s1_no_trailing == s2_no_trailing:
-            logger.debug("  Strings match when trailing whitespace is stripped from each line!")
+            logger.debug(
+                "  Strings match when trailing whitespace is stripped from each line!"
+            )
 
         # Check if strings are equal after normalizing only whitespace-only lines
-        s1_normalized = "\n".join([line.rstrip() if line.strip() == "" else line for line in s1.splitlines()])
-        s2_normalized = "\n".join([line.rstrip() if line.strip() == "" else line for line in s2.splitlines()])
+        s1_normalized = "\n".join(
+            [line.rstrip() if line.strip() == "" else line for line in s1.splitlines()]
+        )
+        s2_normalized = "\n".join(
+            [line.rstrip() if line.strip() == "" else line for line in s2.splitlines()]
+        )
         if s1_normalized == s2_normalized:
             logger.debug("  Strings match when normalizing only whitespace-only lines!")
 
@@ -584,13 +613,15 @@ def edit_file_content(
         is_valid, error_message = check_file_path_and_permissions(full_file_path)
         if not is_valid:
             return error_message
-        
+
         # Handle creating a new file - skip commit_pending_changes for non-existent files
         creating_new_file = old_string == "" and not os.path.exists(full_file_path)
-        
+
         if not creating_new_file:
             # Only check commit_pending_changes for existing files
-            is_tracked, track_error = check_git_tracking_for_existing_file(full_file_path)
+            is_tracked, track_error = check_git_tracking_for_existing_file(
+                full_file_path
+            )
             if not is_tracked:
                 return f"Error: {track_error}"
 
@@ -651,20 +682,22 @@ def edit_file_content(
         # Check if old_string exists in the file
         if old_string and old_string not in content:
             # Try advanced matching techniques
-            logger.debug("Direct match not found, trying advanced matching techniques...")
-            
+            logger.debug(
+                "Direct match not found, trying advanced matching techniques..."
+            )
+
             # Test if replace_most_similar_chunk can find a match
             test_match = replace_most_similar_chunk(content, old_string, new_string)
-            
+
             if not test_match:
                 # If no match found, try to provide helpful suggestions
                 similar = find_similar_lines(old_string, content)
                 error_msg = "Error: String to replace not found in file."
-                
+
                 if similar:
                     error_msg += f"\n\nDid you mean to match these lines?\n\n```\n{similar}\n```\n\nTip: Make sure whitespace, indentation, and exact characters match."
                 return error_msg
-                
+
             # If we're here, we found a match using advanced techniques
             logger.debug("Found match using advanced matching techniques")
 
@@ -675,7 +708,9 @@ def edit_file_content(
                 test_result = try_dotdotdots(content, old_string, new_string)
                 if test_result:
                     # If it worked with dotdotdots, we're good to proceed
-                    logger.debug("Successfully used dotdotdots strategy to handle multiple occurrences")
+                    logger.debug(
+                        "Successfully used dotdotdots strategy to handle multiple occurrences"
+                    )
                 else:
                     # Fall back to the original error message
                     matches = content.count(old_string)
@@ -687,11 +722,13 @@ def edit_file_content(
 
         # Apply the edit with advanced matching if needed
         patch, updated_file = apply_edit(full_file_path, old_string, new_string)
-        
-        # If no changes were made (which should never happen at this point), 
+
+        # If no changes were made (which should never happen at this point),
         # log a warning but continue
         if content == updated_file and old_string.strip():
-            logger.warning("No changes were made despite passing all checks. This is unexpected.")
+            logger.warning(
+                "No changes were made despite passing all checks. This is unexpected."
+            )
 
         # Create directory if it doesn't exist
         directory = os.path.dirname(full_file_path)

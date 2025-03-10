@@ -17,9 +17,10 @@ class TestGrepTool(unittest.TestCase):
         # Set testing environment variable
         self.env_patcher = mock.patch.dict(os.environ, {"DESKAID_TESTING": "1"})
         self.env_patcher.start()
-        
+
     def tearDown(self):
         self.env_patcher.stop()
+
     @mock.patch("codemcp.tools.grep.normalize_file_path", return_value="/test/path")
     @mock.patch("codemcp.tools.grep.is_git_repository", return_value=True)
     @mock.patch("subprocess.run")
@@ -83,14 +84,18 @@ class TestGrepTool(unittest.TestCase):
         ]
         self.assertEqual(result, expected)
 
-    @mock.patch("codemcp.tools.grep.normalize_file_path", return_value="/not/a/git/repo")
+    @mock.patch(
+        "codemcp.tools.grep.normalize_file_path", return_value="/not/a/git/repo"
+    )
     @mock.patch("codemcp.tools.grep.is_git_repository", return_value=False)
     @mock.patch("os.environ.get", return_value="1")  # Simulate test environment
-    def test_git_grep_not_a_git_repo(self, mock_env_get, mock_is_git_repo, mock_normalize):
+    def test_git_grep_not_a_git_repo(
+        self, mock_env_get, mock_is_git_repo, mock_normalize
+    ):
         # Should raise a ValueError if the path is not a git repository
         with self.assertRaises(ValueError) as context:
             git_grep("pattern", "/not/a/git/repo")
-        
+
         # Verify the correct error message
         self.assertIn("not in a git repository", str(context.exception))
 
@@ -136,7 +141,7 @@ class TestGrepTool(unittest.TestCase):
             "/test/path/file2.py",
             "/test/path/file3.py",
         ]
-        
+
         # Mock stat objects
         mock_stat1 = mock.MagicMock()
         mock_stat1.st_mtime = 1000
@@ -144,13 +149,13 @@ class TestGrepTool(unittest.TestCase):
         mock_stat2.st_mtime = 2000
         mock_stat3 = mock.MagicMock()
         mock_stat3.st_mtime = 3000
-        
+
         mock_stat.side_effect = [mock_stat3, mock_stat2, mock_stat1]
-        
+
         # Set test environment variables
         with mock.patch.dict(os.environ, {"NODE_ENV": "test", "DESKAID_TESTING": "1"}):
             result = grep_files("pattern", "/test/path")
-        
+
         # Assertions
         self.assertEqual(result["numFiles"], 3)
         self.assertEqual(len(result["filenames"]), 3)
@@ -162,10 +167,10 @@ class TestGrepTool(unittest.TestCase):
     def test_grep_files_empty_result(self, mock_env_get, mock_git_grep):
         # Setup mock for no matches
         mock_git_grep.return_value = []
-        
+
         # Call the function
         result = grep_files("pattern", "/test/path")
-        
+
         # Assertions
         self.assertEqual(result["numFiles"], 0)
         self.assertEqual(result["filenames"], [])
@@ -177,10 +182,10 @@ class TestGrepTool(unittest.TestCase):
     def test_grep_files_error(self, mock_env_get, mock_git_grep):
         # Setup mock to raise an exception
         mock_git_grep.side_effect = ValueError("Test error")
-        
+
         # Call the function
         result = grep_files("pattern", "/test/path")
-        
+
         # Assertions
         self.assertEqual(result["numFiles"], 0)
         self.assertEqual(result["filenames"], [])

@@ -1,18 +1,17 @@
 #!/usr/bin/env python3
 
+import asyncio
 import os
+import shutil
+import subprocess
+import sys
 import tempfile
 import unittest
-import shutil
-import asyncio
-from pathlib import Path
-import sys
-import subprocess
 import warnings
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from expecttest import TestCase
-
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 
@@ -47,7 +46,7 @@ class MCPEndToEndTest(TestCase, unittest.IsolatedAsyncioTestCase):
 
         # Initialize a git repository in the temp directory
         self.init_git_repo()
-        
+
     # Keep the old setUp method for backward compatibility
     def setUp(self):
         # This will allow the test to run with both unittest and pytest
@@ -56,7 +55,7 @@ class MCPEndToEndTest(TestCase, unittest.IsolatedAsyncioTestCase):
     async def asyncTearDown(self):
         """Async teardown to clean up after the test."""
         self.temp_dir.cleanup()
-        
+
     # Keep the old tearDown method for backward compatibility
     def tearDown(self):
         # This will be called by regular unittest
@@ -65,19 +64,19 @@ class MCPEndToEndTest(TestCase, unittest.IsolatedAsyncioTestCase):
     def init_git_repo(self):
         """Initialize a git repository for testing."""
         subprocess.run(
-            ["git", "init"], 
-            cwd=self.temp_dir.name, 
-            env=self.env, 
-            check=True, 
-            stdout=subprocess.PIPE, 
-            stderr=subprocess.PIPE
+            ["git", "init"],
+            cwd=self.temp_dir.name,
+            env=self.env,
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
         )
-        
+
         # Create initial commit
         readme_path = os.path.join(self.temp_dir.name, "README.md")
         with open(readme_path, "w") as f:
             f.write("# Test Repository\n")
-            
+
         # Create a codemcp.toml file in the repo root (required for permission checks)
         codemcp_toml_path = os.path.join(self.temp_dir.name, "codemcp.toml")
         with open(codemcp_toml_path, "w") as f:
@@ -85,47 +84,47 @@ class MCPEndToEndTest(TestCase, unittest.IsolatedAsyncioTestCase):
 
         subprocess.run(
             ["git", "add", "README.md", "codemcp.toml"],
-            cwd=self.temp_dir.name, 
-            env=self.env, 
-            check=True
+            cwd=self.temp_dir.name,
+            env=self.env,
+            check=True,
         )
-        
+
         subprocess.run(
-            ["git", "commit", "-m", "Initial commit"], 
-            cwd=self.temp_dir.name, 
-            env=self.env, 
-            check=True
+            ["git", "commit", "-m", "Initial commit"],
+            cwd=self.temp_dir.name,
+            env=self.env,
+            check=True,
         )
 
     def normalize_path(self, text):
         """Normalize temporary directory paths in output text."""
         if self.temp_dir and self.temp_dir.name:
             # Handle CallToolResult objects by converting to string first
-            if hasattr(text, 'content'):
+            if hasattr(text, "content"):
                 # This is a CallToolResult object, extract the content
                 text = text.content
-            
+
             # Handle lists of TextContent objects
-            if isinstance(text, list) and len(text) > 0 and hasattr(text[0], 'text'):
+            if isinstance(text, list) and len(text) > 0 and hasattr(text[0], "text"):
                 # For list of TextContent objects, we'll preserve the list structure
                 # but normalize the path in each TextContent's text attribute
                 return text
-            
+
             # Replace the actual temp dir path with a fixed placeholder
             if isinstance(text, str):
                 return text.replace(self.temp_dir.name, "/tmp/test_dir")
         return text
-        
+
     def extract_text_from_result(self, result):
         """Extract text content from various result formats for assertions.
-        
+
         Args:
             result: The result object (could be string, list of TextContent, etc.)
-            
+
         Returns:
             str: The extracted text content
         """
-        if isinstance(result, list) and len(result) > 0 and hasattr(result[0], 'text'):
+        if isinstance(result, list) and len(result) > 0 and hasattr(result[0], "text"):
             return result[0].text
         elif isinstance(result, str):
             return result
@@ -150,7 +149,7 @@ class MCPEndToEndTest(TestCase, unittest.IsolatedAsyncioTestCase):
             else:
                 # Multiple exceptions - don't unwrap
                 raise
-            
+
     @asynccontextmanager
     async def create_client_session(self):
         """Create an MCP client session connected to codemcp server."""
@@ -159,7 +158,7 @@ class MCPEndToEndTest(TestCase, unittest.IsolatedAsyncioTestCase):
             command=sys.executable,  # Current Python executable
             args=["-m", "codemcp"],  # Module path to codemcp
             env=self.env,
-            cwd=self.temp_dir.name  # Set the working directory to our test directory
+            cwd=self.temp_dir.name,  # Set the working directory to our test directory
         )
 
         async with self._unwrap_exception_groups():
@@ -185,14 +184,13 @@ class MCPEndToEndTest(TestCase, unittest.IsolatedAsyncioTestCase):
         test_content = "Test content\nLine 2\nLine 3"
         with open(test_file_path, "w") as f:
             f.write(test_content)
-        
+
         async with self.create_client_session() as session:
             # Call the ReadFile tool
-            result = await session.call_tool("codemcp", {
-                "command": "ReadFile",
-                "file_path": test_file_path
-            })
-            
+            result = await session.call_tool(
+                "codemcp", {"command": "ReadFile", "file_path": test_file_path}
+            )
+
             # Normalize the result for easier comparison
             normalized_result = self.normalize_path(result)
             result_text = self.extract_text_from_result(normalized_result)
@@ -200,7 +198,7 @@ class MCPEndToEndTest(TestCase, unittest.IsolatedAsyncioTestCase):
             # Verify the result includes our file content (ignoring line numbers)
             for line in test_content.splitlines():
                 self.assertIn(line, result_text)
-    
+
     async def test_read_file_with_offset_limit(self):
         """Test the ReadFile command with offset and limit."""
         # Create a test file with multiple lines
@@ -208,16 +206,19 @@ class MCPEndToEndTest(TestCase, unittest.IsolatedAsyncioTestCase):
         lines = ["Line 1", "Line 2", "Line 3", "Line 4", "Line 5"]
         with open(test_file_path, "w") as f:
             f.write("\n".join(lines))
-        
+
         async with self.create_client_session() as session:
             # Call the ReadFile tool with offset and limit
-            result = await session.call_tool("codemcp", {
-                "command": "ReadFile",
-                "file_path": test_file_path,
-                "offset": "2",  # Start from line 2
-                "limit": "2"   # Read 2 lines
-            })
-            
+            result = await session.call_tool(
+                "codemcp",
+                {
+                    "command": "ReadFile",
+                    "file_path": test_file_path,
+                    "offset": "2",  # Start from line 2
+                    "limit": "2",  # Read 2 lines
+                },
+            )
+
             # Normalize the result
             normalized_result = self.normalize_path(result)
             result_text = self.extract_text_from_result(normalized_result)
@@ -227,58 +228,59 @@ class MCPEndToEndTest(TestCase, unittest.IsolatedAsyncioTestCase):
             self.assertIn("Line 3", result_text)
             self.assertNotIn("Line 1", result_text)
             self.assertNotIn("Line 4", result_text)
-    
+
     async def test_write_file(self):
         """Test the WriteFile command, which writes to a file and automatically commits the changes."""
         test_file_path = os.path.join(self.temp_dir.name, "new_file.txt")
         content = "New content\nLine 2"
-        
+
         # First add the file to git to make it tracked
         with open(test_file_path, "w") as f:
             f.write("")
-        
+
         # Add it to git
         subprocess.run(
             ["git", "add", test_file_path],
             cwd=self.temp_dir.name,
             env=self.env,
-            check=True
+            check=True,
         )
-        
+
         # Commit it
         subprocess.run(
             ["git", "commit", "-m", "Add empty file for WriteFile test"],
             cwd=self.temp_dir.name,
             env=self.env,
-            check=True
+            check=True,
         )
 
         async with self.create_client_session() as session:
             # Call the WriteFile tool
-            result = await session.call_tool("codemcp", {
-                "command": "WriteFile",
-                "file_path": test_file_path,
-                "content": content,
-                "description": "Create new file"
-            })
-            
+            result = await session.call_tool(
+                "codemcp",
+                {
+                    "command": "WriteFile",
+                    "file_path": test_file_path,
+                    "content": content,
+                    "description": "Create new file",
+                },
+            )
+
             # Normalize the result
             normalized_result = self.normalize_path(result)
             result_text = self.extract_text_from_result(normalized_result)
 
             # Verify the success message
             self.assertIn("Successfully wrote to", result_text)
-            
+
             # Verify the file was created with the correct content
             with open(test_file_path, "r") as f:
                 file_content = f.read()
             self.assertEqual(file_content, content)
-            
+
             # Verify git state (working tree should be clean after automatic commit)
             status = subprocess.check_output(
-                ["git", "status"],
-                cwd=self.temp_dir.name,
-                env=self.env
+                ["git", "status"], cwd=self.temp_dir.name, env=self.env
             ).decode()
 
             # Use expect test to verify git status - should show clean working tree
@@ -286,9 +288,9 @@ class MCPEndToEndTest(TestCase, unittest.IsolatedAsyncioTestCase):
                 status,
                 """On branch main
 nothing to commit, working tree clean
-"""
+""",
             )
-    
+
     async def test_edit_file(self):
         """Test the EditFile command, which edits a file and automatically commits the changes."""
         # Create a test file with multiple lines for good context
@@ -296,46 +298,53 @@ nothing to commit, working tree clean
         original_content = "Line 1\nLine 2\nLine 3\nLine 4\nLine 5\n"
         with open(test_file_path, "w") as f:
             f.write(original_content)
-        
+
         # Add the file to git and commit it
-        subprocess.run(["git", "add", "edit_file.txt"], cwd=self.temp_dir.name, env=self.env)
-        subprocess.run(["git", "commit", "-m", "Add file for editing"], cwd=self.temp_dir.name, env=self.env)
-        
+        subprocess.run(
+            ["git", "add", "edit_file.txt"], cwd=self.temp_dir.name, env=self.env
+        )
+        subprocess.run(
+            ["git", "commit", "-m", "Add file for editing"],
+            cwd=self.temp_dir.name,
+            env=self.env,
+        )
+
         # Edit the file using the EditFile command with proper context
         old_string = "Line 1\nLine 2\nLine 3\n"
         new_string = "Line 1\nModified Line 2\nLine 3\n"
-        
+
         async with self.create_client_session() as session:
             # Call the EditFile tool
-            result = await session.call_tool("codemcp", {
-                "command": "EditFile",
-                "file_path": test_file_path,
-                "old_string": old_string,
-                "new_string": new_string,
-                "description": "Modify line 2"
-            })
-            
+            result = await session.call_tool(
+                "codemcp",
+                {
+                    "command": "EditFile",
+                    "file_path": test_file_path,
+                    "old_string": old_string,
+                    "new_string": new_string,
+                    "description": "Modify line 2",
+                },
+            )
+
             # Normalize the result
             normalized_result = self.normalize_path(result)
-            
+
             # Extract the text content for assertions
             result_text = self.extract_text_from_result(normalized_result)
 
             # Verify the success message
             self.assertIn("Successfully edited", result_text)
-            
+
             # Verify the file was edited correctly
             with open(test_file_path, "r") as f:
                 file_content = f.read()
-            
+
             expected_content = "Line 1\nModified Line 2\nLine 3\nLine 4\nLine 5\n"
             self.assertEqual(file_content, expected_content)
-            
+
             # Verify git state shows file was committed
             status = subprocess.check_output(
-                ["git", "status"],
-                cwd=self.temp_dir.name,
-                env=self.env
+                ["git", "status"], cwd=self.temp_dir.name, env=self.env
             ).decode()
 
             # Use expect test to verify git status - should show as clean working tree
@@ -344,9 +353,9 @@ nothing to commit, working tree clean
                 status,
                 """On branch main
 nothing to commit, working tree clean
-"""
+""",
             )
-    
+
     async def test_ls(self):
         """Test the LS command."""
         # Create a test directory structure
@@ -368,10 +377,9 @@ nothing to commit, working tree clean
 
         async with self.create_client_session() as session:
             # Call the LS tool
-            result = await session.call_tool("codemcp", {
-                "command": "LS",
-                "file_path": test_dir
-            })
+            result = await session.call_tool(
+                "codemcp", {"command": "LS", "file_path": test_dir}
+            )
 
             # Normalize the result
             normalized_result = self.normalize_path(result)
@@ -381,11 +389,11 @@ nothing to commit, working tree clean
             self.assertIn("file1.txt", result_text)
             self.assertIn("file2.txt", result_text)
             self.assertIn("subdirectory", result_text)
-            
+
     async def test_edit_untracked_file(self):
         """Test that codemcp properly handles editing files that aren't tracked by git."""
         print("\n\n=== TEST: Editing Untracked File ===")
-        
+
         # Create a file but don't commit it to git
         untracked_file_path = os.path.join(self.temp_dir.name, "untracked.txt")
         original_content = "Untracked file content"
@@ -395,23 +403,25 @@ nothing to commit, working tree clean
         # Verify the file exists but is not tracked
         print(f"Initial file path: {untracked_file_path}")
         print(f"Initial content: '{original_content}'")
-        
+
         status = subprocess.check_output(
-            ["git", "status"], 
-            cwd=self.temp_dir.name, 
-            env=self.env
+            ["git", "status"], cwd=self.temp_dir.name, env=self.env
         ).decode()
         print(f"INITIAL GIT STATUS:\n{status}")
-        
-        ls_files_before = subprocess.run(
-            ["git", "ls-files", untracked_file_path],
-            cwd=self.temp_dir.name,
-            env=self.env,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
-        ).stdout.decode().strip()
+
+        ls_files_before = (
+            subprocess.run(
+                ["git", "ls-files", untracked_file_path],
+                cwd=self.temp_dir.name,
+                env=self.env,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+            .stdout.decode()
+            .strip()
+        )
         print(f"INITIAL GIT LS-FILES: '{ls_files_before}'")
-        
+
         self.assertIn("Untracked files:", status)
         self.assertIn("untracked.txt", status)
 
@@ -423,22 +433,27 @@ nothing to commit, working tree clean
             # Try to edit the untracked file
             new_content = "Modified untracked content"
             print(f"Attempting to modify with new content: '{new_content}'")
-            
-            result = await session.call_tool("codemcp", {
-                "command": "EditFile",
-                "file_path": untracked_file_path,
-                "old_string": "Untracked file content",
-                "new_string": new_content,
-                "description": "Attempt to modify untracked file"
-            })
+
+            result = await session.call_tool(
+                "codemcp",
+                {
+                    "command": "EditFile",
+                    "file_path": untracked_file_path,
+                    "old_string": "Untracked file content",
+                    "new_string": new_content,
+                    "description": "Attempt to modify untracked file",
+                },
+            )
 
             # Get the result content
-            result_content = result.content if hasattr(result, 'content') else str(result)
-            
+            result_content = (
+                result.content if hasattr(result, "content") else str(result)
+            )
+
             # Normalize the result
             normalized_result = self.normalize_path(result)
             print(f"RESPONSE FROM SERVER:\n{result_content}")
-            
+
             # Check file after the operation
             if os.path.exists(untracked_file_path):
                 with open(untracked_file_path, "r") as f:
@@ -448,34 +463,40 @@ nothing to commit, working tree clean
                 print(f"New mtime: {new_mtime}, Changed: {original_mtime != new_mtime}")
             else:
                 print("File doesn't exist anymore!")
-            
+
             # Check git status after the operation
             status_after = subprocess.check_output(
-                ["git", "status"], 
-                cwd=self.temp_dir.name, 
-                env=self.env
+                ["git", "status"], cwd=self.temp_dir.name, env=self.env
             ).decode()
             print(f"GIT STATUS AFTER EDIT:\n{status_after}")
-            
-            ls_files_after = subprocess.run(
-                ["git", "ls-files", untracked_file_path],
-                cwd=self.temp_dir.name,
-                env=self.env,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE
-            ).stdout.decode().strip()
+
+            ls_files_after = (
+                subprocess.run(
+                    ["git", "ls-files", untracked_file_path],
+                    cwd=self.temp_dir.name,
+                    env=self.env,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                )
+                .stdout.decode()
+                .strip()
+            )
             print(f"GIT LS-FILES AFTER EDIT: '{ls_files_after}'")
-            
+
             # Run git diff to see changes
-            diff_output = subprocess.run(
-                ["git", "diff", "--cached", untracked_file_path],
-                cwd=self.temp_dir.name,
-                env=self.env,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE
-            ).stdout.decode().strip()
+            diff_output = (
+                subprocess.run(
+                    ["git", "diff", "--cached", untracked_file_path],
+                    cwd=self.temp_dir.name,
+                    env=self.env,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                )
+                .stdout.decode()
+                .strip()
+            )
             print(f"GIT DIFF OUTPUT:\n{diff_output}")
-            
+
             # SECURITY CHECK: If editing untracked files succeeds, ensure they are added to git
             # so they can be properly tracked and reverted
             # First, let's detect if the edit was successful by checking the file content
@@ -485,116 +506,175 @@ nothing to commit, working tree clean
                     current_content = f.read()
                 if current_content == "Modified untracked content":
                     edit_succeeded = True
-            
+
             print(f"Edit operation successful? {edit_succeeded}")
 
             # With new policy, we expect the edit to fail since the file is not tracked
-            self.assertFalse(edit_succeeded, "POLICY ERROR: Editing untracked files should be rejected")
-            
+            self.assertFalse(
+                edit_succeeded,
+                "POLICY ERROR: Editing untracked files should be rejected",
+            )
+
             # Edit was successful, now verify our security invariants
             if edit_succeeded:
                 # The file should have been modified
-                self.assertNotEqual(original_mtime, os.path.getmtime(untracked_file_path))
-                
+                self.assertNotEqual(
+                    original_mtime, os.path.getmtime(untracked_file_path)
+                )
+
                 # Check if the file is now tracked in git
                 is_tracked = bool(ls_files_after)
                 print(f"Is file tracked after edit? {is_tracked}")
-                
+
                 # The file MUST be tracked after editing
-                self.assertTrue(is_tracked, 
-                    "SECURITY VULNERABILITY: File was edited but not added to git")
-                
+                self.assertTrue(
+                    is_tracked,
+                    "SECURITY VULNERABILITY: File was edited but not added to git",
+                )
+
                 # CRITICAL SECURITY CHECK: Can we recover the original content from git history?
                 # If we can't, then we've lost the ability to revert to the original state
-                print("\nAttempting to recover original file content from git history...")
-                
+                print(
+                    "\nAttempting to recover original file content from git history..."
+                )
+
                 # Get commit history for the file
-                git_log = subprocess.run(
-                    ["git", "log", "--pretty=format:%H", untracked_file_path],
-                    cwd=self.temp_dir.name,
-                    env=self.env,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE
-                ).stdout.decode().strip().split('\n')
-                
+                git_log = (
+                    subprocess.run(
+                        ["git", "log", "--pretty=format:%H", untracked_file_path],
+                        cwd=self.temp_dir.name,
+                        env=self.env,
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE,
+                    )
+                    .stdout.decode()
+                    .strip()
+                    .split("\n")
+                )
+
                 print(f"Commit history for {untracked_file_path}: {git_log}")
-                
+
                 if git_log:
                     # Get the first/earliest commit for this file
                     first_commit = git_log[-1] if len(git_log) > 0 else None
                     print(f"First commit that includes this file: {first_commit}")
-                    
+
                     if first_commit:
                         # Try to extract the original content
-                        original_content_from_git = subprocess.run(
-                            ["git", "show", f"{first_commit}:{os.path.basename(untracked_file_path)}"],
-                            cwd=self.temp_dir.name,
-                            env=self.env,
-                            stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE
-                        ).stdout.decode().strip()
-                        
-                        print(f"Content from first commit: '{original_content_from_git}'")
-                        
+                        original_content_from_git = (
+                            subprocess.run(
+                                [
+                                    "git",
+                                    "show",
+                                    f"{first_commit}:{os.path.basename(untracked_file_path)}",
+                                ],
+                                cwd=self.temp_dir.name,
+                                env=self.env,
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE,
+                            )
+                            .stdout.decode()
+                            .strip()
+                        )
+
+                        print(
+                            f"Content from first commit: '{original_content_from_git}'"
+                        )
+
                         # POTENTIAL SECURITY ISSUE:
-                        # If we can't recover the original content, or if the first commit already has 
+                        # If we can't recover the original content, or if the first commit already has
                         # the modified content, then we've lost the original untracked content forever
-                        original_content_recoverable = (original_content_from_git == original_content)
-                        print(f"Original content recoverable from git? {original_content_recoverable}")
-                        
-                        self.assertEqual(original_content_from_git, original_content,
-                            "SECURITY VULNERABILITY: Original content of untracked file was lost during edit")
+                        original_content_recoverable = (
+                            original_content_from_git == original_content
+                        )
+                        print(
+                            f"Original content recoverable from git? {original_content_recoverable}"
+                        )
+
+                        self.assertEqual(
+                            original_content_from_git,
+                            original_content,
+                            "SECURITY VULNERABILITY: Original content of untracked file was lost during edit",
+                        )
                     else:
-                        self.fail("SECURITY VULNERABILITY: File is tracked but has no commits in git history")
+                        self.fail(
+                            "SECURITY VULNERABILITY: File is tracked but has no commits in git history"
+                        )
                 else:
-                    self.fail("SECURITY VULNERABILITY: No commit history found for the file after editing")
-                
+                    self.fail(
+                        "SECURITY VULNERABILITY: No commit history found for the file after editing"
+                    )
+
                 if git_log:
                     # Get the first/earliest commit for this file
                     first_commit = git_log[-1] if git_log else None
                     print(f"First commit that includes this file: {first_commit}")
-                    
+
                     if first_commit:
                         # Try to extract the original content
-                        original_content_from_git = subprocess.run(
-                            ["git", "show", f"{first_commit}:{os.path.basename(untracked_file_path)}"],
-                            cwd=self.temp_dir.name,
-                            env=self.env,
-                            stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE
-                        ).stdout.decode().strip()
-                        
-                        print(f"Content from first commit: '{original_content_from_git}'")
-                        
+                        original_content_from_git = (
+                            subprocess.run(
+                                [
+                                    "git",
+                                    "show",
+                                    f"{first_commit}:{os.path.basename(untracked_file_path)}",
+                                ],
+                                cwd=self.temp_dir.name,
+                                env=self.env,
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE,
+                            )
+                            .stdout.decode()
+                            .strip()
+                        )
+
+                        print(
+                            f"Content from first commit: '{original_content_from_git}'"
+                        )
+
                         # POTENTIAL SECURITY ISSUE:
-                        # If we can't recover the original content, or if the first commit already has 
+                        # If we can't recover the original content, or if the first commit already has
                         # the modified content, then we've lost the original untracked content forever
-                        original_content_recoverable = (original_content_from_git == original_content)
-                        print(f"Original content recoverable from git? {original_content_recoverable}")
-                        
-                        self.assertEqual(original_content_from_git, original_content,
-                            "SECURITY VULNERABILITY: Original content of untracked file was lost during edit")
+                        original_content_recoverable = (
+                            original_content_from_git == original_content
+                        )
+                        print(
+                            f"Original content recoverable from git? {original_content_recoverable}"
+                        )
+
+                        self.assertEqual(
+                            original_content_from_git,
+                            original_content,
+                            "SECURITY VULNERABILITY: Original content of untracked file was lost during edit",
+                        )
                     else:
-                        self.fail("SECURITY VULNERABILITY: File is tracked but has no commits in git history")
+                        self.fail(
+                            "SECURITY VULNERABILITY: File is tracked but has no commits in git history"
+                        )
                 else:
-                    self.fail("SECURITY VULNERABILITY: No commit history found for the file after editing")
+                    self.fail(
+                        "SECURITY VULNERABILITY: No commit history found for the file after editing"
+                    )
 
     async def test_write_file_outside_tracked_paths(self):
         """Test that codemcp properly handles writing to paths outside tracked paths."""
         # Create a subdirectory but don't add it to git
         subdir_path = os.path.join(self.temp_dir.name, "untrackeddir")
         os.makedirs(subdir_path, exist_ok=True)
-        
+
         new_file_path = os.path.join(subdir_path, "newfile.txt")
-        
+
         async with self.create_client_session() as session:
             # Try to write a new file in the untracked directory
-            result = await session.call_tool("codemcp", {
-                "command": "WriteFile",
-                "file_path": new_file_path,
-                "content": "New file in untracked directory",
-                "description": "Attempt to create file in untracked directory"
-            })
+            result = await session.call_tool(
+                "codemcp",
+                {
+                    "command": "WriteFile",
+                    "file_path": new_file_path,
+                    "content": "New file in untracked directory",
+                    "description": "Attempt to create file in untracked directory",
+                },
+            )
 
             # Normalize the result
             normalized_result = self.normalize_path(result)
@@ -604,26 +684,32 @@ nothing to commit, working tree clean
             if "Successfully wrote to" in result_text:
                 # The operation succeeded - check if the directory and file are now tracked in git
                 status_after = subprocess.check_output(
-                    ["git", "status"], 
-                    cwd=self.temp_dir.name, 
-                    env=self.env
+                    ["git", "status"], cwd=self.temp_dir.name, env=self.env
                 ).decode()
-                
+
                 # The file should exist
-                self.assertTrue(os.path.exists(new_file_path), 
-                    "File was not created even though operation reported success")
-                
-                # SECURITY CHECK: If writing to untracked directories succeeds, 
+                self.assertTrue(
+                    os.path.exists(new_file_path),
+                    "File was not created even though operation reported success",
+                )
+
+                # SECURITY CHECK: If writing to untracked directories succeeds,
                 # both the directory and file should be tracked in git
-                ls_files_output = subprocess.check_output(
-                    ["git", "ls-files", new_file_path],
-                    cwd=self.temp_dir.name,
-                    env=self.env
-                ).decode().strip()
-                
+                ls_files_output = (
+                    subprocess.check_output(
+                        ["git", "ls-files", new_file_path],
+                        cwd=self.temp_dir.name,
+                        env=self.env,
+                    )
+                    .decode()
+                    .strip()
+                )
+
                 # Check that the file is tracked - if this fails, we have a security issue
-                self.assertTrue(ls_files_output, 
-                    "SECURITY VULNERABILITY: File was created in untracked directory but not added to git")
+                self.assertTrue(
+                    ls_files_output,
+                    "SECURITY VULNERABILITY: File was created in untracked directory but not added to git",
+                )
 
     async def test_write_to_gitignored_file(self):
         """Test that codemcp properly handles writing to files that are in .gitignore."""
@@ -637,14 +723,14 @@ nothing to commit, working tree clean
             ["git", "add", ".gitignore"],
             cwd=self.temp_dir.name,
             env=self.env,
-            check=True
+            check=True,
         )
 
         subprocess.run(
             ["git", "commit", "-m", "Add .gitignore"],
             cwd=self.temp_dir.name,
             env=self.env,
-            check=True
+            check=True,
         )
 
         # Create the ignored file
@@ -652,24 +738,25 @@ nothing to commit, working tree clean
         original_content = "This file is ignored by git"
         with open(ignored_file_path, "w") as f:
             f.write(original_content)
-        
+
         # Verify the file is ignored
         status = subprocess.check_output(
-            ["git", "status"], 
-            cwd=self.temp_dir.name, 
-            env=self.env
+            ["git", "status"], cwd=self.temp_dir.name, env=self.env
         ).decode()
         self.assertNotIn("ignored.txt", status, "File should be ignored by git")
 
         async with self.create_client_session() as session:
             # Try to edit the ignored file
-            result = await session.call_tool("codemcp", {
-                "command": "EditFile",
-                "file_path": ignored_file_path,
-                "old_string": "This file is ignored by git",
-                "new_string": "Modified ignored content",
-                "description": "Attempt to modify gitignored file"
-            })
+            result = await session.call_tool(
+                "codemcp",
+                {
+                    "command": "EditFile",
+                    "file_path": ignored_file_path,
+                    "old_string": "This file is ignored by git",
+                    "new_string": "Modified ignored content",
+                    "description": "Attempt to modify gitignored file",
+                },
+            )
 
             # Normalize the result
             normalized_result = self.normalize_path(result)
@@ -681,61 +768,72 @@ nothing to commit, working tree clean
                 with open(ignored_file_path, "r") as f:
                     new_content = f.read()
                 self.assertEqual(new_content, "Modified ignored content")
-                
+
                 # Check if git add succeeded (it should for explicitly named files even if ignored)
-                ls_files_output = subprocess.check_output(
-                    ["git", "ls-files", ignored_file_path],
-                    cwd=self.temp_dir.name,
-                    env=self.env
-                ).decode().strip()
-                
+                ls_files_output = (
+                    subprocess.check_output(
+                        ["git", "ls-files", ignored_file_path],
+                        cwd=self.temp_dir.name,
+                        env=self.env,
+                    )
+                    .decode()
+                    .strip()
+                )
+
                 # SECURITY CHECK: If editing ignored files succeeds, they should be explicitly added
                 # to git to maintain the invariant that we can revert any change
-                self.assertTrue(ls_files_output, 
-                    "SECURITY VULNERABILITY: Ignored file was edited but not added to git")
-            
+                self.assertTrue(
+                    ls_files_output,
+                    "SECURITY VULNERABILITY: Ignored file was edited but not added to git",
+                )
+
     async def test_edit_after_git_rm(self):
         """Test that codemcp properly handles editing files that have been removed with git rm."""
         # Create a tracked file
         tracked_file_path = os.path.join(self.temp_dir.name, "tracked.txt")
         with open(tracked_file_path, "w") as f:
             f.write("Tracked file content")
-            
+
         # Add and commit the file
         subprocess.run(
             ["git", "add", "tracked.txt"],
             cwd=self.temp_dir.name,
             env=self.env,
-            check=True
+            check=True,
         )
-        
+
         subprocess.run(
             ["git", "commit", "-m", "Add tracked file"],
             cwd=self.temp_dir.name,
             env=self.env,
-            check=True
+            check=True,
         )
-        
+
         # Remove the file with git rm
         subprocess.run(
             ["git", "rm", "tracked.txt"],
             cwd=self.temp_dir.name,
             env=self.env,
-            check=True
+            check=True,
         )
-        
+
         # Verify file was removed
-        self.assertFalse(os.path.exists(tracked_file_path), "File should be physically removed")
-        
+        self.assertFalse(
+            os.path.exists(tracked_file_path), "File should be physically removed"
+        )
+
         async with self.create_client_session() as session:
             # Try to write to the removed file
-            result = await session.call_tool("codemcp", {
-                "command": "WriteFile",
-                "file_path": tracked_file_path,
-                "content": "Attempt to write to git-removed file",
-                "description": "Attempt to modify git-removed file"
-            })
-            
+            result = await session.call_tool(
+                "codemcp",
+                {
+                    "command": "WriteFile",
+                    "file_path": tracked_file_path,
+                    "content": "Attempt to write to git-removed file",
+                    "description": "Attempt to modify git-removed file",
+                },
+            )
+
             # Normalize the result
             normalized_result = self.normalize_path(result)
             result_text = self.extract_text_from_result(normalized_result)
@@ -743,27 +841,33 @@ nothing to commit, working tree clean
             # Check the actual behavior
             if "Successfully wrote to" in result_text:
                 # The operation succeeded - check if the file was recreated and added to git
-                self.assertTrue(os.path.exists(tracked_file_path), 
-                    "File was not recreated even though operation reported success")
-                
+                self.assertTrue(
+                    os.path.exists(tracked_file_path),
+                    "File was not recreated even though operation reported success",
+                )
+
                 # SECURITY CHECK: Read file content to confirm it was written correctly
                 with open(tracked_file_path, "r") as f:
                     content = f.read()
                 self.assertEqual(content, "Attempt to write to git-removed file")
-                
+
                 # Check if the recreated file is tracked in git
                 status_after = subprocess.check_output(
-                    ["git", "status"], 
-                    cwd=self.temp_dir.name, 
-                    env=self.env
+                    ["git", "status"], cwd=self.temp_dir.name, env=self.env
                 ).decode()
-                
+
                 # If the file is untracked or deleted, we have a problem
-                self.assertNotIn("deleted:", status_after, 
-                    "SECURITY VULNERABILITY: File still shows as deleted in git")
-                self.assertNotIn("tracked.txt", status_after, 
-                    "SECURITY VULNERABILITY: Recreated file is not properly tracked")
-            
+                self.assertNotIn(
+                    "deleted:",
+                    status_after,
+                    "SECURITY VULNERABILITY: File still shows as deleted in git",
+                )
+                self.assertNotIn(
+                    "tracked.txt",
+                    status_after,
+                    "SECURITY VULNERABILITY: Recreated file is not properly tracked",
+                )
+
     async def test_create_file_with_edit_file_in_untracked_dir(self):
         """Test that codemcp properly handles creating new files with EditFile in untracked directories."""
         # Create an untracked subdirectory within the Git repository
@@ -772,62 +876,67 @@ nothing to commit, working tree clean
 
         # Path to a new file in the untracked directory
         new_file_path = os.path.join(untracked_dir, "new_file.txt")
-        
+
         # Debug: Print git repository detection
         print(f"\n\nTesting directory structure:")
         print(f"Temp dir: {self.temp_dir.name}")
         print(f"Untracked dir: {untracked_dir}")
         print(f"New file path: {new_file_path}")
-        
+
         # Check if git recognizes this directory
         git_toplevel = subprocess.run(
             ["git", "rev-parse", "--show-toplevel"],
             cwd=untracked_dir,
             env=self.env,
             stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
+            stderr=subprocess.PIPE,
         )
         print(f"Git toplevel output: {git_toplevel.stdout.decode().strip()}")
         print(f"Git toplevel stderr: {git_toplevel.stderr.decode().strip()}")
-        
+
         # Make sure codemcp.toml exists in the repository root
         config_path = os.path.join(self.temp_dir.name, "codemcp.toml")
         print(f"Config path: {config_path}")
         print(f"Config exists: {os.path.exists(config_path)}")
-        
+
         if os.path.exists(config_path):
             with open(config_path, "r") as f:
                 print(f"Config content: {f.read()}")
 
         async with self.create_client_session() as session:
             # Try to create a new file using EditFile with empty old_string
-            result = await session.call_tool("codemcp", {
-                "command": "EditFile",
-                "file_path": new_file_path,
-                "old_string": "",
-                "new_string": "This file in untracked dir",
-                "description": "Attempt to create file in untracked dir with EditFile"
-            })
+            result = await session.call_tool(
+                "codemcp",
+                {
+                    "command": "EditFile",
+                    "file_path": new_file_path,
+                    "old_string": "",
+                    "new_string": "This file in untracked dir",
+                    "description": "Attempt to create file in untracked dir with EditFile",
+                },
+            )
 
             # Normalize the result
             normalized_result = self.normalize_path(result)
             result_text = self.extract_text_from_result(normalized_result)
-            
+
             # Print the raw result to debug
             print(f"\nResult from server: {result_text}")
 
             # Since we've changed the behavior, we now expect this to succeed
             self.assertIn("Successfully created", result_text)
-            
+
             # Check the file was created
-            self.assertTrue(os.path.exists(new_file_path),
-                "File was not created even though operation reported success")
-            
+            self.assertTrue(
+                os.path.exists(new_file_path),
+                "File was not created even though operation reported success",
+            )
+
             # Read the content to verify it was written correctly
             with open(new_file_path, "r") as f:
                 content = f.read()
             self.assertEqual(content, "This file in untracked dir")
-            
+
             # For this test, we'll manually add and commit the file
             # This is a change in the test expectation since we don't need automatic git tracking
             # for files in untracked directories - we just want file creation to work
@@ -837,111 +946,130 @@ nothing to commit, working tree clean
                 cwd=self.temp_dir.name,
                 env=self.env,
                 stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE
+                stderr=subprocess.PIPE,
             )
-            
+
             commit_output = subprocess.run(
                 ["git", "commit", "-m", "Add test file"],
                 cwd=self.temp_dir.name,
                 env=self.env,
                 stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE
+                stderr=subprocess.PIPE,
             )
-            
+
             # Now check if the file is tracked
-            ls_files_output = subprocess.run(
-                ["git", "ls-files", new_file_path],
-                cwd=self.temp_dir.name,
-                env=self.env,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE
-            ).stdout.decode().strip()
-            
+            ls_files_output = (
+                subprocess.run(
+                    ["git", "ls-files", new_file_path],
+                    cwd=self.temp_dir.name,
+                    env=self.env,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                )
+                .stdout.decode()
+                .strip()
+            )
+
             # Verify the file is tracked by git after our manual commit
-            self.assertTrue(ls_files_output, 
-                "Failed to add file to git even after manual commit")
-                
+            self.assertTrue(
+                ls_files_output, "Failed to add file to git even after manual commit"
+            )
+
     async def test_create_new_file_with_write_file(self):
         """Test creating a new file that doesn't exist yet with WriteFile."""
         # Path to a new file that doesn't exist yet, within the git repository
         new_file_path = os.path.join(self.temp_dir.name, "completely_new_file.txt")
-        
+
         # Make sure it doesn't exist
         if os.path.exists(new_file_path):
             os.unlink(new_file_path)
-            
-        self.assertFalse(os.path.exists(new_file_path), "Test file should not exist initially")
-        
+
+        self.assertFalse(
+            os.path.exists(new_file_path), "Test file should not exist initially"
+        )
+
         # Debug: Print git repository detection
         print(f"\n\nTesting WriteFile for new file:")
         print(f"Temp dir: {self.temp_dir.name}")
         print(f"New file path: {new_file_path}")
-        
+
         # Check if git recognizes this directory
         git_toplevel = subprocess.run(
             ["git", "rev-parse", "--show-toplevel"],
             cwd=os.path.dirname(new_file_path),
             env=self.env,
             stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
+            stderr=subprocess.PIPE,
         )
         print(f"Git toplevel output: {git_toplevel.stdout.decode().strip()}")
         print(f"Git toplevel stderr: {git_toplevel.stderr.decode().strip()}")
-        
+
         # Make sure codemcp.toml exists in the repository root
         config_path = os.path.join(self.temp_dir.name, "codemcp.toml")
         print(f"Config path: {config_path}")
         print(f"Config exists: {os.path.exists(config_path)}")
-        
+
         if os.path.exists(config_path):
             with open(config_path, "r") as f:
                 print(f"Config content: {f.read()}")
-        
+
         async with self.create_client_session() as session:
             # Create a new file
-            result = await session.call_tool("codemcp", {
-                "command": "WriteFile",
-                "file_path": new_file_path,
-                "content": "This is a brand new file",
-                "description": "Create a new file with WriteFile"
-            })
-            
+            result = await session.call_tool(
+                "codemcp",
+                {
+                    "command": "WriteFile",
+                    "file_path": new_file_path,
+                    "content": "This is a brand new file",
+                    "description": "Create a new file with WriteFile",
+                },
+            )
+
             # Normalize the result
             normalized_result = self.normalize_path(result)
             result_text = self.extract_text_from_result(normalized_result)
-            
+
             # Print the raw result to debug
             print(f"\nResult from server: {result_text}")
-            
+
             # Check that the operation succeeded
             self.assertIn("Successfully wrote to", result_text)
-            
+
             # Verify the file was created
-            self.assertTrue(os.path.exists(new_file_path),
-                "File was not created even though operation reported success")
-                
+            self.assertTrue(
+                os.path.exists(new_file_path),
+                "File was not created even though operation reported success",
+            )
+
             # Check content
             with open(new_file_path, "r") as f:
                 content = f.read()
             self.assertEqual(content, "This is a brand new file")
-            
+
             # Verify the file was added to git
-            ls_files_output = subprocess.run(
-                ["git", "ls-files", new_file_path],
-                cwd=self.temp_dir.name,
-                env=self.env,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE
-            ).stdout.decode().strip()
-            
+            ls_files_output = (
+                subprocess.run(
+                    ["git", "ls-files", new_file_path],
+                    cwd=self.temp_dir.name,
+                    env=self.env,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                )
+                .stdout.decode()
+                .strip()
+            )
+
             # The new file should be tracked in git
-            self.assertTrue(ls_files_output, 
-                "New file was created but not added to git")
-            
+            self.assertTrue(
+                ls_files_output, "New file was created but not added to git"
+            )
+
     async def test_write_to_untracked_file(self):
         """Test that writes to untracked files are rejected."""
         # Create an untracked file (not added to git)
-        untracked_file_path = os.path.join(self.temp_dir.name, "untracked_for_write.txt")
+        untracked_file_path = os.path.join(
+            self.temp_dir.name, "untracked_for_write.txt"
+        )
         with open(untracked_file_path, "w") as f:
             f.write("Initial content in untracked file")
 
@@ -950,13 +1078,17 @@ nothing to commit, working tree clean
         self.assertTrue(file_exists, "Test file should exist on filesystem")
 
         # Check that the file is untracked
-        ls_files_output = subprocess.run(
-            ["git", "ls-files", untracked_file_path],
-            cwd=self.temp_dir.name,
-            env=self.env,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
-        ).stdout.decode().strip()
+        ls_files_output = (
+            subprocess.run(
+                ["git", "ls-files", untracked_file_path],
+                cwd=self.temp_dir.name,
+                env=self.env,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+            .stdout.decode()
+            .strip()
+        )
 
         self.assertEqual(ls_files_output, "", "File should not be tracked by git")
 
@@ -968,36 +1100,51 @@ nothing to commit, working tree clean
         async with self.create_client_session() as session:
             # Try to write to the untracked file
             new_content = "This content should not be written to untracked file"
-            result = await session.call_tool("codemcp", {
-                "command": "WriteFile",
-                "file_path": untracked_file_path,
-                "content": new_content,
-                "description": "Attempt to write to untracked file"
-            })
+            result = await session.call_tool(
+                "codemcp",
+                {
+                    "command": "WriteFile",
+                    "file_path": untracked_file_path,
+                    "content": new_content,
+                    "description": "Attempt to write to untracked file",
+                },
+            )
 
             # Normalize the result
             normalized_result = self.normalize_path(result)
-            
+
             # Extract the text content for assertions
             result_text = self.extract_text_from_result(normalized_result)
 
             # Verify that the operation was rejected
-            self.assertIn("Error", result_text,
-                "Write to untracked file should be rejected with an error")
-            self.assertIn("not tracked by git", result_text,
-                "Error message should indicate the file is not tracked by git")
+            self.assertIn(
+                "Error",
+                result_text,
+                "Write to untracked file should be rejected with an error",
+            )
+            self.assertIn(
+                "not tracked by git",
+                result_text,
+                "Error message should indicate the file is not tracked by git",
+            )
 
             # Verify the file content was not changed
             with open(untracked_file_path, "r") as f:
                 current_content = f.read()
-            self.assertEqual(current_content, original_content,
-                "File content should not have been changed")
+            self.assertEqual(
+                current_content,
+                original_content,
+                "File content should not have been changed",
+            )
 
             # Verify file modification time was not changed
             current_mtime = os.path.getmtime(untracked_file_path)
-            self.assertEqual(current_mtime, original_mtime,
-                "File modification time should not have changed")
-            
+            self.assertEqual(
+                current_mtime,
+                original_mtime,
+                "File modification time should not have changed",
+            )
+
         # Explicitly return None to avoid DeprecationWarning
         return None
 
@@ -1013,57 +1160,66 @@ nothing to commit, working tree clean
             ["git", "add", "target.txt"],
             cwd=self.temp_dir.name,
             env=self.env,
-            check=True
+            check=True,
         )
 
         subprocess.run(
             ["git", "commit", "-m", "Add target file"],
             cwd=self.temp_dir.name,
             env=self.env,
-            check=True
+            check=True,
         )
-        
+
         # Create a directory outside of the repo
         parent_dir = os.path.dirname(self.temp_dir.name)
         outside_file_path = os.path.join(parent_dir, "outside.txt")
-        
+
         if os.path.exists(outside_file_path):
             os.unlink(outside_file_path)  # Clean up any existing file
-        
+
         # Try various path traversal techniques
         traversal_paths = [
             outside_file_path,  # Direct absolute path outside the repo
             os.path.join(self.temp_dir.name, "..", "outside.txt"),  # Using .. to escape
-            os.path.join(self.temp_dir.name, "subdir", "..", "..", "outside.txt"),  # Multiple ..
+            os.path.join(
+                self.temp_dir.name, "subdir", "..", "..", "outside.txt"
+            ),  # Multiple ..
         ]
-        
+
         async with self.create_client_session() as session:
             for path in traversal_paths:
-                path_desc = path.replace(parent_dir, "/parent_dir")  # For better error messages
-                
+                path_desc = path.replace(
+                    parent_dir, "/parent_dir"
+                )  # For better error messages
+
                 # Try to write to a file outside the repository
-                result = await session.call_tool("codemcp", {
-                    "command": "WriteFile",
-                    "file_path": path,
-                    "content": "This should not be allowed to write outside the repo",
-                    "description": f"Attempt path traversal attack ({path_desc})"
-                })
-                
+                result = await session.call_tool(
+                    "codemcp",
+                    {
+                        "command": "WriteFile",
+                        "file_path": path,
+                        "content": "This should not be allowed to write outside the repo",
+                        "description": f"Attempt path traversal attack ({path_desc})",
+                    },
+                )
+
                 # Normalize the result
                 normalized_result = self.normalize_path(result)
                 result_text = self.extract_text_from_result(normalized_result)
 
                 # Check if the operation was rejected (which it should be for security)
                 rejected = "Error" in result_text
-                
+
                 # Verify the file wasn't created outside the repo boundary
                 file_created = os.path.exists(outside_file_path)
-                
+
                 # Either the operation should be rejected, or the file should not exist outside the repo
                 if not rejected:
-                    self.assertFalse(file_created, 
-                        f"SECURITY VULNERABILITY: Path traversal attack succeeded with {path_desc}")
-                
+                    self.assertFalse(
+                        file_created,
+                        f"SECURITY VULNERABILITY: Path traversal attack succeeded with {path_desc}",
+                    )
+
                 # Clean up if the file was created
                 if file_created:
                     os.unlink(outside_file_path)
