@@ -57,12 +57,15 @@ If the user tells you a fact about the overall system that seems very important,
                 # Extract global_prompt if it exists
                 if "global_prompt" in rules_config:
                     global_prompt = rules_config["global_prompt"]
-                    
+
                 # Extract format command if it exists
                 if "commands" in rules_config and "format" in rules_config["commands"]:
                     format_command = rules_config["commands"]["format"]
                     if isinstance(format_command, list) and format_command:
-                        format_command_str = "\nWhen you are done with your task, run code formatting using the command: " + " ".join(format_command)
+                        format_command_str = (
+                            "\nWhen you are done with your task, run code formatting using the command: "
+                            + " ".join(format_command)
+                        )
             except Exception as e:
                 return f"Error reading codemcp.toml file: {e!s}"
 
