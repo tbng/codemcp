@@ -169,7 +169,8 @@ class TestGrepTool(unittest.TestCase):
         self.assertEqual(result["resultForAssistant"], "No files found")
 
     @mock.patch("deskaid.tools.grep.git_grep")
-    def test_grep_files_error(self, mock_git_grep):
+    @mock.patch("os.environ.get", return_value="1")  # Simulate test environment
+    def test_grep_files_error(self, mock_env_get, mock_git_grep):
         # Setup mock to raise an exception
         mock_git_grep.side_effect = ValueError("Test error")
         
