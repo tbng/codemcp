@@ -3,6 +3,7 @@
 import os
 import tempfile
 import unittest
+import subprocess
 from unittest.mock import patch, MagicMock, call
 
 import tomli_w
@@ -55,7 +56,7 @@ class TestFormatTool(unittest.TestCase):
         """Test successful execution of format_code."""
         # Mock git repository check (not a git repo to simplify test)
         mock_is_git_repo.return_value = False
-        
+
         # Mock successful subprocess run
         mock_process = MagicMock()
         mock_process.stdout = "Formatting successful"
@@ -71,7 +72,7 @@ class TestFormatTool(unittest.TestCase):
 
         result = format_code(self.project_dir)
         self.assertIn("Code formatting successful", result)
-        
+
         # Check that subprocess.run was called correctly for the format command
         mock_run.assert_called_once_with(
             format_command,
@@ -87,7 +88,7 @@ class TestFormatTool(unittest.TestCase):
         """Test format_code when the command fails."""
         # Mock git repository check
         mock_is_git_repo.return_value = False
-        
+
         # Mock failed subprocess run
         mock_run.side_effect = Exception("Command failed")
 
@@ -106,7 +107,7 @@ class TestFormatTool(unittest.TestCase):
         """Test format_code when no format command is configured."""
         # Mock git repository check
         mock_is_git_repo.return_value = False
-        
+
         # Create a config file without format command
         config = {"global_prompt": "Test prompt"}
         config_path = os.path.join(self.project_dir, "codemcp.toml")
@@ -123,7 +124,7 @@ class TestFormatTool(unittest.TestCase):
         result = format_code("/nonexistent/directory")
         self.assertIn("Error: Directory does not exist", result)
         mock_is_git_repo.assert_not_called()
-        
+
     @patch("subprocess.run")
     def test_check_for_changes(self, mock_run):
         """Test _check_for_changes function."""
@@ -131,27 +132,27 @@ class TestFormatTool(unittest.TestCase):
         mock_process1 = MagicMock()
         mock_process1.stdout = " M file1.py\n?? file2.py\n"
         mock_process1.stderr = ""
-        
+
         # Test case 2: No changes detected
         mock_process2 = MagicMock()
         mock_process2.stdout = ""
         mock_process2.stderr = ""
-        
+
         # Test case 3: Exception occurs
         mock_run.side_effect = [mock_process1, mock_process2, Exception("Git error")]
-        
+
         # Test with changes
         result1 = _check_for_changes(self.project_dir)
         self.assertTrue(result1)
-        
+
         # Test without changes
         result2 = _check_for_changes(self.project_dir)
         self.assertFalse(result2)
-        
+
         # Test with exception
         result3 = _check_for_changes(self.project_dir)
         self.assertFalse(result3)
-        
+
         # Verify subprocess.run was called correctly
         calls = [
             call(
@@ -169,7 +170,7 @@ class TestFormatTool(unittest.TestCase):
                 stderr=subprocess.PIPE,
                 check=True,
                 text=True,
-            )
+            ),
         ]
         mock_run.assert_has_calls(calls)
 
@@ -177,17 +178,19 @@ class TestFormatTool(unittest.TestCase):
     @patch("codemcp.tools.format._check_for_changes")
     @patch("codemcp.tools.format.is_git_repository")
     @patch("subprocess.run")
-    def test_format_code_with_git_changes(self, mock_run, mock_is_git_repo, mock_check_changes, mock_commit):
+    def test_format_code_with_git_changes(
+        self, mock_run, mock_is_git_repo, mock_check_changes, mock_commit
+    ):
         """Test format_code when it makes changes in a git repository."""
         # Mock git repository check
         mock_is_git_repo.return_value = True
-        
+
         # Mock changes before (no changes) and after (changes detected)
         mock_check_changes.side_effect = [False, True]
-        
+
         # Mock successful commit
         mock_commit.return_value = (True, "Changes committed successfully")
-        
+
         # Mock successful subprocess run
         mock_process = MagicMock()
         mock_process.stdout = "Formatting successful"
@@ -203,31 +206,35 @@ class TestFormatTool(unittest.TestCase):
 
         result = format_code(self.project_dir)
         self.assertIn("Code formatting successful and changes committed", result)
-        
+
         # Verify subprocess.run was called for the format command
         mock_run.assert_called_once()
-        
+
         # Verify commit_changes was called
         mock_commit.assert_called_once_with(
-            self.project_dir, 
-            "Auto-commit formatting changes"
+            self.project_dir, "Auto-commit formatting changes"
         )
-        
+
     @patch("codemcp.tools.format.commit_changes")
     @patch("codemcp.tools.format._check_for_changes")
     @patch("codemcp.tools.format.is_git_repository")
     @patch("subprocess.run")
-    def test_format_code_with_git_changes_commit_failure(self, mock_run, mock_is_git_repo, mock_check_changes, mock_commit):
+    def test_format_code_with_git_changes_commit_failure(
+        self, mock_run, mock_is_git_repo, mock_check_changes, mock_commit
+    ):
         """Test format_code when it makes changes in a git repository but commit fails."""
         # Mock git repository check
         mock_is_git_repo.return_value = True
-        
+
         # Mock changes before (no changes) and after (changes detected)
         mock_check_changes.side_effect = [False, True]
-        
+
         # Mock failed commit
-        mock_commit.return_value = (False, "Failed to commit changes: no user.email configured")
-        
+        mock_commit.return_value = (
+            False,
+            "Failed to commit changes: no user.email configured",
+        )
+
         # Mock successful subprocess run
         mock_process = MagicMock()
         mock_process.stdout = "Formatting successful"
@@ -244,14 +251,13 @@ class TestFormatTool(unittest.TestCase):
         result = format_code(self.project_dir)
         self.assertIn("Code formatting successful but failed to commit changes", result)
         self.assertIn("Failed to commit changes", result)
-        
+
         # Verify subprocess.run was called for the format command
         mock_run.assert_called_once()
-        
+
         # Verify commit_changes was called
         mock_commit.assert_called_once_with(
-            self.project_dir, 
-            "Auto-commit formatting changes"
+            self.project_dir, "Auto-commit formatting changes"
         )
 
 
