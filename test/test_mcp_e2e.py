@@ -766,7 +766,7 @@ nothing to commit, working tree clean
             
     async def test_create_file_with_edit_file_in_untracked_dir(self):
         """Test that codemcp properly handles creating new files with EditFile in untracked directories."""
-        # Create an untracked subdirectory
+        # Create an untracked subdirectory within the Git repository
         untracked_dir = os.path.join(self.temp_dir.name, "untracked_subdir")
         os.makedirs(untracked_dir, exist_ok=True)
 
@@ -799,16 +799,18 @@ nothing to commit, working tree clean
                 content = f.read()
             self.assertEqual(content, "This file in untracked dir")
             
-            # The file should have been added to git
-            ls_files_output = subprocess.check_output(
+            # Check if the file was added to git
+            ls_files_output = subprocess.run(
                 ["git", "ls-files", new_file_path],
                 cwd=self.temp_dir.name,
-                env=self.env
-            ).decode().strip()
+                env=self.env,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE
+            ).stdout.decode().strip()
             
-            # Check that the file is tracked
+            # Verify the file is tracked by git after creation
             self.assertTrue(ls_files_output, 
-                "File was created but not added to git")
+                "New file was created but not added to git")
                 
     async def test_create_new_file_with_write_file(self):
         """Test creating a new file that doesn't exist yet with WriteFile."""
