@@ -36,7 +36,7 @@ class TestGrepTool(unittest.TestCase):
 
         # Assert subprocess.run was called correctly
         mock_run.assert_called_once_with(
-            ["git", "grep", "-li", "pattern"],
+            args=["git", "grep", "-li", "pattern"],
             cwd="/test/path",
             stdout=mock.ANY,
             stderr=mock.ANY,
