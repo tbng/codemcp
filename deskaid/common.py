@@ -177,6 +177,12 @@ def commit_changes(file_path: str, description: str) -> Tuple[bool, str]:
             stderr=subprocess.PIPE,
             text=True,
         )
+        
+        # Log command output
+        if add_result.stdout:
+            logging.debug("git add file output: %s", add_result.stdout.strip())
+        if add_result.stderr:
+            logging.debug("git add file stderr: %s", add_result.stderr.strip())
 
         if add_result.returncode != 0:
             return False, f"Failed to add file to Git: {add_result.stderr}"
