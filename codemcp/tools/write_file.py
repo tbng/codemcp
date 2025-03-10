@@ -9,6 +9,13 @@ from .file_utils import (
     write_text_content,
 )
 
+__all__ = [
+    "write_file_content",
+    "detect_file_encoding",
+    "detect_line_endings",
+    "detect_repo_line_endings",
+]
+
 
 def detect_file_encoding(file_path: str) -> str:
     """Detect the encoding of a file.
