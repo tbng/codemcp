@@ -19,7 +19,7 @@ class InitProjectTestCase(unittest.TestCase):
         self.test_dir.cleanup()
 
     def test_init_project_no_rules_file(self):
-        """Test initializing a project without a .deskaidrules file."""
+        """Test initializing a project without a deskaid.toml file."""
         result = init_project(self.dir_path)
         self.assertEqual(result, "Do NOT attempt to run tests, let the user run them.")
 
