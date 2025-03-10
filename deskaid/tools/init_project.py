@@ -48,7 +48,7 @@ def init_project(directory: str) -> str:
                 if "global_prompt" in rules_config:
                     global_prompt = rules_config["global_prompt"]
             except Exception as e:
-                return f"Error reading .deskaidrules file: {str(e)}"
+                return f"Error reading deskaid.toml file: {str(e)}"
 
         # Combine system prompt and global prompt
         combined_prompt = system_prompt
