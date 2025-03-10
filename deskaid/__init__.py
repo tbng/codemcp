@@ -111,6 +111,16 @@ async def deskaid(
 
     Lists files and directories in a given path. The path parameter must be an absolute path, not a relative path. You should generally prefer the Glob and Grep tools, if you know which directories to search.
     
+    ## Grep pattern path include?
+    
+    Searches for files containing a specified pattern (regular expression) using git grep.
+    Files with a match are returned, up to a maximum of 100 files.
+    Note that this tool only works inside git repositories.
+    
+    Example:
+      Grep "function.*hello" /path/to/repo  # Find files containing functions with "hello" in their name
+      Grep "console\\.log" /path/to/repo --include="*.js"  # Find JS files with console.log statements
+    
     ## InitProject directory_path
     
     Initializes a project by reading the .deskaidrules TOML file from the specified directory.
