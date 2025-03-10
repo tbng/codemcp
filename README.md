@@ -21,6 +21,8 @@ use case:
 
 Major missing functionality that I plan to implement ASAP:
 
+- Improve the system prompt
+
 - Linter/autoformatter integration
 
 - Typecheck/build integration
@@ -29,9 +31,16 @@ Major missing functionality that I plan to implement ASAP:
 
 - Scrape webpage and add to context
 
+- A few more of Claude Code's tools: glob, memory, notebook
+
 Things I NEVER intend to implement, for philosophical reasons:
 
-- Bash tool
+- Bash tool (instead, I want you to explicitly whitelist commands that are OK
+  for the agent to run)
+
+- Recursive LLM calls (I'd like to support this, but I think there's no way to
+  do this without doing API calls, and I'm not that interested in adding API
+  support)
 
 This tool was bootstrapped into developing itself in three hours.  I'm still
 working out Sonnet 3.7's quirks for Python projects, so apologies for any
@@ -89,6 +98,16 @@ codemcp uses a TOML configuration file located at `~/.codemcprc`. Currently supp
 [logger]
 verbosity = "INFO"  # Can be DEBUG, INFO, WARNING, ERROR, or CRITICAL
 ```
+
+In your repository, there is also a config file `codemcp.toml`.
+
+```
+global_prompt = """
+Before beginning work on this feature, write a short haiku.  Do this only once.
+"""
+```
+
+This prompt will be loaded when you initialize the project in chats.
 
 ## Logging
 
