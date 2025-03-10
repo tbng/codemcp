@@ -68,8 +68,9 @@ def git_grep(pattern: str, path: Optional[str] = None, include: Optional[str] = 
 
     try:
         # Execute git grep command
+        # Use explicit parameters to avoid confusion in mocking
         result = subprocess.run(
-            args,
+            args=args,
             cwd=absolute_path,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
