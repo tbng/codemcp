@@ -6,6 +6,12 @@ import subprocess
 
 from .common import normalize_file_path
 
+__all__ = [
+    "is_git_repository",
+    "commit_pending_changes",
+    "commit_changes",
+]
+
 
 def is_git_repository(path: str) -> bool:
     """Check if the path is within a Git repository.
