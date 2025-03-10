@@ -32,6 +32,9 @@ async def deskaid(
     offset: Optional[int] = None,
     limit: Optional[int] = None,
     description: Optional[str] = None,
+    pattern: Optional[str] = None,
+    path: Optional[str] = None,
+    include: Optional[str] = None,
 ) -> str:
     """
     This is a multipurpose tool that supports the following subcommands:
