@@ -115,11 +115,17 @@ class TestWriteFile(TestCase):
 
         write_text_content(test_path, content, line_endings="\r\n")
 
+        # Read in binary mode to check the actual line endings
         with open(test_path, "rb") as f:
             written_content = f.read()
 
+        # Should contain CRLF (b'\r\n') and not lone LF (b'\n\n')
         self.assertIn(b"\r\n", written_content)
         self.assertNotIn(b"\n\n", written_content)
+        
+        # Confirm the content has the correct number of newlines
+        text_lines = written_content.count(b"\r\n")
+        self.assertEqual(text_lines, 2, "Should have 2 CRLF line breaks")
 
     def test_write_file_content_success(self):
         """Test successful file writing"""
