@@ -15,34 +15,26 @@ class InitProjectTestCase(unittest.TestCase):
         self.test_dir = tempfile.TemporaryDirectory()
         self.dir_path = self.test_dir.name
         
-        # Initialize git repository
-        self._init_git_repo()
+        # Setup mock patches
+        self.setup_mocks()
 
     def tearDown(self):
         # Clean up temporary directory
         self.test_dir.cleanup()
         
-    def _init_git_repo(self):
-        """Initialize a git repository in the temporary directory."""
-        # Initialize git repository
-        subprocess.run(["git", "init"], cwd=self.dir_path, check=True, 
-                      stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    def setup_mocks(self):
+        """Setup mocks for git functions to bypass repository checks"""
+        # Create patch for git repository check
+        self.is_git_repo_patch = patch('codemcp.git.is_git_repository')
+        self.mock_is_git_repo = self.is_git_repo_patch.start()
+        self.mock_is_git_repo.return_value = True
+        self.addCleanup(self.is_git_repo_patch.stop)
         
-        # Configure git for test environment
-        subprocess.run(["git", "config", "user.name", "Test User"], cwd=self.dir_path, check=True,
-                      stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        subprocess.run(["git", "config", "user.email", "test@example.com"], cwd=self.dir_path, check=True,
-                      stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        
-        # Add an initial file and commit to initialize the repository
-        initial_file = os.path.join(self.dir_path, "initial_file.txt")
-        with open(initial_file, "w") as f:
-            f.write("Initial file for git repository\n")
-            
-        subprocess.run(["git", "add", "."], cwd=self.dir_path, check=True,
-                      stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        subprocess.run(["git", "commit", "-m", "Initial commit for tests"], cwd=self.dir_path, check=True,
-                      stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        # Create patch for git base directory
+        self.git_base_dir_patch = patch('codemcp.access.get_git_base_dir')
+        self.mock_git_base_dir = self.git_base_dir_patch.start()
+        self.mock_git_base_dir.return_value = self.dir_path
+        self.addCleanup(self.git_base_dir_patch.stop)
 
     def test_init_project_no_rules_file(self):
         """Test initializing a project without a codemcp.toml file."""
