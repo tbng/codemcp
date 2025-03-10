@@ -647,9 +647,10 @@ no changes added to commit (use "git add" and/or "git commit -a")
 
             # Normalize the result
             normalized_result = self.normalize_path(result)
-            
+            result_text = self.extract_text_from_result(normalized_result)
+
             # Check if the operation was permitted and what happened
-            if "Successfully edited" in normalized_result:
+            if "Successfully edited" in result_text:
                 # The file was modified, check if it was added to git despite being ignored
                 with open(ignored_file_path, "r") as f:
                     new_content = f.read()
