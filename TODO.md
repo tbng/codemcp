@@ -31,6 +31,9 @@ SHARPEN THE SAW
 
 UNCLEAR PAYOFF
 - More faithfully copy claude code's line numbering algorithm
+- Figure out if "compact output" is a good idea
+- Figure out how to make Claude stop trying to do things I don't want it to do
+  (like running tests)
 
 LLM AFFORDANCE
 - Support this style of grep
