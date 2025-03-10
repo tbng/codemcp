@@ -199,6 +199,9 @@ async def codemcp(
             return "Error: file_path is required for EditFile command"
         if description is None:
             return "Error: description is required for EditFile command"
+        if old_string is None and old_str is None:
+            # For new file creation, empty string is valid
+            pass
 
         # Accept either old_string or old_str (prefer old_string if both are provided)
         old_content = old_string or old_str or ""
