@@ -294,7 +294,7 @@ nothing added to commit but untracked files present (use "git add" to track)
             )
     
     async def test_edit_file(self):
-        """Test the EditFile command."""
+        """Test the EditFile command, which edits a file and automatically commits the changes."""
         # Create a test file with multiple lines for good context
         test_file_path = os.path.join(self.temp_dir.name, "edit_file.txt")
         original_content = "Line 1\nLine 2\nLine 3\nLine 4\nLine 5\n"
