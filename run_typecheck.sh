@@ -2,4 +2,6 @@
 set -e
 
 echo "Running Pyright type checker with strict settings..."
-pyright codemcp
+python -m pyright codemcp
+
+echo "Type checking completed successfully!"
