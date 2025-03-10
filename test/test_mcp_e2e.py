@@ -142,13 +142,29 @@ class MCPEndToEndTest(TestCase, unittest.IsolatedAsyncioTestCase):
             env=self.env,
             cwd=self.temp_dir.name  # Set the working directory to our test directory
         )
-        
-        # Connect to the server and create a session
-        async with stdio_client(server_params) as (read, write):
-            async with ClientSession(read, write) as session:
-                # Initialize the connection
-                await session.initialize()
-                yield session
+
+        try:
+            # Connect to the server and create a session
+            async with stdio_client(server_params) as (read, write):
+                try:
+                    async with ClientSession(read, write) as session:
+                        # Initialize the connection
+                        await session.initialize()
+                        yield session
+                except ExceptionGroup as eg:
+                    # Extract the original exception from the ExceptionGroup
+                    original_exc = eg.exceptions[0]
+                    # Recursively extract the original exception if it's nested in multiple ExceptionGroups
+                    while isinstance(original_exc, ExceptionGroup) and original_exc.exceptions:
+                        original_exc = original_exc.exceptions[0]
+                    raise original_exc from None
+        except ExceptionGroup as eg:
+            # Extract the original exception from the ExceptionGroup
+            original_exc = eg.exceptions[0]
+            # Recursively extract the original exception if it's nested in multiple ExceptionGroups
+            while isinstance(original_exc, ExceptionGroup) and original_exc.exceptions:
+                original_exc = original_exc.exceptions[0]
+            raise original_exc from None
 
     async def test_list_tools(self):
         """Test listing available tools."""
