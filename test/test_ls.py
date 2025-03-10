@@ -7,7 +7,7 @@ import unittest
 
 from expecttest import TestCase
 
-from deskaid.tools.ls import (
+from codemcp.tools.ls import (
     MAX_FILES,
     TreeNode,
     create_file_tree,
@@ -205,9 +205,9 @@ class TestLS(TestCase):
                 return [f"file{i}.txt" for i in range(MAX_FILES + 100)]
 
             # Monkey patch the list_directory function
-            import deskaid.tools.ls
+            import codemcp.tools.ls
 
-            deskaid.tools.ls.list_directory = mock_list_directory
+            codemcp.tools.ls.list_directory = mock_list_directory
 
             # Call ls_directory
             result = ls_directory(many_files_dir)
@@ -219,4 +219,4 @@ class TestLS(TestCase):
 
         finally:
             # Restore the original list_directory function
-            deskaid.tools.ls.list_directory = original_list_directory
+            codemcp.tools.ls.list_directory = original_list_directory

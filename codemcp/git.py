@@ -128,7 +128,7 @@ def commit_pending_changes(file_path: str) -> Tuple[bool, str]:
                     logging.debug("git add stderr: %s", add_result.stderr.strip())
 
                 commit_snapshot_result = subprocess.run(
-                    ["git", "commit", "-m", "Snapshot before deskaid change"],
+                    ["git", "commit", "-m", "Snapshot before codemcp change"],
                     cwd=directory,
                     check=True,
                     stdout=subprocess.PIPE,

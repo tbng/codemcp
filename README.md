@@ -22,24 +22,24 @@ pip install "mcp[cli]"
 Run the server:
 
 ```bash
-python deskaid_server.py
+python codemcp_server.py
 ```
 
 Install in Claude Desktop:
 
 ```bash
-mcp install deskaid_server.py
+mcp install codemcp_server.py
 ```
 
 Test with MCP Inspector:
 
 ```bash
-mcp dev deskaid_server.py
+mcp dev codemcp_server.py
 ```
 
 ## Configuration
 
-Deskaid uses a TOML configuration file located at `~/.deskaidrc`. Currently supported configuration options:
+Deskaid uses a TOML configuration file located at `~/.codemcprc`. Currently supported configuration options:
 
 ```toml
 [logger]
@@ -48,11 +48,11 @@ verbosity = "INFO"  # Can be DEBUG, INFO, WARNING, ERROR, or CRITICAL
 
 ### Logging
 
-Logs are written to `~/.deskaid/deskaid.log` and to the console. The log level can be set in the configuration file or overridden with environment variables:
+Logs are written to `~/.codemcp/codemcp.log` and to the console. The log level can be set in the configuration file or overridden with environment variables:
 
-- Set the log level in config: `verbosity = "DEBUG"` in `~/.deskaidrc`
-- Override with environment variable: `DESKAID_DEBUG_LEVEL=DEBUG python -m deskaid`
-- Enable debug mode: `DESKAID_DEBUG=1 python -m deskaid`
+- Set the log level in config: `verbosity = "DEBUG"` in `~/.codemcprc`
+- Override with environment variable: `DESKAID_DEBUG_LEVEL=DEBUG python -m codemcp`
+- Enable debug mode: `DESKAID_DEBUG=1 python -m codemcp`
 
 By default, logs from the 'mcp' module are filtered out to reduce noise. These logs are only shown when running in debug mode (`DESKAID_DEBUG=1`).
 

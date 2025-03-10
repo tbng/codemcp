@@ -1,7 +1,7 @@
 """
-Configuration module for deskaid.
+Configuration module for codemcp.
 
-This module provides access to user configuration stored in ~/.deskaidrc in TOML format.
+This module provides access to user configuration stored in ~/.codemcprc in TOML format.
 """
 
 import os
@@ -20,12 +20,12 @@ DEFAULT_CONFIG = {
 
 def get_config_path() -> Path:
     """Return the path to the user's config file."""
-    return Path.home() / ".deskaidrc"
+    return Path.home() / ".codemcprc"
 
 
 def load_config() -> Dict[str, Any]:
     """
-    Load configuration from ~/.deskaidrc file.
+    Load configuration from ~/.codemcprc file.
 
     Returns:
         Dict containing the merged configuration (defaults + user config).

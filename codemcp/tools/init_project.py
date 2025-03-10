@@ -11,11 +11,11 @@ from ..common import normalize_file_path
 
 def init_project(directory: str) -> str:
     """
-    Initialize a project by reading the deskaid.toml TOML file and returning
+    Initialize a project by reading the codemcp.toml TOML file and returning
     a combined system prompt.
 
     Args:
-        directory: The directory path containing the deskaid.toml file
+        directory: The directory path containing the codemcp.toml file
 
     Returns:
         A string containing the system prompt plus any global_prompt from the config
@@ -31,14 +31,14 @@ def init_project(directory: str) -> str:
         if not os.path.isdir(full_dir_path):
             return f"Error: Path is not a directory: {directory}"
 
-        # Build path to deskaid.toml file
-        rules_file_path = os.path.join(full_dir_path, "deskaid.toml")
+        # Build path to codemcp.toml file
+        rules_file_path = os.path.join(full_dir_path, "codemcp.toml")
 
         # Default system prompt
         system_prompt = "Do NOT attempt to run tests, let the user run them."
         global_prompt = ""
 
-        # Check if deskaid.toml file exists
+        # Check if codemcp.toml file exists
         if os.path.exists(rules_file_path):
             try:
                 with open(rules_file_path, "rb") as f:
@@ -48,7 +48,7 @@ def init_project(directory: str) -> str:
                 if "global_prompt" in rules_config:
                     global_prompt = rules_config["global_prompt"]
             except Exception as e:
-                return f"Error reading deskaid.toml file: {str(e)}"
+                return f"Error reading codemcp.toml file: {str(e)}"
 
         # Combine system prompt and global prompt
         combined_prompt = system_prompt

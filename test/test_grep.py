@@ -9,7 +9,7 @@ from unittest import mock
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from deskaid.tools.grep import git_grep, grep_files
+from codemcp.tools.grep import git_grep, grep_files
 
 
 class TestGrepTool(unittest.TestCase):
@@ -20,8 +20,8 @@ class TestGrepTool(unittest.TestCase):
         
     def tearDown(self):
         self.env_patcher.stop()
-    @mock.patch("deskaid.tools.grep.normalize_file_path", return_value="/test/path")
-    @mock.patch("deskaid.tools.grep.is_git_repository", return_value=True)
+    @mock.patch("codemcp.tools.grep.normalize_file_path", return_value="/test/path")
+    @mock.patch("codemcp.tools.grep.is_git_repository", return_value=True)
     @mock.patch("subprocess.run")
     def test_git_grep_basic(self, mock_run, mock_is_git_repo, mock_normalize):
         # Setup mock
@@ -52,8 +52,8 @@ class TestGrepTool(unittest.TestCase):
         ]
         self.assertEqual(result, expected)
 
-    @mock.patch("deskaid.tools.grep.normalize_file_path", return_value="/test/path")
-    @mock.patch("deskaid.tools.grep.is_git_repository", return_value=True)
+    @mock.patch("codemcp.tools.grep.normalize_file_path", return_value="/test/path")
+    @mock.patch("codemcp.tools.grep.is_git_repository", return_value=True)
     @mock.patch("subprocess.run")
     def test_git_grep_with_include(self, mock_run, mock_is_git_repo, mock_normalize):
         # Setup mock
@@ -83,8 +83,8 @@ class TestGrepTool(unittest.TestCase):
         ]
         self.assertEqual(result, expected)
 
-    @mock.patch("deskaid.tools.grep.normalize_file_path", return_value="/not/a/git/repo")
-    @mock.patch("deskaid.tools.grep.is_git_repository", return_value=False)
+    @mock.patch("codemcp.tools.grep.normalize_file_path", return_value="/not/a/git/repo")
+    @mock.patch("codemcp.tools.grep.is_git_repository", return_value=False)
     @mock.patch("os.environ.get", return_value="1")  # Simulate test environment
     def test_git_grep_not_a_git_repo(self, mock_env_get, mock_is_git_repo, mock_normalize):
         # Should raise a ValueError if the path is not a git repository
@@ -94,8 +94,8 @@ class TestGrepTool(unittest.TestCase):
         # Verify the correct error message
         self.assertIn("not in a git repository", str(context.exception))
 
-    @mock.patch("deskaid.tools.grep.normalize_file_path", return_value="/test/path")
-    @mock.patch("deskaid.tools.grep.is_git_repository", return_value=True)
+    @mock.patch("codemcp.tools.grep.normalize_file_path", return_value="/test/path")
+    @mock.patch("codemcp.tools.grep.is_git_repository", return_value=True)
     @mock.patch("subprocess.run")
     def test_git_grep_no_matches(self, mock_run, mock_is_git_repo, mock_normalize):
         # Setup mock for no matches found
@@ -111,8 +111,8 @@ class TestGrepTool(unittest.TestCase):
         # Assert correct empty result
         self.assertEqual(result, [])
 
-    @mock.patch("deskaid.tools.grep.normalize_file_path", return_value="/test/path")
-    @mock.patch("deskaid.tools.grep.is_git_repository", return_value=True)
+    @mock.patch("codemcp.tools.grep.normalize_file_path", return_value="/test/path")
+    @mock.patch("codemcp.tools.grep.is_git_repository", return_value=True)
     @mock.patch("subprocess.run")
     def test_git_grep_error(self, mock_run, mock_is_git_repo, mock_normalize):
         # Setup mock for error
@@ -126,7 +126,7 @@ class TestGrepTool(unittest.TestCase):
         with self.assertRaises(subprocess.SubprocessError):
             git_grep("pattern", "/test/path")
 
-    @mock.patch("deskaid.tools.grep.git_grep")
+    @mock.patch("codemcp.tools.grep.git_grep")
     @mock.patch("os.stat")
     @mock.patch("os.environ.get", return_value="1")  # Simulate test environment
     def test_grep_files_success(self, mock_env_get, mock_stat, mock_git_grep):
@@ -157,7 +157,7 @@ class TestGrepTool(unittest.TestCase):
         self.assertIn("resultForAssistant", result)
         self.assertIn("Found 3 files", result["resultForAssistant"])
 
-    @mock.patch("deskaid.tools.grep.git_grep")
+    @mock.patch("codemcp.tools.grep.git_grep")
     @mock.patch("os.environ.get", return_value="1")  # Simulate test environment
     def test_grep_files_empty_result(self, mock_env_get, mock_git_grep):
         # Setup mock for no matches
@@ -172,7 +172,7 @@ class TestGrepTool(unittest.TestCase):
         self.assertIn("resultForAssistant", result)
         self.assertEqual(result["resultForAssistant"], "No files found")
 
-    @mock.patch("deskaid.tools.grep.git_grep")
+    @mock.patch("codemcp.tools.grep.git_grep")
     @mock.patch("os.environ.get", return_value="1")  # Simulate test environment
     def test_grep_files_error(self, mock_env_get, mock_git_grep):
         # Setup mock to raise an exception

@@ -7,7 +7,7 @@ from unittest.mock import mock_open, patch
 
 from expecttest import TestCase
 
-from deskaid.tools.write_file import (
+from codemcp.tools.write_file import (
     detect_file_encoding,
     detect_line_endings,
     detect_repo_line_endings,
@@ -144,7 +144,7 @@ class TestWriteFile(TestCase):
 
         self.assertEqual(written_content, new_content)
 
-    @patch("deskaid.tools.write_file.write_text_content")
+    @patch("codemcp.tools.write_file.write_text_content")
     def test_write_file_content_exception(self, mock_write):
         """Test handling of exceptions during writing"""
         mock_write.side_effect = Exception("Test exception")

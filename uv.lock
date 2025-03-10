@@ -91,7 +91,7 @@ wheels = [
 ]
 
 [[package]]
-name = "deskaid"
+name = "codemcp"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [

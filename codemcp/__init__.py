@@ -17,11 +17,11 @@ from .tools.read_file import read_file_content
 from .tools.write_file import write_file_content
 
 # Initialize FastMCP server
-mcp = FastMCP("deskaid")
+mcp = FastMCP("codemcp")
 
 
 @mcp.tool()
-async def deskaid(
+async def codemcp(
     ctx: Context,
     command: str,
     *,
@@ -123,7 +123,7 @@ async def deskaid(
     
     ## InitProject directory_path
     
-    Initializes a project by reading the .deskaidrules TOML file from the specified directory.
+    Initializes a project by reading the .codemcprules TOML file from the specified directory.
     Returns instructions which you should IMMEDIATELY follow before continuing.
 
     Args:
@@ -227,18 +227,18 @@ async def deskaid(
             return f"Error executing grep: {str(e)}"
 
 
-def configure_logging(log_file="deskaid.log"):
+def configure_logging(log_file="codemcp.log"):
     """Configure logging to write to both a file and the console.
 
-    The log level is determined from the configuration file ~/.deskaidrc.
+    The log level is determined from the configuration file ~/.codemcprc.
     It can be overridden by setting the DESKAID_DEBUG environment variable.
-    Example: DESKAID_DEBUG=1 python -m deskaid
+    Example: DESKAID_DEBUG=1 python -m codemcp
 
     By default, logs from the 'mcp' module are filtered out unless in debug mode.
     """
     from .config import get_logger_verbosity
 
-    log_dir = os.path.join(os.path.expanduser("~"), ".deskaid")
+    log_dir = os.path.join(os.path.expanduser("~"), ".codemcp")
     os.makedirs(log_dir, exist_ok=True)
     log_path = os.path.join(log_dir, log_file)
 

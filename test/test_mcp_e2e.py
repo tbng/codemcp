@@ -17,7 +17,7 @@ from mcp.client.stdio import stdio_client
 
 
 class MCPEndToEndTest(TestCase):
-    """End-to-end test for deskaid using MCP client."""
+    """End-to-end test for codemcp using MCP client."""
 
     def setUp(self):
         # Create a temporary directory for testing
@@ -88,11 +88,11 @@ class MCPEndToEndTest(TestCase):
 
     @asynccontextmanager
     async def create_client_session(self):
-        """Create an MCP client session connected to deskaid server."""
-        # Set up server parameters for the deskaid MCP server
+        """Create an MCP client session connected to codemcp server."""
+        # Set up server parameters for the codemcp MCP server
         server_params = StdioServerParameters(
             command=sys.executable,  # Current Python executable
-            args=["-m", "deskaid"],  # Module path to deskaid
+            args=["-m", "codemcp"],  # Module path to codemcp
             env=self.env,
             cwd=self.temp_dir.name  # Set the working directory to our test directory
         )
@@ -108,9 +108,9 @@ class MCPEndToEndTest(TestCase):
         """Test listing available tools."""
         async with self.create_client_session() as session:
             tools = await session.list_tools()
-            # Verify the deskaid tool is available
+            # Verify the codemcp tool is available
             tool_names = [tool.name for tool in tools]
-            self.assertIn("deskaid", tool_names)
+            self.assertIn("codemcp", tool_names)
 
     async def test_read_file(self):
         """Test the ReadFile command."""
@@ -122,7 +122,7 @@ class MCPEndToEndTest(TestCase):
         
         async with self.create_client_session() as session:
             # Call the ReadFile tool
-            result = await session.call_tool("deskaid", {
+            result = await session.call_tool("codemcp", {
                 "command": "ReadFile",
                 "file_path": test_file_path
             })
@@ -144,7 +144,7 @@ class MCPEndToEndTest(TestCase):
         
         async with self.create_client_session() as session:
             # Call the ReadFile tool with offset and limit
-            result = await session.call_tool("deskaid", {
+            result = await session.call_tool("codemcp", {
                 "command": "ReadFile",
                 "file_path": test_file_path,
                 "offset": "2",  # Start from line 2
@@ -167,7 +167,7 @@ class MCPEndToEndTest(TestCase):
         
         async with self.create_client_session() as session:
             # Call the WriteFile tool
-            result = await session.call_tool("deskaid", {
+            result = await session.call_tool("codemcp", {
                 "command": "WriteFile",
                 "file_path": test_file_path,
                 "content": content,
@@ -222,7 +222,7 @@ nothing added to commit but untracked files present (use "git add" to track)
         
         async with self.create_client_session() as session:
             # Call the EditFile tool
-            result = await session.call_tool("deskaid", {
+            result = await session.call_tool("codemcp", {
                 "command": "EditFile",
                 "file_path": test_file_path,
                 "old_string": old_string,
@@ -284,7 +284,7 @@ no changes added to commit (use "git add" and/or "git commit -a")
         
         async with self.create_client_session() as session:
             # Call the LS tool
-            result = await session.call_tool("deskaid", {
+            result = await session.call_tool("codemcp", {
                 "command": "LS",
                 "file_path": test_dir
             })

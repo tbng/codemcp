@@ -7,8 +7,8 @@ from unittest.mock import MagicMock, mock_open, patch
 
 from expecttest import TestCase
 
-from deskaid.common import get_edit_snippet
-from deskaid.tools.edit_file import (
+from codemcp.common import get_edit_snippet
+from codemcp.tools.edit_file import (
     apply_edit,
     detect_file_encoding,
     detect_line_endings,
@@ -296,7 +296,7 @@ class TestEditFile(TestCase):
 
         self.assertIn("Error: Found 3 matches of the string to replace", result)
 
-    @patch("deskaid.tools.edit_file.write_text_content")
+    @patch("codemcp.tools.edit_file.write_text_content")
     def test_edit_file_content_exception(self, mock_write):
         """Test handling of exceptions during editing"""
         mock_write.side_effect = Exception("Test exception")
@@ -362,7 +362,7 @@ class TestEditFile(TestCase):
 
         self.assertIn("Error: File has not been read yet", result)
 
-    @patch("deskaid.common.get_edit_snippet")
+    @patch("codemcp.common.get_edit_snippet")
     def test_edit_file_content_snippet_generation(self, mock_snippet):
         """Test that a snippet is generated for successful edits"""
         # Set up the mock to be called with any arguments and return our mock snippet
@@ -373,7 +373,7 @@ class TestEditFile(TestCase):
 
         # We need to patch the function at the point where it's imported, not where it's defined
         with patch(
-            "deskaid.tools.edit_file.get_edit_snippet", return_value="MOCK SNIPPET"
+            "codemcp.tools.edit_file.get_edit_snippet", return_value="MOCK SNIPPET"
         ):
             result = edit_file_content(self.test_file_path, old_string, new_string)
 

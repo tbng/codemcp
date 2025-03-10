@@ -5,7 +5,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from deskaid.tools import init_project
+from codemcp.tools import init_project
 
 
 class InitProjectTestCase(unittest.TestCase):
@@ -19,14 +19,14 @@ class InitProjectTestCase(unittest.TestCase):
         self.test_dir.cleanup()
 
     def test_init_project_no_rules_file(self):
-        """Test initializing a project without a deskaid.toml file."""
+        """Test initializing a project without a codemcp.toml file."""
         result = init_project(self.dir_path)
         self.assertEqual(result, "Do NOT attempt to run tests, let the user run them.")
 
     def test_init_project_with_rules_file(self):
-        """Test initializing a project with a deskaid.toml file."""
-        # Create a deskaid.toml file with a global_prompt
-        rules_file_path = os.path.join(self.dir_path, "deskaid.toml")
+        """Test initializing a project with a codemcp.toml file."""
+        # Create a codemcp.toml file with a global_prompt
+        rules_file_path = os.path.join(self.dir_path, "codemcp.toml")
         with open(rules_file_path, "w") as f:
             f.write('global_prompt = "This is a custom global prompt."\n')
 
@@ -51,13 +51,13 @@ class InitProjectTestCase(unittest.TestCase):
 
     def test_init_project_invalid_toml(self):
         """Test initializing a project with an invalid TOML file."""
-        # Create an invalid deskaid.toml file
-        rules_file_path = os.path.join(self.dir_path, "deskaid.toml")
+        # Create an invalid codemcp.toml file
+        rules_file_path = os.path.join(self.dir_path, "codemcp.toml")
         with open(rules_file_path, "w") as f:
             f.write('global_prompt = "This is an invalid TOML file\n')  # Missing closing quote
 
         result = init_project(self.dir_path)
-        self.assertTrue(result.startswith("Error reading deskaid.toml file"))
+        self.assertTrue(result.startswith("Error reading codemcp.toml file"))
 
 
 if __name__ == "__main__":

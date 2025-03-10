@@ -5,8 +5,8 @@ import tempfile
 import unittest
 from expecttest import TestCase
 
-from deskaid.tools.read_file import read_file_content
-from deskaid.common import MAX_LINES_TO_READ, MAX_LINE_LENGTH
+from codemcp.tools.read_file import read_file_content
+from codemcp.common import MAX_LINES_TO_READ, MAX_LINE_LENGTH
 
 
 class TestReadFile(TestCase):
