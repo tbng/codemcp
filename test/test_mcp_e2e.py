@@ -224,9 +224,10 @@ class MCPEndToEndTest(TestCase, unittest.IsolatedAsyncioTestCase):
             
             # Normalize the result
             normalized_result = self.normalize_path(result)
-            
+            result_text = self.extract_text_from_result(normalized_result)
+
             # Verify the success message
-            self.assertIn("Successfully wrote to", normalized_result)
+            self.assertIn("Successfully wrote to", result_text)
             
             # Verify the file was created with the correct content
             with open(test_file_path, "r") as f:
