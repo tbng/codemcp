@@ -8,6 +8,7 @@ import asyncio
 from pathlib import Path
 import sys
 import subprocess
+import warnings
 from contextlib import asynccontextmanager
 
 from expecttest import TestCase
