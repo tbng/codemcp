@@ -152,19 +152,32 @@ class MCPEndToEndTest(TestCase, unittest.IsolatedAsyncioTestCase):
                         await session.initialize()
                         yield session
                 except ExceptionGroup as eg:
-                    # Extract the original exception from the ExceptionGroup
-                    original_exc = eg.exceptions[0]
-                    # Recursively extract the original exception if it's nested in multiple ExceptionGroups
-                    while isinstance(original_exc, ExceptionGroup) and original_exc.exceptions:
-                        original_exc = original_exc.exceptions[0]
-                    raise original_exc from None
+                    # Check if there's only one exception in the group
+                    if len(eg.exceptions) == 1:
+                        exc = eg.exceptions[0]
+                        # Recursively unwrap if it's another ExceptionGroup with a single exception
+                        while isinstance(exc, ExceptionGroup) and len(exc.exceptions) == 1:
+                            exc = exc.exceptions[0]
+                        raise exc from None
+                    else:
+                        # Log that we have multiple exceptions
+                        print(f"WARNING: Multiple exceptions occurred: {len(eg.exceptions)}")
+                        for i, exc in enumerate(eg.exceptions):
+                            print(f"Exception {i+1}: {exc}")
+                        # Re-raise the original exception group
+                        raise
         except ExceptionGroup as eg:
-            # Extract the original exception from the ExceptionGroup
-            original_exc = eg.exceptions[0]
-            # Recursively extract the original exception if it's nested in multiple ExceptionGroups
-            while isinstance(original_exc, ExceptionGroup) and original_exc.exceptions:
-                original_exc = original_exc.exceptions[0]
-            raise original_exc from None
+            # Same pattern for the outer exception handler
+            if len(eg.exceptions) == 1:
+                exc = eg.exceptions[0]
+                while isinstance(exc, ExceptionGroup) and len(exc.exceptions) == 1:
+                    exc = exc.exceptions[0]
+                raise exc from None
+            else:
+                print(f"WARNING: Multiple exceptions occurred: {len(eg.exceptions)}")
+                for i, exc in enumerate(eg.exceptions):
+                    print(f"Exception {i+1}: {exc}")
+                raise
 
     async def test_list_tools(self):
         """Test listing available tools."""
