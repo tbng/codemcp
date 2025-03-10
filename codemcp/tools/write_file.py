@@ -104,6 +104,9 @@ def write_file_content(file_path: str, content: str, description: str = "") -> s
         commit_success, commit_message = commit_pending_changes(file_path)
         if not commit_success:
             logging.debug(f"Failed to commit pending changes: {commit_message}")
+            # Check if the file is not tracked by git
+            if "not tracked by git" in commit_message:
+                return f"Error: {commit_message}"
         else:
             logging.debug(f"Pending changes status: {commit_message}")
 
