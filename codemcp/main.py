@@ -231,6 +231,12 @@ async def codemcp(
             return "Error: file_path is required for InitProject command"
 
         return init_project(file_path)
+    
+    if command == "Format":
+        if file_path is None:
+            return "Error: file_path is required for Format command"
+        
+        return format_code(file_path)
 
     if command == "Grep":
         if pattern is None:
