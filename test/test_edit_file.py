@@ -484,5 +484,32 @@ class TestEditFile(TestCase):
             self.assertIn("MOCK SNIPPET", result)
 
 
+    def test_edit_untracked_file(self):
+        """Test editing when the file is not tracked in git"""
+        # Create a file but don't add it to git tracking
+        untracked_path = os.path.join(self.temp_dir.name, "untracked.txt")
+        with open(untracked_path, "w", encoding="utf-8") as f:
+            f.write("This is an untracked file")
+            
+        # Override the commit_pending_changes mock to simulate an untracked file
+        with patch('codemcp.tools.edit_file.commit_pending_changes') as mock_pending:
+            # Simulate the subprocess.run result for an untracked file
+            mock_pending.return_value = (False, "File is not tracked by git. Please add the file to git tracking first using 'git add <file>'")
+            
+            # Attempt to edit the untracked file
+            old_string = "This is an untracked file"
+            new_string = "This shouldn't work"
+            
+            result = edit_file_content(untracked_path, old_string, new_string)
+            
+            # Verify that the edit was rejected
+            self.assertIn("Error: File is not tracked by git", result)
+            self.assertIn("Please add the file to git tracking", result)
+            
+            # Verify that the file content was not changed
+            with open(untracked_path, "r", encoding="utf-8") as f:
+                content = f.read()
+            self.assertEqual(content, old_string)
+
 if __name__ == "__main__":
     unittest.main()
