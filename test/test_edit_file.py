@@ -255,16 +255,16 @@ class TestEditFile(TestCase):
         # and the empty line with whitespace should now be a clean empty line
         self.assertEqual("This has been edited\n\nThe empty line should be preserved\n", content)
         
-    def test_edit_file_content_mixed_whitespace_match(self):
-        """Test editing when only some lines have trailing whitespace"""
-        # Create a test file with mixed trailing whitespace patterns
+    def test_edit_file_content_multiple_whitespace_only_lines(self):
+        """Test editing content with multiple whitespace-only lines"""
+        # Create a test file with multiple empty lines that have whitespace
         mixed_whitespace_path = os.path.join(self.temp_dir.name, "mixed_whitespace.txt")
         with open(mixed_whitespace_path, "w", encoding="utf-8") as f:
-            f.write("This line has spaces    \nThis line doesn't\nThis one does    \n")
+            f.write("This file has\n  \nmultiple empty lines\n\t\nwith different whitespace\n   \n")
         
-        # Original string without any trailing whitespace
-        old_string = "This line has spaces\nThis line doesn't\nThis one does"
-        new_string = "All of these lines\nHave been edited\nBy the test"
+        # Original string with clean empty lines
+        old_string = "This file has\n\nmultiple empty lines\n\nwith different whitespace\n\n"
+        new_string = "The file now has\n\nno more empty lines\nwith whitespace"
         
         # Use read_file_timestamps to avoid "file has not been read" error
         timestamps = {mixed_whitespace_path: os.stat(mixed_whitespace_path).st_mtime + 1}
@@ -275,11 +275,12 @@ class TestEditFile(TestCase):
         # Check that the edit was successful
         self.assertIn(f"Successfully edited {mixed_whitespace_path}", result)
         
-        # Read the file and verify the content was replaced while preserving original whitespace
+        # Read the file and verify the content was replaced
         with open(mixed_whitespace_path, "r", encoding="utf-8") as f:
             content = f.read()
         
-        self.assertIn("All of these lines    \nHave been edited\nBy the test    \n", content)
+        # The whitespace-only lines should be replaced with the new content
+        self.assertEqual("The file now has\n\nno more empty lines\nwith whitespace", content)
 
     def test_edit_file_content_multiple_matches(self):
         """Test editing when there are multiple matches of the string to replace"""
