@@ -10,7 +10,14 @@ CODE QUAL
 - General logging to repro problems
 - Stop using catch all exceptions
 
-TOOLS: see README
+TOOLS:
+- ✅ Linter/autoformatter integration
+- Typecheck/build integration
+- Test runner integration
+- Scrape webpage and add to context
+- Explicitly add file to context
+- Make file executable tool
+- A few more of Claude Code's tools: glob, memory, notebook
 
 FEATURES
 - Diff review mode
