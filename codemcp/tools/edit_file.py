@@ -272,6 +272,9 @@ def edit_file_content(
         commit_success, commit_message = commit_pending_changes(full_file_path)
         if not commit_success:
             logging.debug(f"Failed to commit pending changes: {commit_message}")
+            # Check if the file is not tracked by git
+            if "not tracked by git" in commit_message:
+                return f"Error: {commit_message}"
         else:
             logging.debug(f"Pending changes status: {commit_message}")
 
