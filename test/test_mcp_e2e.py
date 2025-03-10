@@ -132,27 +132,24 @@ class MCPEndToEndTest(TestCase, unittest.IsolatedAsyncioTestCase):
         else:
             return str(result)
 
-    def _unwrap_single_exception_group(self, eg):
+    @asynccontextmanager
+    async def _unwrap_exception_groups(self):
         """
-        Helper method to unwrap an ExceptionGroup if it contains exactly one exception.
-        
-        Args:
-            eg: An ExceptionGroup object
-            
-        Returns:
-            tuple: (unwrapped, exception) where:
-                - unwrapped: Boolean indicating if unwrapping was performed
-                - exception: Either the unwrapped exception or the original ExceptionGroup
+        Context manager that unwraps ExceptionGroups with single exceptions.
+        Only unwraps if there's exactly one exception at each level.
         """
-        if len(eg.exceptions) == 1:
-            exc = eg.exceptions[0]
-            # Recursively unwrap if it's another ExceptionGroup with a single exception
-            while isinstance(exc, ExceptionGroup) and len(exc.exceptions) == 1:
-                exc = exc.exceptions[0]
-            return True, exc
-        else:
-            # Multiple exceptions - don't unwrap
-            return False, eg
+        try:
+            yield
+        except ExceptionGroup as eg:
+            if len(eg.exceptions) == 1:
+                exc = eg.exceptions[0]
+                # Recursively unwrap if it's another ExceptionGroup with a single exception
+                while isinstance(exc, ExceptionGroup) and len(exc.exceptions) == 1:
+                    exc = exc.exceptions[0]
+                raise exc from None
+            else:
+                # Multiple exceptions - don't unwrap
+                raise
             
     @asynccontextmanager
     async def create_client_session(self):
@@ -165,26 +162,13 @@ class MCPEndToEndTest(TestCase, unittest.IsolatedAsyncioTestCase):
             cwd=self.temp_dir.name  # Set the working directory to our test directory
         )
 
-        try:
-            # Connect to the server and create a session
+        async with self._unwrap_exception_groups():
             async with stdio_client(server_params) as (read, write):
-                try:
+                async with self._unwrap_exception_groups():
                     async with ClientSession(read, write) as session:
                         # Initialize the connection
                         await session.initialize()
                         yield session
-                except ExceptionGroup as eg:
-                    unwrapped, exc = self._unwrap_single_exception_group(eg)
-                    if unwrapped:
-                        raise exc from None
-                    else:
-                        raise
-        except ExceptionGroup as eg:
-            unwrapped, exc = self._unwrap_single_exception_group(eg)
-            if unwrapped:
-                raise exc from None
-            else:
-                raise
 
     async def test_list_tools(self):
         """Test listing available tools."""
