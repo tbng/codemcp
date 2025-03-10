@@ -55,31 +55,25 @@ class TestLS(TestCase):
         # Setup mock patches
         self.setup_mocks()
         
-    def _init_git_repo(self):
-        """Initialize a git repository in the temporary directory and create a codemcp.toml file."""
-        temp_dir = self.temp_dir.name
+    def setup_mocks(self):
+        """Setup mocks for git functions to bypass repository checks"""
+        # Create patch for git repository check
+        self.is_git_repo_patch = patch('codemcp.git.is_git_repository')
+        self.mock_is_git_repo = self.is_git_repo_patch.start()
+        self.mock_is_git_repo.return_value = True
+        self.addCleanup(self.is_git_repo_patch.stop)
         
-        # Create codemcp.toml file
-        config_path = os.path.join(temp_dir, "codemcp.toml")
+        # Create patch for git base directory
+        self.git_base_dir_patch = patch('codemcp.access.get_git_base_dir')
+        self.mock_git_base_dir = self.git_base_dir_patch.start()
+        self.mock_git_base_dir.return_value = self.temp_dir.name
+        self.addCleanup(self.git_base_dir_patch.stop)
+        
+        # Create a mock codemcp.toml file to satisfy permission check
+        config_path = os.path.join(self.temp_dir.name, "codemcp.toml")
         with open(config_path, "w") as f:
             f.write("[codemcp]\nenabled = true\n")
-        
-        # Initialize git repository
-        subprocess.run(["git", "init"], cwd=temp_dir, check=True, 
-                      stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        
-        # Configure git for test environment
-        subprocess.run(["git", "config", "user.name", "Test User"], cwd=temp_dir, check=True,
-                      stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        subprocess.run(["git", "config", "user.email", "test@example.com"], cwd=temp_dir, check=True,
-                      stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        
-        # Add files and make initial commit
-        subprocess.run(["git", "add", "."], cwd=temp_dir, check=True,
-                      stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        subprocess.run(["git", "commit", "-m", "Initial commit for tests"], cwd=temp_dir, check=True,
-                      stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
+            
         # Create a __pycache__ directory
         self.pycache_dir = os.path.join(self.test_dir, "__pycache__")
         os.makedirs(self.pycache_dir, exist_ok=True)
@@ -140,112 +134,110 @@ class TestLS(TestCase):
         self.assertNotIn(".hidden_file", result_set)
         self.assertNotIn("__pycache__", result_set)
 
-    def test_skip(self):
-        """Test the skip function"""
-        # Hidden files should be skipped
-        self.assertTrue(skip(self.hidden_file_path))
+    def test_list_directory_show_hidden(self):
+        """Test listing a directory with show_hidden=True"""
+        results = list_directory(self.test_dir, show_hidden=True)
 
-        # __pycache__ directories should be skipped
-        self.assertTrue(skip(self.pycache_dir))
+        # Convert to set for easier comparison
+        result_set = set(results)
 
-        # Regular files should not be skipped
-        self.assertFalse(skip(self.file1_path))
+        # Check that hidden files are now included
+        self.assertIn(".hidden_file", result_set)
 
-        # Regular directories should not be skipped
-        self.assertFalse(skip(self.subdir_path))
+    def test_list_directory_skip_patterns(self):
+        """Test listing a directory with skip patterns"""
+        # Skip all .txt files
+        results = list_directory(self.test_dir, skip_patterns=["*.txt"])
 
-    def test_create_file_tree(self):
-        """Test the create_file_tree function"""
-        paths = [
-            "file1.txt",
-            "file2.txt",
-            f"subdir{os.sep}",
-            f"subdir{os.sep}subdir_file.txt",
-        ]
-        tree = create_file_tree(paths)
+        # Convert to set for easier comparison
+        result_set = set(results)
 
-        # Check the root level
-        self.assertEqual(len(tree), 3)  # file1.txt, file2.txt, subdir/
+        # Check that .txt files are skipped
+        self.assertNotIn("file1.txt", result_set)
+        self.assertNotIn("file2.txt", result_set)
+        self.assertNotIn(f"subdir{os.sep}subdir_file.txt", result_set)
 
-        # Find the subdir node
-        subdir_node = None
-        for node in tree:
-            if node.name == "subdir":
-                subdir_node = node
-                break
+        # The directory itself should still be included
+        self.assertIn(f"subdir{os.sep}", result_set)
 
-        # Check that the subdir node exists and has the correct type
-        self.assertIsNotNone(subdir_node)
-        self.assertEqual(subdir_node.type, "directory")
-
-        # Check that the subdir node has the correct child
-        self.assertEqual(len(subdir_node.children), 1)
-        self.assertEqual(subdir_node.children[0].name, "subdir_file.txt")
-        self.assertEqual(subdir_node.children[0].type, "file")
-
-    def test_print_tree(self):
-        """Test the print_tree function"""
-        # Create a simple tree
-        root = []
-        file1 = TreeNode("file1.txt", "file1.txt", "file")
-        file2 = TreeNode("file2.txt", "file2.txt", "file")
-        subdir = TreeNode("subdir", "subdir", "directory")
-        subdir_file = TreeNode("subdir_file.txt", "subdir/subdir_file.txt", "file")
-
-        root.append(file1)
-        root.append(file2)
-        root.append(subdir)
-        subdir.children.append(subdir_file)
-
-        # Print the tree
-        result = print_tree(root, cwd="/test/dir")
-
-        # Check the output
-        expected_lines = [
-            "- /test/dir/",
-            "  - file1.txt",
-            "  - file2.txt",
-            "  - subdir/",
-            "    - subdir_file.txt",
-        ]
-
-        for line in expected_lines:
-            self.assertIn(line, result)
-
-    def test_max_files_limit(self):
-        """Test that the MAX_FILES limit is enforced"""
-        # Create a directory with more than MAX_FILES files
+    def test_list_directory_max_files(self):
+        """Test the max_files parameter"""
+        # Create a directory with many files
         many_files_dir = os.path.join(self.temp_dir.name, "many_files")
         os.makedirs(many_files_dir, exist_ok=True)
 
-        # Create a small number of files for testing (we don't need to create MAX_FILES)
-        # We'll mock the list_directory function to return more than MAX_FILES
-        for i in range(10):
+        # Create MAX_FILES + 10 files
+        for i in range(MAX_FILES + 10):
             file_path = os.path.join(many_files_dir, f"file{i}.txt")
             with open(file_path, "w") as f:
                 f.write(f"This is file {i}\n")
 
-        # Create a mock list_directory function that returns more than MAX_FILES
-        original_list_directory = list_directory
+        # List the directory with default max_files
+        results = list_directory(many_files_dir)
 
-        try:
-            # Replace list_directory with a mock function
-            def mock_list_directory(path):
-                return [f"file{i}.txt" for i in range(MAX_FILES + 100)]
+        # Check that the number of files is limited to MAX_FILES
+        self.assertEqual(len(results), MAX_FILES)
+        self.assertTrue(any("..." in r for r in results))  # Truncation message should be present
 
-            # Monkey patch the list_directory function
-            import codemcp.tools.ls
+    def test_create_file_tree(self):
+        """Test creating a file tree"""
+        tree = create_file_tree(self.test_dir)
 
-            codemcp.tools.ls.list_directory = mock_list_directory
+        # Check the structure of the tree
+        self.assertEqual(tree.name, os.path.basename(self.test_dir))
+        self.assertTrue(tree.is_dir)
+        self.assertEqual(len(tree.children), 3)  # 2 files and 1 subdir
 
-            # Call ls_directory
-            result = ls_directory(many_files_dir)
+        # Check that we have the expected files
+        file_names = [child.name for child in tree.children if not child.is_dir]
+        self.assertIn("file1.txt", file_names)
+        self.assertIn("file2.txt", file_names)
 
-            # Check that the truncation message is included
-            self.assertIn(
-                f"There are more than {MAX_FILES} files in the directory", result
-            )
+        # Check the subdirectory
+        subdirs = [child for child in tree.children if child.is_dir]
+        self.assertEqual(len(subdirs), 1)
+        self.assertEqual(subdirs[0].name, "subdir")
+        self.assertEqual(len(subdirs[0].children), 1)  # 1 file
+        self.assertEqual(subdirs[0].children[0].name, "subdir_file.txt")
 
-        finally:
-            # Restore the original list_directory function
-            codemcp.tools.ls.list_directory = original_list_directory
+    def test_skip_function(self):
+        """Test the skip function for filtering paths"""
+        # Test skipping hidden files
+        self.assertTrue(skip(".hidden_file", show_hidden=False))
+        self.assertFalse(skip(".hidden_file", show_hidden=True))
+
+        # Test skipping __pycache__
+        self.assertTrue(skip("__pycache__"))
+        self.assertTrue(skip("__pycache__/file.pyc"))
+
+        # Test skipping patterns
+        self.assertTrue(skip("file.txt", skip_patterns=["*.txt"]))
+        self.assertFalse(skip("file.py", skip_patterns=["*.txt"]))
+        self.assertTrue(skip("temp.txt", skip_patterns=["temp*"]))
+        self.assertTrue(skip("subdir/file.txt", skip_patterns=["*/*.txt"]))
+
+    def test_print_tree(self):
+        """Test printing a file tree"""
+        # Create a simple tree structure
+        root = TreeNode("root", True)
+        file1 = TreeNode("file1.txt", False)
+        file2 = TreeNode("file2.txt", False)
+        subdir = TreeNode("subdir", True)
+        subfile = TreeNode("subfile.txt", False)
+
+        root.children = [file1, file2, subdir]
+        subdir.children = [subfile]
+
+        # Print the tree
+        result = print_tree(root)
+
+        # Check that the output has the expected structure
+        self.assertIn("root", result)
+        self.assertIn("├── file1.txt", result)
+        self.assertIn("├── file2.txt", result)
+        self.assertIn("└── subdir/", result)
+        self.assertIn("    └── subfile.txt", result)
+
+
+if __name__ == "__main__":
+    unittest.main()
