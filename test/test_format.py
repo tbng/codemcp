@@ -124,6 +124,55 @@ class TestFormatTool(unittest.TestCase):
         self.assertIn("Error: Directory does not exist", result)
         mock_is_git_repo.assert_not_called()
         
+    @patch("subprocess.run")
+    def test_check_for_changes(self, mock_run):
+        """Test _check_for_changes function."""
+        # Test case 1: Changes detected
+        mock_process1 = MagicMock()
+        mock_process1.stdout = " M file1.py\n?? file2.py\n"
+        mock_process1.stderr = ""
+        
+        # Test case 2: No changes detected
+        mock_process2 = MagicMock()
+        mock_process2.stdout = ""
+        mock_process2.stderr = ""
+        
+        # Test case 3: Exception occurs
+        mock_run.side_effect = [mock_process1, mock_process2, Exception("Git error")]
+        
+        # Test with changes
+        result1 = _check_for_changes(self.project_dir)
+        self.assertTrue(result1)
+        
+        # Test without changes
+        result2 = _check_for_changes(self.project_dir)
+        self.assertFalse(result2)
+        
+        # Test with exception
+        result3 = _check_for_changes(self.project_dir)
+        self.assertFalse(result3)
+        
+        # Verify subprocess.run was called correctly
+        calls = [
+            call(
+                ["git", "status", "--porcelain"],
+                cwd=self.project_dir,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                check=True,
+                text=True,
+            ),
+            call(
+                ["git", "status", "--porcelain"],
+                cwd=self.project_dir,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                check=True,
+                text=True,
+            )
+        ]
+        mock_run.assert_has_calls(calls)
+
     @patch("codemcp.tools.format.commit_changes")
     @patch("codemcp.tools.format._check_for_changes")
     @patch("codemcp.tools.format.is_git_repository")
