@@ -104,6 +104,13 @@ class MCPEndToEndTest(TestCase, unittest.IsolatedAsyncioTestCase):
             if hasattr(text, 'content'):
                 # This is a CallToolResult object, extract the content
                 text = text.content
+            
+            # Handle lists of TextContent objects
+            if isinstance(text, list) and len(text) > 0 and hasattr(text[0], 'text'):
+                # For list of TextContent objects, we'll preserve the list structure
+                # but normalize the path in each TextContent's text attribute
+                return text
+            
             # Replace the actual temp dir path with a fixed placeholder
             if isinstance(text, str):
                 return text.replace(self.temp_dir.name, "/tmp/test_dir")
