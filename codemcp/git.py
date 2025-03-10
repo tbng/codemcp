@@ -168,26 +168,13 @@ def commit_changes(file_path: str, description: str) -> tuple[bool, str]:
 
         # First check if there's already a commit in the repository
         has_commits = False
-        rev_parse_result = subprocess.run(
+        rev_parse_result = run_command(
             ["git", "rev-parse", "--verify", "HEAD"],
             cwd=directory,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            capture_output=True,
             text=True,
             check=False,
         )
-
-        # Log command output
-        if rev_parse_result.stdout:
-            logging.debug(
-                "git rev-parse HEAD output: %s",
-                rev_parse_result.stdout.strip(),
-            )
-        if rev_parse_result.stderr:
-            logging.debug(
-                "git rev-parse HEAD stderr: %s",
-                rev_parse_result.stderr.strip(),
-            )
 
         has_commits = rev_parse_result.returncode == 0
 
