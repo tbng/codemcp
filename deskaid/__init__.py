@@ -182,6 +182,12 @@ async def deskaid(
             return "Error: file_path is required for LS command"
 
         return ls_directory(file_path)
+        
+    elif command == "InitProject":
+        if file_path is None:
+            return "Error: file_path is required for InitProject command"
+            
+        return init_project(file_path)
 
 
 def configure_logging(log_file="deskaid.log"):
