@@ -108,20 +108,13 @@ def commit_pending_changes(file_path: str) -> tuple[bool, str]:
 
             if changed_files:
                 # Commit other changes first with a default message
-                add_result = subprocess.run(
+                add_result = run_command(
                     ["git", "add", "."],
                     cwd=directory,
                     check=True,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
+                    capture_output=True,
                     text=True,
                 )
-
-                # Log command output
-                if add_result.stdout:
-                    logging.debug("git add output: %s", add_result.stdout.strip())
-                if add_result.stderr:
-                    logging.debug("git add stderr: %s", add_result.stderr.strip())
 
                 commit_snapshot_result = subprocess.run(
                     ["git", "commit", "-m", "Snapshot before codemcp change"],
