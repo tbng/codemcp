@@ -8,8 +8,7 @@ from ..common import normalize_file_path
 
 
 def init_project(directory: str) -> str:
-    """
-    Initialize a project by reading the codemcp.toml TOML file and returning
+    """Initialize a project by reading the codemcp.toml TOML file and returning
     a combined system prompt.
 
     Args:
@@ -17,6 +16,7 @@ def init_project(directory: str) -> str:
 
     Returns:
         A string containing the system prompt plus any global_prompt from the config
+
     """
     try:
         # Normalize the directory path
@@ -53,7 +53,7 @@ If the user tells you a fact about the overall system that seems very important,
                 if "global_prompt" in rules_config:
                     global_prompt = rules_config["global_prompt"]
             except Exception as e:
-                return f"Error reading codemcp.toml file: {str(e)}"
+                return f"Error reading codemcp.toml file: {e!s}"
 
         # Combine system prompt and global prompt
         combined_prompt = system_prompt
@@ -62,4 +62,4 @@ If the user tells you a fact about the overall system that seems very important,
 
         return combined_prompt
     except Exception as e:
-        return f"Error initializing project: {str(e)}"
+        return f"Error initializing project: {e!s}"

@@ -8,15 +8,15 @@ from typing import Optional, Tuple
 import toml
 
 
-def get_git_base_dir(file_path: str) -> Optional[str]:
-    """
-    Get the base directory of the git repository containing the file.
+def get_git_base_dir(file_path: str) -> str | None:
+    """Get the base directory of the git repository containing the file.
 
     Args:
         file_path: The path to the file or directory
 
     Returns:
         The base directory of the git repository, or None if not in a git repository
+
     """
     try:
         # Get the directory containing the file - handle non-existent files
@@ -47,13 +47,12 @@ def get_git_base_dir(file_path: str) -> Optional[str]:
         logging.debug(f"Git base directory: {git_base_dir}")
         return git_base_dir
     except (subprocess.SubprocessError, OSError) as e:
-        logging.debug(f"Error finding git base directory: {str(e)}")
+        logging.debug(f"Error finding git base directory: {e!s}")
         return None
 
 
-def check_edit_permission(file_path: str) -> Tuple[bool, str]:
-    """
-    Check if editing the file is permitted based on the presence of codemcp.toml
+def check_edit_permission(file_path: str) -> tuple[bool, str]:
+    """Check if editing the file is permitted based on the presence of codemcp.toml
     in the git repository's root directory.
 
     Args:
@@ -61,6 +60,7 @@ def check_edit_permission(file_path: str) -> Tuple[bool, str]:
 
     Returns:
         A tuple of (is_permitted, message)
+
     """
     # Get the git base directory
     git_base_dir = get_git_base_dir(file_path)
@@ -85,4 +85,4 @@ def check_edit_permission(file_path: str) -> Tuple[bool, str]:
         # For example, check for allowed_directories, deny_patterns, etc.
         return True, "Permission granted."
     except Exception as e:
-        return False, f"Error parsing codemcp.toml file: {str(e)}"
+        return False, f"Error parsing codemcp.toml file: {e!s}"

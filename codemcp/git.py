@@ -16,6 +16,7 @@ def is_git_repository(path: str) -> bool:
 
     Returns:
         True if path is in a Git repository, False otherwise
+
     """
     try:
         # Get the directory containing the file
@@ -40,7 +41,7 @@ def is_git_repository(path: str) -> bool:
         return False
 
 
-def commit_pending_changes(file_path: str) -> Tuple[bool, str]:
+def commit_pending_changes(file_path: str) -> tuple[bool, str]:
     """Commit any pending changes in the repository, excluding the target file.
 
     Args:
@@ -48,6 +49,7 @@ def commit_pending_changes(file_path: str) -> Tuple[bool, str]:
 
     Returns:
         A tuple of (success, message)
+
     """
     try:
         # First, check if this is a git repository
@@ -62,7 +64,7 @@ def commit_pending_changes(file_path: str) -> Tuple[bool, str]:
             cwd=directory,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            text=True,
+            text=True, check=False,
         )
 
         # Log command output
@@ -159,10 +161,10 @@ def commit_pending_changes(file_path: str) -> Tuple[bool, str]:
 
         return True, "No pending changes to commit"
     except Exception as e:
-        return False, f"Error committing pending changes: {str(e)}"
+        return False, f"Error committing pending changes: {e!s}"
 
 
-def commit_changes(file_path: str, description: str) -> Tuple[bool, str]:
+def commit_changes(file_path: str, description: str) -> tuple[bool, str]:
     """Commit changes to a file in Git.
 
     Args:
@@ -171,6 +173,7 @@ def commit_changes(file_path: str, description: str) -> Tuple[bool, str]:
 
     Returns:
         A tuple of (success, message)
+
     """
     try:
         # First, check if this is a git repository
@@ -190,7 +193,7 @@ def commit_changes(file_path: str, description: str) -> Tuple[bool, str]:
             cwd=directory,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            text=True,
+            text=True, check=False,
         )
 
         # Log command output
@@ -209,17 +212,17 @@ def commit_changes(file_path: str, description: str) -> Tuple[bool, str]:
             cwd=directory,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            text=True,
+            text=True, check=False,
         )
 
         # Log command output
         if rev_parse_result.stdout:
             logging.debug(
-                "git rev-parse HEAD output: %s", rev_parse_result.stdout.strip()
+                "git rev-parse HEAD output: %s", rev_parse_result.stdout.strip(),
             )
         if rev_parse_result.stderr:
             logging.debug(
-                "git rev-parse HEAD stderr: %s", rev_parse_result.stderr.strip()
+                "git rev-parse HEAD stderr: %s", rev_parse_result.stderr.strip(),
             )
 
         has_commits = rev_parse_result.returncode == 0
@@ -233,7 +236,7 @@ def commit_changes(file_path: str, description: str) -> Tuple[bool, str]:
                 cwd=directory,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
-                text=True,
+                text=True, check=False,
             )
 
             # Log command output (only stderr since stdout would be empty with --quiet flag)
@@ -253,7 +256,7 @@ def commit_changes(file_path: str, description: str) -> Tuple[bool, str]:
             cwd=directory,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            text=True,
+            text=True, check=False,
         )
 
         # Log command output
@@ -267,4 +270,4 @@ def commit_changes(file_path: str, description: str) -> Tuple[bool, str]:
 
         return True, "Changes committed successfully"
     except Exception as e:
-        return False, f"Error committing changes: {str(e)}"
+        return False, f"Error committing changes: {e!s}"

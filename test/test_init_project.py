@@ -75,7 +75,7 @@ class InitProjectTestCase(unittest.TestCase):
         rules_file_path = os.path.join(self.dir_path, "codemcp.toml")
         with open(rules_file_path, "w") as f:
             f.write(
-                'global_prompt = "This is an invalid TOML file\n'
+                'global_prompt = "This is an invalid TOML file\n',
             )  # Missing closing quote
 
         result = init_project(self.dir_path)

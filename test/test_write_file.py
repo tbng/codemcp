@@ -57,7 +57,7 @@ class TestWriteFile(TestCase):
 
         # Create patch for pending commit operations - patch in file_utils now
         self.commit_pending_patch = patch(
-            "codemcp.tools.file_utils.commit_pending_changes"
+            "codemcp.tools.file_utils.commit_pending_changes",
         )
         self.mock_commit_pending = self.commit_pending_patch.start()
         self.mock_commit_pending.return_value = (True, "No pending changes to commit")
@@ -105,7 +105,7 @@ class TestWriteFile(TestCase):
 
         write_text_content(test_path, content)
 
-        with open(test_path, "r", encoding="utf-8") as f:
+        with open(test_path, encoding="utf-8") as f:
             written_content = f.read()
 
         self.assertEqual(written_content, content)
@@ -139,7 +139,7 @@ class TestWriteFile(TestCase):
         self.assertIn(f"Successfully wrote to {abs_path}", result)
         self.assertTrue(os.path.exists(abs_path))
 
-        with open(abs_path, "r") as f:
+        with open(abs_path) as f:
             written_content = f.read()
 
         self.assertEqual(written_content, content)
@@ -181,7 +181,7 @@ class TestWriteFile(TestCase):
 
         self.assertIn(f"Successfully wrote to {abs_path}", result)
 
-        with open(abs_path, "r") as f:
+        with open(abs_path) as f:
             written_content = f.read()
 
         self.assertEqual(written_content, new_content)
@@ -192,7 +192,7 @@ class TestWriteFile(TestCase):
         mock_write.side_effect = Exception("Test exception")
 
         abs_path = os.path.abspath(
-            os.path.join(self.temp_dir.name, "exception_test.txt")
+            os.path.join(self.temp_dir.name, "exception_test.txt"),
         )
         content = "This should raise an exception"
 
@@ -213,7 +213,7 @@ class TestWriteFile(TestCase):
 
             # Create the file first so it exists but is untracked
             abs_path = os.path.abspath(
-                os.path.join(self.temp_dir.name, "untracked_file.txt")
+                os.path.join(self.temp_dir.name, "untracked_file.txt"),
             )
             with open(abs_path, "w") as f:
                 f.write("Initial content")
@@ -226,7 +226,7 @@ class TestWriteFile(TestCase):
             self.assertIn("Please add the file to git tracking", result)
 
             # Verify that the file content was not changed
-            with open(abs_path, "r") as f:
+            with open(abs_path) as f:
                 written_content = f.read()
             self.assertEqual(written_content, "Initial content")
 
@@ -246,7 +246,7 @@ class TestWriteFile(TestCase):
 
         # Verify that the file was created with correct content
         self.assertTrue(os.path.exists(abs_path))
-        with open(abs_path, "r") as f:
+        with open(abs_path) as f:
             written_content = f.read()
         self.assertEqual(written_content, content)
 

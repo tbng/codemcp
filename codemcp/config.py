@@ -1,5 +1,4 @@
-"""
-Configuration module for codemcp.
+"""Configuration module for codemcp.
 
 This module provides access to user configuration stored in ~/.codemcprc in TOML format.
 """
@@ -12,8 +11,8 @@ import tomli
 # Default configuration values
 DEFAULT_CONFIG = {
     "logger": {
-        "verbosity": "INFO"  # Default logging level
-    }
+        "verbosity": "INFO",  # Default logging level
+    },
 }
 
 
@@ -22,12 +21,12 @@ def get_config_path() -> Path:
     return Path.home() / ".codemcprc"
 
 
-def load_config() -> Dict[str, Any]:
-    """
-    Load configuration from ~/.codemcprc file.
+def load_config() -> dict[str, Any]:
+    """Load configuration from ~/.codemcprc file.
 
     Returns:
         Dict containing the merged configuration (defaults + user config).
+
     """
     config = DEFAULT_CONFIG.copy()
     config_path = get_config_path()
@@ -45,13 +44,13 @@ def load_config() -> Dict[str, Any]:
     return config
 
 
-def _merge_configs(base: Dict[str, Any], override: Dict[str, Any]) -> None:
-    """
-    Recursively merge override dict into base dict.
+def _merge_configs(base: dict[str, Any], override: dict[str, Any]) -> None:
+    """Recursively merge override dict into base dict.
 
     Args:
         base: The base configuration dictionary to merge into.
         override: The override configuration dictionary to merge from.
+
     """
     for key, value in override.items():
         if key in base and isinstance(base[key], dict) and isinstance(value, dict):
@@ -61,11 +60,11 @@ def _merge_configs(base: Dict[str, Any], override: Dict[str, Any]) -> None:
 
 
 def get_logger_verbosity() -> str:
-    """
-    Get the configured logger verbosity level.
+    """Get the configured logger verbosity level.
 
     Returns:
         String representing the logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL).
+
     """
     config = load_config()
     return config["logger"]["verbosity"]

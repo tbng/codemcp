@@ -28,7 +28,7 @@ class TestEditFile(TestCase):
         self.test_file_path = os.path.join(self.temp_dir.name, "test_file.txt")
         with open(self.test_file_path, "w", encoding="utf-8") as f:
             f.write(
-                "This is a test file\nWith multiple lines\nFor testing edit functionality\n"
+                "This is a test file\nWith multiple lines\nFor testing edit functionality\n",
             )
 
         # Create a test file with CRLF line endings
@@ -70,7 +70,7 @@ class TestEditFile(TestCase):
 
         # Create patch for pending commit operations
         self.commit_pending_patch = patch(
-            "codemcp.tools.file_utils.commit_pending_changes"
+            "codemcp.tools.file_utils.commit_pending_changes",
         )
         self.mock_commit_pending = self.commit_pending_patch.start()
         self.mock_commit_pending.return_value = (True, "No pending changes to commit")
@@ -113,7 +113,7 @@ class TestEditFile(TestCase):
     def test_find_similar_file_directory_not_exists(self):
         """Test finding a similar file when directory doesn't exist"""
         non_existent_path = os.path.join(
-            self.temp_dir.name, "non_existent_dir", "file.txt"
+            self.temp_dir.name, "non_existent_dir", "file.txt",
         )
         result = find_similar_file(non_existent_path)
         self.assertIsNone(result)
@@ -165,7 +165,7 @@ class TestEditFile(TestCase):
                     "newStart": 1,
                     "newLines": len(new_string.split("\n")),
                     "lines": [f"+{line}" for line in new_string.split("\n")],
-                }
+                },
             ]
             self.assertEqual(len(patch), 1)
             self.assertEqual(updated_file, new_string)
@@ -176,7 +176,7 @@ class TestEditFile(TestCase):
         indented_file_path = os.path.join(self.temp_dir.name, "indented.py")
         with open(indented_file_path, "w", encoding="utf-8") as f:
             f.write(
-                "def example():\n    first_line = 1\n    second_line = 2\n    third_line = 3\n"
+                "def example():\n    first_line = 1\n    second_line = 2\n    third_line = 3\n",
             )
 
         # Search text with missing indentation
@@ -198,7 +198,7 @@ class TestEditFile(TestCase):
         ellipsis_file_path = os.path.join(self.temp_dir.name, "ellipsis.py")
         with open(ellipsis_file_path, "w", encoding="utf-8") as f:
             f.write(
-                "def start():\n    # This is the start\n    print('start')\n\ndef middle():\n    # Middle section\n    print('middle')\n\ndef end():\n    # This is the end\n    print('end')\n"
+                "def start():\n    # This is the start\n    print('start')\n\ndef middle():\n    # Middle section\n    print('middle')\n\ndef end():\n    # This is the end\n    print('end')\n",
             )
 
         # Use ellipsis to replace just the middle function
@@ -212,7 +212,7 @@ class TestEditFile(TestCase):
             self.assertIn("print('START')", updated_file)
             # Should still contain the middle function unchanged
             self.assertIn(
-                "def middle():\n    # Middle section\n    print('middle')", updated_file
+                "def middle():\n    # Middle section\n    print('middle')", updated_file,
             )
         except ValueError:
             # Our test might not pass yet if the full dotdotdots implementation isn't complete
@@ -225,13 +225,13 @@ class TestEditFile(TestCase):
         fuzzy_file_path = os.path.join(self.temp_dir.name, "fuzzy.txt")
         with open(fuzzy_file_path, "w", encoding="utf-8") as f:
             f.write(
-                "This is some text that will be searched\nwith fuzzy matching because there are\nsmall differences in spacing and punctuation.\n"
+                "This is some text that will be searched\nwith fuzzy matching because there are\nsmall differences in spacing and punctuation.\n",
             )
 
         # Manually test if the fuzzy matching capability works
         try:
             # Using fuzzy matching directly to confirm it works as expected
-            with open(fuzzy_file_path, "r", encoding="utf-8") as f:
+            with open(fuzzy_file_path, encoding="utf-8") as f:
                 content = f.read()
 
             # Search text that's closer to the actual content
@@ -242,7 +242,7 @@ class TestEditFile(TestCase):
 
             # Test replace_most_similar_chunk directly
             updated_content = replace_most_similar_chunk(
-                content, old_string, new_string
+                content, old_string, new_string,
             )
 
             if updated_content and updated_content != content:
@@ -293,7 +293,7 @@ class TestEditFile(TestCase):
 
         self.assertIn(f"Successfully edited {self.test_file_path}", result)
 
-        with open(self.test_file_path, "r", encoding="utf-8") as f:
+        with open(self.test_file_path, encoding="utf-8") as f:
             content = f.read()
 
         self.assertIn("With edited lines", content)
@@ -318,7 +318,7 @@ class TestEditFile(TestCase):
         self.assertIn(f"Successfully created {new_file_path}", result)
         self.assertTrue(os.path.exists(new_file_path))
 
-        with open(new_file_path, "r", encoding="utf-8") as f:
+        with open(new_file_path, encoding="utf-8") as f:
             content = f.read()
 
         self.assertEqual(content, new_string)
@@ -367,20 +367,20 @@ class TestEditFile(TestCase):
 
         # Run the edit operation
         result = edit_file_content(
-            whitespace_file_path, old_string, new_string, timestamps
+            whitespace_file_path, old_string, new_string, timestamps,
         )
 
         # Check that the edit was successful
         self.assertIn(f"Successfully edited {whitespace_file_path}", result)
 
         # Read the file and verify the content was replaced
-        with open(whitespace_file_path, "r", encoding="utf-8") as f:
+        with open(whitespace_file_path, encoding="utf-8") as f:
             content = f.read()
 
         # The new content should have replaced the old content,
         # and the empty line with whitespace should now be a clean empty line
         self.assertEqual(
-            "This has been edited\n\nThe empty line should be preserved\n", content
+            "This has been edited\n\nThe empty line should be preserved\n", content,
         )
 
     def test_edit_file_content_multiple_whitespace_only_lines(self):
@@ -389,7 +389,7 @@ class TestEditFile(TestCase):
         mixed_whitespace_path = os.path.join(self.temp_dir.name, "mixed_whitespace.txt")
         with open(mixed_whitespace_path, "w", encoding="utf-8") as f:
             f.write(
-                "This file has\n  \nmultiple empty lines\n\t\nwith different whitespace\n   \n"
+                "This file has\n  \nmultiple empty lines\n\t\nwith different whitespace\n   \n",
             )
 
         # Original string with clean empty lines
@@ -400,19 +400,19 @@ class TestEditFile(TestCase):
 
         # Use read_file_timestamps to avoid "file has not been read" error
         timestamps = {
-            mixed_whitespace_path: os.stat(mixed_whitespace_path).st_mtime + 1
+            mixed_whitespace_path: os.stat(mixed_whitespace_path).st_mtime + 1,
         }
 
         # Run the edit operation
         result = edit_file_content(
-            mixed_whitespace_path, old_string, new_string, timestamps
+            mixed_whitespace_path, old_string, new_string, timestamps,
         )
 
         # Check that the edit was successful
         self.assertIn(f"Successfully edited {mixed_whitespace_path}", result)
 
         # Read the file and verify the content was replaced
-        with open(mixed_whitespace_path, "r", encoding="utf-8") as f:
+        with open(mixed_whitespace_path, encoding="utf-8") as f:
             content = f.read()
 
         # The whitespace-only lines should be replaced with the new content
@@ -463,7 +463,7 @@ class TestEditFile(TestCase):
         timestamps = {self.test_file_path: os.stat(self.test_file_path).st_mtime + 1}
 
         result = edit_file_content(
-            self.test_file_path, old_string, new_string, timestamps
+            self.test_file_path, old_string, new_string, timestamps,
         )
 
         self.assertIn(f"Successfully edited {self.test_file_path}", result)
@@ -488,7 +488,7 @@ class TestEditFile(TestCase):
             f.write("Additional line\n")
 
         result = edit_file_content(
-            self.test_file_path, old_string, new_string, timestamps
+            self.test_file_path, old_string, new_string, timestamps,
         )
 
         self.assertIn("Error: File has been modified since read", result)
@@ -502,7 +502,7 @@ class TestEditFile(TestCase):
         timestamps = {"some_other_file.txt": 12345.0}
 
         result = edit_file_content(
-            self.test_file_path, old_string, new_string, timestamps
+            self.test_file_path, old_string, new_string, timestamps,
         )
 
         self.assertIn("Error: File has not been read yet", result)
@@ -518,7 +518,7 @@ class TestEditFile(TestCase):
 
         # We need to patch the function at the point where it's imported, not where it's defined
         with patch(
-            "codemcp.tools.edit_file.get_edit_snippet", return_value="MOCK SNIPPET"
+            "codemcp.tools.edit_file.get_edit_snippet", return_value="MOCK SNIPPET",
         ):
             result = edit_file_content(self.test_file_path, old_string, new_string)
 
@@ -550,7 +550,7 @@ class TestEditFile(TestCase):
             self.assertIn("Please add the file to git tracking", result)
 
             # Verify that the file content was not changed
-            with open(untracked_path, "r", encoding="utf-8") as f:
+            with open(untracked_path, encoding="utf-8") as f:
                 content = f.read()
             self.assertEqual(content, old_string)
 

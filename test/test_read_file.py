@@ -26,7 +26,7 @@ class TestReadFile(TestCase):
 
         # Create a file with long lines
         self.long_line_file_path = os.path.join(
-            self.temp_dir.name, "long_line_file.txt"
+            self.temp_dir.name, "long_line_file.txt",
         )
         with open(self.long_line_file_path, "w") as f:
             f.write("Short line\n")
@@ -1324,14 +1324,14 @@ class TestReadFile(TestCase):
         test_string = f"Error: File does not exist: {self.temp_dir.name}/some/path.txt"
         normalized = self.normalize_result(test_string)
         self.assertEqual(
-            normalized, "Error: File does not exist: /tmp/test_dir/some/path.txt"
+            normalized, "Error: File does not exist: /tmp/test_dir/some/path.txt",
         )
 
         # Test with multiple occurrences of the temp dir
         test_string = f"Path1: {self.temp_dir.name}/file1.txt, Path2: {self.temp_dir.name}/file2.txt"
         normalized = self.normalize_result(test_string)
         self.assertEqual(
-            normalized, "Path1: /tmp/test_dir/file1.txt, Path2: /tmp/test_dir/file2.txt"
+            normalized, "Path1: /tmp/test_dir/file1.txt, Path2: /tmp/test_dir/file2.txt",
         )
 
         # Test with a string that doesn't contain the temp dir

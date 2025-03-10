@@ -12,7 +12,7 @@ from ..common import (
 
 
 def read_file_content(
-    file_path: str, offset: Optional[int] = None, limit: Optional[int] = None
+    file_path: str, offset: int | None = None, limit: int | None = None,
 ) -> str:
     """Read a file's content with optional offset and limit.
 
@@ -23,6 +23,7 @@ def read_file_content(
 
     Returns:
         The file content as a string, or an error message
+
     """
     try:
         # Normalize the file path
@@ -42,7 +43,7 @@ def read_file_content(
             return f"Error: File content ({file_size // 1024}KB) exceeds maximum allowed size ({MAX_OUTPUT_SIZE // 1024}KB). Please use offset and limit parameters to read specific portions of the file."
 
         # Handle text files
-        with open(full_file_path, "r", encoding="utf-8", errors="replace") as f:
+        with open(full_file_path, encoding="utf-8", errors="replace") as f:
             # Get total line count
             all_lines = f.readlines()
             total_lines = len(all_lines)
@@ -62,7 +63,7 @@ def read_file_content(
             for line in selected_lines:
                 if len(line) > MAX_LINE_LENGTH:
                     processed_lines.append(
-                        line[:MAX_LINE_LENGTH] + "... (line truncated)"
+                        line[:MAX_LINE_LENGTH] + "... (line truncated)",
                     )
                 else:
                     processed_lines.append(line)
@@ -81,4 +82,4 @@ def read_file_content(
 
             return content
     except Exception as e:
-        return f"Error reading file: {str(e)}"
+        return f"Error reading file: {e!s}"

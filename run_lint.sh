@@ -7,9 +7,12 @@ python -m ruff format codemcp/ test/
 
 # Run Ruff linting
 echo "Running Ruff linter..."
-python -m ruff check --fix codemcp/ test/
+
+UNSAFE_CODES="F401,F841,I"
+
+python -m ruff check --ignore "$UNSAFE_CODES" --fix codemcp/ test/
 
 # Less safe autofixes
-ruff check --select F401 --select I --select F841 --fix codemcp/ test/
+ruff check --select "$UNSAFE_CODES" --unsafe-fixes --fix codemcp/ test/
 
 echo "Lint and format completed successfully!"

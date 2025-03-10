@@ -18,11 +18,12 @@ def detect_file_encoding(file_path: str) -> str:
 
     Returns:
         The detected encoding, defaulting to 'utf-8'
+
     """
     # Simple implementation - in a real-world scenario, you might use chardet or similar
     try:
         # Try to read the file with utf-8 encoding
-        with open(file_path, "r", encoding="utf-8") as f:
+        with open(file_path, encoding="utf-8") as f:
             f.read()
         return "utf-8"
     except UnicodeDecodeError:
@@ -41,6 +42,7 @@ def detect_line_endings(file_path: str) -> str:
 
     Returns:
         The detected line endings ('\n' or '\r\n')
+
     """
     try:
         with open(file_path, "rb") as f:
@@ -60,6 +62,7 @@ def detect_repo_line_endings(directory: str) -> str:
 
     Returns:
         The detected line endings ('\n' or '\r\n')
+
     """
     # Default to system line endings
     return os.linesep
@@ -80,6 +83,7 @@ def write_file_content(file_path: str, content: str, description: str = "") -> s
         This function allows creating new files that don't exist yet.
         For existing files, it will reject attempts to write to files that are not tracked by git.
         Files must be tracked in the git repository before they can be modified.
+
     """
     try:
         # Validate file path and permissions
@@ -114,4 +118,4 @@ def write_file_content(file_path: str, content: str, description: str = "") -> s
 
         return f"Successfully wrote to {file_path}{git_message}"
     except Exception as e:
-        return f"Error writing file: {str(e)}"
+        return f"Error writing file: {e!s}"

@@ -17,6 +17,7 @@ def ls_directory(directory_path: str) -> str:
 
     Returns:
         A formatted string representation of the directory contents, or an error message
+
     """
     try:
         # Normalize the directory path
@@ -45,13 +46,12 @@ def ls_directory(directory_path: str) -> str:
         # Return the result with truncation message if needed
         if len(results) < MAX_FILES:
             return tree_output
-        else:
-            return f"{TRUNCATED_MESSAGE}{tree_output}"
+        return f"{TRUNCATED_MESSAGE}{tree_output}"
     except Exception as e:
-        return f"Error listing directory: {str(e)}"
+        return f"Error listing directory: {e!s}"
 
 
-def list_directory(initial_path: str) -> List[str]:
+def list_directory(initial_path: str) -> list[str]:
     """List all files and directories recursively.
 
     Args:
@@ -59,6 +59,7 @@ def list_directory(initial_path: str) -> List[str]:
 
     Returns:
         A list of relative paths to files and directories
+
     """
     results = []
 
@@ -83,12 +84,11 @@ def list_directory(initial_path: str) -> List[str]:
                     child_path = os.path.join(path, child)
                     if os.path.isdir(child_path):
                         queue.append(child_path)
-                    else:
-                        if not skip(child_path):
-                            rel_path = os.path.relpath(child_path, initial_path)
-                            results.append(rel_path)
-                            if len(results) > MAX_FILES:
-                                return results
+                    elif not skip(child_path):
+                        rel_path = os.path.relpath(child_path, initial_path)
+                        results.append(rel_path)
+                        if len(results) > MAX_FILES:
+                            return results
             except (PermissionError, OSError):
                 # Skip directories we can't access
                 continue
@@ -104,6 +104,7 @@ def skip(path: str) -> bool:
 
     Returns:
         True if the path should be skipped, False otherwise
+
     """
     basename = os.path.basename(path)
     if path != "." and basename.startswith("."):
@@ -123,7 +124,7 @@ class TreeNode:
         self.children = []
 
 
-def create_file_tree(sorted_paths: List[str]) -> List[TreeNode]:
+def create_file_tree(sorted_paths: list[str]) -> list[TreeNode]:
     """Create a file tree from a list of paths.
 
     Args:
@@ -131,6 +132,7 @@ def create_file_tree(sorted_paths: List[str]) -> List[TreeNode]:
 
     Returns:
         A list of TreeNode objects representing the root of the tree
+
     """
     root = []
 
@@ -170,7 +172,7 @@ def create_file_tree(sorted_paths: List[str]) -> List[TreeNode]:
 
 
 def print_tree(
-    tree: List[TreeNode], level: int = 0, prefix: str = "", cwd: str = ""
+    tree: list[TreeNode], level: int = 0, prefix: str = "", cwd: str = "",
 ) -> str:
     """Print a file tree.
 
@@ -182,6 +184,7 @@ def print_tree(
 
     Returns:
         A formatted string representation of the tree
+
     """
     result = ""
 

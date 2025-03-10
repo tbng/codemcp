@@ -26,21 +26,20 @@ async def codemcp(
     ctx: Context,
     command: str,
     *,
-    file_path: Optional[str] = None,
-    content: Optional[str] = None,
-    old_string: Optional[str] = None,
-    new_string: Optional[str] = None,
-    offset: Optional[int] = None,
-    limit: Optional[int] = None,
-    description: Optional[str] = None,
-    pattern: Optional[str] = None,
-    path: Optional[str] = None,
-    include: Optional[str] = None,
-    old_str: Optional[str] = None,  # Added for backward compatibility
-    new_str: Optional[str] = None,  # Added for backward compatibility
+    file_path: str | None = None,
+    content: str | None = None,
+    old_string: str | None = None,
+    new_string: str | None = None,
+    offset: int | None = None,
+    limit: int | None = None,
+    description: str | None = None,
+    pattern: str | None = None,
+    path: str | None = None,
+    include: str | None = None,
+    old_str: str | None = None,  # Added for backward compatibility
+    new_str: str | None = None,  # Added for backward compatibility
 ) -> str:
-    """
-    This is a multipurpose tool that supports the following subcommands:
+    """This is a multipurpose tool that supports the following subcommands:
 
     ## ReadFile file_path offset? limit?
 
@@ -139,6 +138,7 @@ async def codemcp(
         offset: Line offset for ReadFile command
         limit: Line limit for ReadFile command
         description: Short description of the change (for WriteFile/EditFile)
+
     """
     # Define expected parameters for each command
     expected_params = {
@@ -194,7 +194,7 @@ async def codemcp(
 
         return read_file_content(file_path, offset, limit)
 
-    elif command == "WriteFile":
+    if command == "WriteFile":
         if file_path is None:
             return "Error: file_path is required for WriteFile command"
         if description is None:
@@ -203,7 +203,7 @@ async def codemcp(
         content_str = content or ""
         return write_file_content(file_path, content_str, description)
 
-    elif command == "EditFile":
+    if command == "EditFile":
         if file_path is None:
             return "Error: file_path is required for EditFile command"
         if description is None:
@@ -218,19 +218,19 @@ async def codemcp(
         new_content = new_string or new_str or ""
         return edit_file_content(file_path, old_content, new_content, None, description)
 
-    elif command == "LS":
+    if command == "LS":
         if file_path is None:
             return "Error: file_path is required for LS command"
 
         return ls_directory(file_path)
 
-    elif command == "InitProject":
+    if command == "InitProject":
         if file_path is None:
             return "Error: file_path is required for InitProject command"
 
         return init_project(file_path)
 
-    elif command == "Grep":
+    if command == "Grep":
         if pattern is None:
             return "Error: pattern is required for Grep command"
 
@@ -240,10 +240,10 @@ async def codemcp(
         try:
             result = grep_files(pattern, path, include)
             return result.get(
-                "resultForAssistant", f"Found {result.get('numFiles', 0)} file(s)"
+                "resultForAssistant", f"Found {result.get('numFiles', 0)} file(s)",
             )
         except Exception as e:
-            return f"Error executing grep: {str(e)}"
+            return f"Error executing grep: {e!s}"
 
 
 def configure_logging(log_file="codemcp.log"):
@@ -300,7 +300,7 @@ def configure_logging(log_file="codemcp.log"):
 
     # Create formatter and add it to the handlers
     formatter = logging.Formatter(
-        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+        "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     )
     file_handler.setFormatter(formatter)
     console_handler.setFormatter(formatter)

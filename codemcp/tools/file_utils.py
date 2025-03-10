@@ -8,9 +8,8 @@ from ..access import check_edit_permission
 from ..git import commit_pending_changes
 
 
-def check_file_path_and_permissions(file_path: str) -> Tuple[bool, Optional[str]]:
-    """
-    Check if the file path is valid and has the necessary permissions.
+def check_file_path_and_permissions(file_path: str) -> tuple[bool, str | None]:
+    """Check if the file path is valid and has the necessary permissions.
 
     Args:
         file_path: The absolute path to the file
@@ -18,6 +17,7 @@ def check_file_path_and_permissions(file_path: str) -> Tuple[bool, Optional[str]
     Returns:
         A tuple of (is_valid, error_message)
         If is_valid is True, error_message will be None
+
     """
     # Check that the path is absolute
     if not os.path.isabs(file_path):
@@ -31,9 +31,8 @@ def check_file_path_and_permissions(file_path: str) -> Tuple[bool, Optional[str]
     return True, None
 
 
-def check_git_tracking_for_existing_file(file_path: str) -> Tuple[bool, Optional[str]]:
-    """
-    Check if an existing file is tracked by git. Skips check for non-existent files.
+def check_git_tracking_for_existing_file(file_path: str) -> tuple[bool, str | None]:
+    """Check if an existing file is tracked by git. Skips check for non-existent files.
 
     Args:
         file_path: The absolute path to the file
@@ -41,6 +40,7 @@ def check_git_tracking_for_existing_file(file_path: str) -> Tuple[bool, Optional
     Returns:
         A tuple of (success, error_message)
         If success is True, error_message will be None
+
     """
     # Check if the file exists
     file_exists = os.path.exists(file_path)
@@ -60,11 +60,11 @@ def check_git_tracking_for_existing_file(file_path: str) -> Tuple[bool, Optional
 
 
 def ensure_directory_exists(file_path: str) -> None:
-    """
-    Ensure the directory for the file exists, creating it if necessary.
+    """Ensure the directory for the file exists, creating it if necessary.
 
     Args:
         file_path: The absolute path to the file
+
     """
     directory = os.path.dirname(file_path)
     if not os.path.exists(directory):
@@ -72,7 +72,7 @@ def ensure_directory_exists(file_path: str) -> None:
 
 
 def write_text_content(
-    file_path: str, content: str, encoding: str = "utf-8", line_endings: str = None
+    file_path: str, content: str, encoding: str = "utf-8", line_endings: str = None,
 ) -> None:
     """Write text content to a file with specified encoding and line endings.
 
@@ -81,6 +81,7 @@ def write_text_content(
         content: The content to write
         encoding: The encoding to use
         line_endings: The line endings to use ('CRLF', 'LF', '\r\n', or '\n')
+
     """
     # Handle different line ending formats: string constants or actual characters
     if isinstance(line_endings, str):

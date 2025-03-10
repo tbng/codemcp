@@ -24,8 +24,8 @@ Example:
 
 
 def git_grep(
-    pattern: str, path: Optional[str] = None, include: Optional[str] = None, signal=None
-) -> List[str]:
+    pattern: str, path: str | None = None, include: str | None = None, signal=None,
+) -> list[str]:
     """Execute git grep to search for pattern in files.
 
     Args:
@@ -36,6 +36,7 @@ def git_grep(
 
     Returns:
         A list of file paths with matches
+
     """
     if path is None:
         raise ValueError("Path must be provided for git grep")
@@ -88,7 +89,7 @@ def git_grep(
         # git grep returns exit code 1 when no matches are found, which is normal
         if result.returncode not in [0, 1]:
             logging.error(
-                f"git grep failed with exit code {result.returncode}: {result.stderr}"
+                f"git grep failed with exit code {result.returncode}: {result.stderr}",
             )
             raise subprocess.SubprocessError(f"git grep failed: {result.stderr}")
 
@@ -100,11 +101,11 @@ def git_grep(
 
         return matches
     except subprocess.SubprocessError as e:
-        logging.error(f"Error executing git grep: {str(e)}")
+        logging.exception(f"Error executing git grep: {e!s}")
         raise
 
 
-def render_result_for_assistant(output: Dict[str, Any]) -> str:
+def render_result_for_assistant(output: dict[str, Any]) -> str:
     """Render the results in a format suitable for the assistant.
 
     Args:
@@ -112,6 +113,7 @@ def render_result_for_assistant(output: Dict[str, Any]) -> str:
 
     Returns:
         A formatted string representation of the results
+
     """
     num_files = output.get("numFiles", 0)
     filenames = output.get("filenames", [])
@@ -129,8 +131,8 @@ def render_result_for_assistant(output: Dict[str, Any]) -> str:
 
 
 def grep_files(
-    pattern: str, path: Optional[str] = None, include: Optional[str] = None, signal=None
-) -> Dict[str, Any]:
+    pattern: str, path: str | None = None, include: str | None = None, signal=None,
+) -> dict[str, Any]:
     """Search for a pattern in files within a directory.
 
     Args:
@@ -141,6 +143,7 @@ def grep_files(
 
     Returns:
         A dictionary with execution stats and matched files
+
     """
     start_time = time.time()
 
@@ -152,7 +155,7 @@ def grep_files(
         try:
             # First try sorting by modification time
             stats = [os.stat(match) for match in matches]
-            matches_with_stats = list(zip(matches, stats))
+            matches_with_stats = list(zip(matches, stats, strict=False))
 
             # In tests, sort by filename for deterministic results
             if os.environ.get("NODE_ENV") == "test":
@@ -165,13 +168,13 @@ def grep_files(
         except Exception as e:
             # Fall back to sorting by name if there's an error
             logging.debug(
-                f"Error sorting by modification time, falling back to name sort: {str(e)}"
+                f"Error sorting by modification time, falling back to name sort: {e!s}",
             )
             matches.sort()
 
         # Calculate execution time
         execution_time = int(
-            (time.time() - start_time) * 1000
+            (time.time() - start_time) * 1000,
         )  # Convert to milliseconds
 
         # Prepare output
@@ -195,7 +198,7 @@ def grep_files(
             "durationMs": execution_time,
             "numFiles": 0,
             "error": str(e),
-            "resultForAssistant": f"Error: {str(e)}",
+            "resultForAssistant": f"Error: {e!s}",
         }
 
         return error_output
