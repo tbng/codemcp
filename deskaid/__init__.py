@@ -199,8 +199,19 @@ async def deskaid(
     elif command == "InitProject":
         if file_path is None:
             return "Error: file_path is required for InitProject command"
-            
+
         return init_project(file_path)
+        
+    elif command == "Grep":
+        if pattern is None:
+            return "Error: pattern is required for Grep command"
+        
+        try:
+            result = grep_files(pattern, path, include)
+            return result.get("resultForAssistant", 
+                            f"Found {result.get('numFiles', 0)} file(s)")
+        except Exception as e:
+            return f"Error executing grep: {str(e)}"
 
 
 def configure_logging(log_file="deskaid.log"):
