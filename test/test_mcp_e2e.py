@@ -786,16 +786,19 @@ no changes added to commit (use "git add" and/or "git commit -a")
             # Normalize the result
             normalized_result = self.normalize_path(result)
             
-            # Convert result to string if it's a list of TextContent objects
-            if isinstance(normalized_result, list) and hasattr(normalized_result[0], 'text'):
-                normalized_result_str = normalized_result[0].text
+            # Extract the text content for assertions
+            result_text = ""
+            if isinstance(normalized_result, list) and len(normalized_result) > 0 and hasattr(normalized_result[0], 'text'):
+                result_text = normalized_result[0].text
+            elif isinstance(normalized_result, str):
+                result_text = normalized_result
             else:
-                normalized_result_str = str(normalized_result)
+                result_text = str(normalized_result)
 
             # Verify that the operation was rejected
-            self.assertIn("Error", normalized_result_str,
+            self.assertIn("Error", result_text,
                 "Write to untracked file should be rejected with an error")
-            self.assertIn("not tracked by git", normalized_result_str,
+            self.assertIn("not tracked by git", result_text,
                 "Error message should indicate the file is not tracked by git")
 
             # Verify the file content was not changed
