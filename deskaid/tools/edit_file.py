@@ -9,7 +9,7 @@ import re
 import stat
 from typing import Dict, List, Optional, Tuple
 
-from ..common import commit_changes, get_edit_snippet
+from ..common import commit_changes, commit_pending_changes, get_edit_snippet
 
 # Set up logger
 logger = logging.getLogger(__name__)
@@ -84,7 +84,7 @@ def apply_edit(
             content = f.read()
     else:
         content = ""
-    
+
     # Try direct replacement first
     if old_string in content:
         updated_file = content.replace(old_string, new_string, 1)
@@ -93,20 +93,20 @@ def apply_edit(
         content_lines = content.split("\n")
         old_string_lines = old_string.split("\n")
         matched_indices = []
-        
+
         # Find the start of the match in the normalized content
         content_normalized = "\n".join([line.rstrip() if line.strip() == "" else line for line in content_lines])
         old_string_normalized = "\n".join([line.rstrip() if line.strip() == "" else line for line in old_string_lines])
-        
+
         match_start = content_normalized.find(old_string_normalized)
         if match_start >= 0:
             # Find the line number where the match starts
             line_start = content_normalized[:match_start].count("\n")
-            
+
             # Replace the matching block with the new content
             new_content_lines = content_lines.copy()
             new_content_lines[line_start:line_start + len(old_string_lines)] = new_string.split("\n")
-            
+
             updated_file = "\n".join(new_content_lines)
         else:
             # This should not happen if edit_file_content already checked
@@ -215,13 +215,13 @@ def debug_string_comparison(
             logger.debug(f"  Line differences (first 5):")
             for d in changes[:5]:
                 logger.debug(f"    {d}")
-                
+
         # Check if strings are equal after stripping trailing whitespace
         s1_no_trailing = "\n".join([line.rstrip() for line in s1.splitlines()])
         s2_no_trailing = "\n".join([line.rstrip() for line in s2.splitlines()])
         if s1_no_trailing == s2_no_trailing:
             logger.debug("  Strings match when trailing whitespace is stripped from each line!")
-            
+
         # Check if strings are equal after normalizing only whitespace-only lines
         s1_normalized = "\n".join([line.rstrip() if line.strip() == "" else line for line in s1.splitlines()])
         s2_normalized = "\n".join([line.rstrip() if line.strip() == "" else line for line in s2.splitlines()])
@@ -239,7 +239,7 @@ def edit_file_content(
     description: str = "",
 ) -> str:
     """Edit a file by replacing old_string with new_string.
-    
+
     If the old_string is not found in the file, attempts a fallback mechanism
     where trailing whitespace is stripped from blank lines (lines with only whitespace)
     before matching. This helps match files where the only difference is in trailing
@@ -260,6 +260,13 @@ def edit_file_content(
         full_file_path = (
             file_path if os.path.isabs(file_path) else os.path.abspath(file_path)
         )
+        
+        # First commit any pending changes
+        commit_success, commit_message = commit_pending_changes(full_file_path)
+        if not commit_success:
+            logging.debug(f"Failed to commit pending changes: {commit_message}")
+        else:
+            logging.debug(f"Pending changes status: {commit_message}")
 
         # Debug string comparison using our thorough utility
         strings_are_different = debug_string_comparison(
@@ -321,7 +328,7 @@ def edit_file_content(
             # We specifically focus on blank lines with whitespace
             content_normalized = "\n".join([line.rstrip() if line.strip() == "" else line for line in content.split("\n")])
             old_string_normalized = "\n".join([line.rstrip() if line.strip() == "" else line for line in old_string.split("\n")])
-            
+
             if old_string_normalized in content_normalized:
                 # Found match after normalizing whitespace-only lines
                 logger.debug(f"Found match after normalizing whitespace-only lines")
