@@ -83,20 +83,13 @@ def git_grep(
     try:
         # Execute git grep command
         # Use explicit parameters to avoid confusion in mocking
-        result = subprocess.run(
+        result = run_command(
             args=args,
             cwd=absolute_path,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            capture_output=True,
             text=True,
             check=False,  # Don't raise exception if git grep doesn't find matches
         )
-
-        # Log command output
-        if result.stdout:
-            logging.debug(f"git grep stdout: {result.stdout.strip()}")
-        if result.stderr:
-            logging.debug(f"git grep stderr: {result.stderr.strip()}")
 
         # git grep returns exit code 1 when no matches are found, which is normal
         if result.returncode not in [0, 1]:
