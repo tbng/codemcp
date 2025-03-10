@@ -80,19 +80,33 @@ def write_text_content(
         file_path: The path to the file
         content: The content to write
         encoding: The encoding to use
-        line_endings: The line endings to use
+        line_endings: The line endings to use ('CRLF', 'LF', '\r\n', or '\n')
     """
-    # Convert CRLF format to LF format for uniformity
-    if isinstance(line_endings, str) and line_endings.upper() == "CRLF":
-        line_endings = "\r\n"
+    # Handle different line ending formats: string constants or actual characters
+    if isinstance(line_endings, str):
+        if line_endings.upper() == "CRLF":
+            actual_line_endings = "\r\n"
+        elif line_endings.upper() == "LF":
+            actual_line_endings = "\n"
+        else:
+            # Assume it's already the character sequence
+            actual_line_endings = line_endings
+    else:
+        # Default to system line endings if None
+        actual_line_endings = os.linesep
     
-    if line_endings and line_endings != "\n":
-        # Normalize to \n first, then replace with desired line endings
-        content = content.replace("\r\n", "\n").replace("\n", line_endings)
+    # First normalize all line endings to \n
+    normalized_content = content.replace("\r\n", "\n")
+    
+    # Then replace with the desired line endings if different from \n
+    if actual_line_endings != "\n":
+        final_content = normalized_content.replace("\n", actual_line_endings)
+    else:
+        final_content = normalized_content
 
     # Ensure directory exists
     ensure_directory_exists(file_path)
     
     # Write the content
     with open(file_path, "w", encoding=encoding) as f:
-        f.write(content)
+        f.write(final_content)
