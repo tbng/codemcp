@@ -113,10 +113,12 @@ format = ["./run_format.sh"]
 
 The `global_prompt` will be loaded when you initialize the project in chats.
 
-The `commands` section allows you to configure commands that Claude will run at specific points:
-- `format`: The command that will run at the end of a task to format code according to project standards.
+The `commands` section allows you to configure commands for specific tools:
+- `format`: The command that will be executed when the Format tool is used to format code according to project standards.
 
-Commands are specified as arrays of strings that will be joined with spaces and executed in a shell context.
+Commands are specified as arrays of strings that will be joined with spaces and executed in a shell context. These commands are not executed directly by Claude, but through dedicated tools provided by codemcp.
+
+When a format command is configured, the system prompt will automatically instruct Claude to use the Format tool when the task is complete.
 
 ## Logging
 
