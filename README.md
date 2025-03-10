@@ -99,3 +99,5 @@ Edits a file by replacing old_string with new_string.
 
 - LS - only use git ls-files
 - An "init" command that will feed the project prompt (per project config)
+- Add a system prompt command that will load instructions at the start of
+  convo
