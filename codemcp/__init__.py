@@ -15,6 +15,7 @@ from .tools.init_project import init_project
 from .tools.ls import ls_directory
 from .tools.read_file import read_file_content
 from .tools.write_file import write_file_content
+from .access import check_edit_permission, get_git_base_dir
 
 # Initialize FastMCP server
 mcp = FastMCP("codemcp")
