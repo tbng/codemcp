@@ -283,13 +283,7 @@ nothing added to commit but untracked files present (use "git add" to track)
             normalized_result = self.normalize_path(result)
             
             # Extract the text content for assertions
-            result_text = ""
-            if isinstance(normalized_result, list) and len(normalized_result) > 0 and hasattr(normalized_result[0], 'text'):
-                result_text = normalized_result[0].text
-            elif isinstance(normalized_result, str):
-                result_text = normalized_result
-            else:
-                result_text = str(normalized_result)
+            result_text = self.extract_text_from_result(normalized_result)
 
             # Verify the success message
             self.assertIn("Successfully edited", result_text)
