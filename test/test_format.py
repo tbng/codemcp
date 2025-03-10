@@ -9,6 +9,7 @@ from unittest.mock import patch, MagicMock, call
 import tomli_w
 
 from codemcp.tools.format import format_code, _get_format_command, _check_for_changes
+from codemcp.shell import run_command
 
 
 class TestFormatTool(unittest.TestCase):
