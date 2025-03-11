@@ -97,10 +97,15 @@ def format_code(project_dir: str) -> str:
         # Check if directory is in a git repository
         is_git_repo = is_git_repository(full_dir_path)
 
-        # If it's a git repo, check for changes before formatting
-        had_changes_before = False
+        # If it's a git repo, commit any pending changes before formatting
         if is_git_repo:
-            had_changes_before = _check_for_changes(full_dir_path)
+            # Commit any pending changes before running formatter
+            logging.info("Committing any pending changes before formatting")
+            commit_result = commit_changes(
+                full_dir_path, "Snapshot before auto-formatting"
+            )
+            if not commit_result[0]:
+                logging.warning(f"Failed to commit pending changes: {commit_result[1]}")
 
         # Run the format command
         try:
@@ -114,12 +119,10 @@ def format_code(project_dir: str) -> str:
 
             # Additional logging is already done by run_command
 
-            # Check if there are changes after formatting
+            # If it's a git repo, commit any changes made by formatter
             if is_git_repo:
-                has_changes_after = _check_for_changes(full_dir_path)
-
-                # Only commit if new changes appeared after formatting
-                if has_changes_after and (has_changes_after != had_changes_before):
+                has_changes = _check_for_changes(full_dir_path)
+                if has_changes:
                     logging.info("Changes detected after formatting, committing")
                     success, commit_message = commit_changes(
                         full_dir_path, "Auto-commit formatting changes"
