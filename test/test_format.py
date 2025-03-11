@@ -100,11 +100,12 @@ class TestFormat(TestCase):
 
     def test_check_for_changes_with_changes(self):
         """Test checking for changes when there are changes"""
+
         # Set up responses for different git commands
         def run_command_side_effect(*args, **kwargs):
             cmd = args[0]
             mock_result = MagicMock()
-            
+
             if cmd[0:2] == ["git", "rev-parse"]:
                 # Return the repo root
                 mock_result.stdout = self.temp_dir.name + "\n"
@@ -113,14 +114,14 @@ class TestFormat(TestCase):
                 mock_result.stdout = " M modified_file.py\n?? new_file.py\n"
             else:
                 mock_result.stdout = ""
-                
+
             return mock_result
-            
+
         self.mock_run_command.side_effect = run_command_side_effect
-        
+
         result = _check_for_changes(self.temp_dir.name)
         self.assertTrue(result)
-        
+
         # Verify the git status command was called with the repo root from rev-parse
         self.mock_run_command.assert_any_call(
             ["git", "status", "--porcelain"],
@@ -132,11 +133,12 @@ class TestFormat(TestCase):
 
     def test_check_for_changes_no_changes(self):
         """Test checking for changes when there are no changes"""
+
         # Set up responses for different git commands
         def run_command_side_effect(*args, **kwargs):
             cmd = args[0]
             mock_result = MagicMock()
-            
+
             if cmd[0:2] == ["git", "rev-parse"]:
                 # Return the repo root
                 mock_result.stdout = self.temp_dir.name + "\n"
@@ -145,11 +147,11 @@ class TestFormat(TestCase):
                 mock_result.stdout = ""
             else:
                 mock_result.stdout = ""
-                
+
             return mock_result
-            
+
         self.mock_run_command.side_effect = run_command_side_effect
-        
+
         result = _check_for_changes(self.temp_dir.name)
         self.assertFalse(result)
 
@@ -157,12 +159,12 @@ class TestFormat(TestCase):
         """Test successful code formatting"""
         # Create a config file
         self.create_config_file()
-        
+
         # Set up responses for different commands
         def run_command_side_effect(*args, **kwargs):
             cmd = args[0]
             mock_result = MagicMock()
-            
+
             if cmd[0:2] == ["git", "rev-parse"]:
                 # Return the repo root
                 mock_result.stdout = self.temp_dir.name + "\n"
@@ -174,23 +176,24 @@ class TestFormat(TestCase):
                 mock_result.stdout = "Formatting successful"
             else:
                 mock_result.stdout = ""
-                
+
             return mock_result
-            
+
         self.mock_run_command.side_effect = run_command_side_effect
-        
+
         result = format_code(self.temp_dir.name)
         self.assertEqual(result, "Code formatting successful:\nFormatting successful")
+
     def test_format_code_with_changes(self):
         """Test code formatting that makes changes to files"""
         # Create a config file
         self.create_config_file()
-        
+
         # Set up responses for different commands
         def run_command_side_effect(*args, **kwargs):
             cmd = args[0]
             mock_result = MagicMock()
-            
+
             if cmd[0:2] == ["git", "rev-parse"]:
                 # Return the repo root
                 mock_result.stdout = self.temp_dir.name + "\n"
@@ -202,17 +205,17 @@ class TestFormat(TestCase):
                 mock_result.stdout = "Formatting successful"
             else:
                 mock_result.stdout = ""
-                
+
             return mock_result
-            
+
         self.mock_run_command.side_effect = run_command_side_effect
-        
+
         result = format_code(self.temp_dir.name)
         self.assertEqual(
-            result, 
-            "Code formatting successful and changes committed:\nFormatting successful"
+            result,
+            "Code formatting successful and changes committed:\nFormatting successful",
         )
-        
+
         # Verify commit_changes was called
         self.mock_commit_changes.assert_called_with(
             self.temp_dir.name, "Auto-commit formatting changes"
@@ -247,35 +250,37 @@ class TestFormat(TestCase):
         """Test code formatting when the format command fails"""
         # Create a config file
         self.create_config_file()
-        
+
         # Set up responses for git commands, but make format command fail
         from subprocess import CalledProcessError
+
         error = CalledProcessError(1, ["./run_format.sh"])
         error.stderr = "Command failed: syntax error"
-        
+
         # Configure command responses
         call_count = 0
+
         def run_command_side_effect(*args, **kwargs):
             nonlocal call_count
             cmd = args[0]
-            
+
             # First handle git repo commands
             if cmd[0:2] == ["git", "rev-parse"]:
                 mock_result = MagicMock()
                 mock_result.stdout = self.temp_dir.name + "\n"
                 return mock_result
-            
+
             # Make the format command fail
             if cmd == ["./run_format.sh"]:
                 raise error
-                
+
             # Default response for other commands
             mock_result = MagicMock()
             mock_result.stdout = ""
             return mock_result
-            
+
         self.mock_run_command.side_effect = run_command_side_effect
-        
+
         result = format_code(self.temp_dir.name)
         self.assertIn("Error:", result)
         self.assertIn("Format command failed with exit code 1", result)
@@ -284,12 +289,12 @@ class TestFormat(TestCase):
         """Test code formatting when commit fails after changes"""
         # Create a config file
         self.create_config_file()
-        
+
         # Set up responses for different commands
         def run_command_side_effect(*args, **kwargs):
             cmd = args[0]
             mock_result = MagicMock()
-            
+
             if cmd[0:2] == ["git", "rev-parse"]:
                 # Return the repo root
                 mock_result.stdout = self.temp_dir.name + "\n"
@@ -301,14 +306,14 @@ class TestFormat(TestCase):
                 mock_result.stdout = "Formatting successful"
             else:
                 mock_result.stdout = ""
-                
+
             return mock_result
-            
+
         self.mock_run_command.side_effect = run_command_side_effect
-        
+
         # Configure commit to fail
         self.mock_commit_changes.return_value = (False, "Commit failed: merge conflict")
-        
+
         result = format_code(self.temp_dir.name)
         self.assertIn("Code formatting successful but failed to commit changes", result)
         self.assertIn("Commit error: Commit failed: merge conflict", result)
