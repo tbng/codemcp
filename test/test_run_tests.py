@@ -76,10 +76,11 @@ test = ["./run_test.sh"]
 
     @mock.patch("codemcp.tools.run_tests.run_command")
     def test_run_tests_failure(self, mock_run_command):
-        # Mock the subprocess.run to raise CalledProcessError
-        mock_run_command.side_effect = subprocess.CalledProcessError(
-            1, ["./run_test.sh"], stdout="Some tests failed", stderr="Error in tests"
-        )
+        # Create a CalledProcessError with appropriate attributes
+        error = subprocess.CalledProcessError(1, ["./run_test.sh"])
+        error.stdout = "Some tests failed"
+        error.stderr = "Error in tests"
+        mock_run_command.side_effect = error
 
         # Run the test function
         result = run_tests(self.project_dir)
