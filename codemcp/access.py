@@ -58,14 +58,6 @@ def get_git_base_dir(file_path: str) -> str | None:
                     logging.debug(f"Could not find an existing parent directory for: {normalized_path}")
                     return None
                 
-                # SECURITY CHECK: Prevent path traversal attacks
-                # Make sure the found directory is a subdirectory of the original parent
-                # or is the original parent itself
-                if not (directory.startswith(original_parent) or 
-                        os.path.commonpath([directory, original_parent]) == original_parent):
-                    logging.warning(f"Potential path traversal attempt: {file_path} -> {directory}")
-                    return None
-                
                 logging.debug(f"Found existing parent directory: {directory}")
 
         # Run git command to get the top-level directory of the repository

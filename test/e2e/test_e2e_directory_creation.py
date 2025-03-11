@@ -49,10 +49,6 @@ class DirectoryCreationTest(MCPEndToEndTestCase):
                 with open(test_file_path) as f:
                     file_content = f.read()
                 self.assertEqual(file_content, content)
-            elif "Permission denied" in result_text:
-                # This is also acceptable - the test is running in an environment where 
-                # directories can't be created due to git permission issues
-                self.skipTest("Test environment doesn't support creating files outside git repo")
             else:
                 # Unexpected error
                 self.fail(f"Unexpected error: {result_text}")
@@ -95,10 +91,6 @@ class DirectoryCreationTest(MCPEndToEndTestCase):
                 with open(test_file_path) as f:
                     file_content = f.read()
                 self.assertEqual(file_content, content)
-            elif "Permission denied" in result_text:
-                # This is also acceptable - the test is running in an environment where 
-                # directories can't be created due to git permission issues
-                self.skipTest("Test environment doesn't support creating files outside git repo")
             else:
                 # Unexpected error
                 self.fail(f"Unexpected error: {result_text}")
