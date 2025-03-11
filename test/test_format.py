@@ -22,20 +22,20 @@ class TestFormat(TestCase):
 
     def setup_mocks(self):
         """Setup mocks for git and subprocess functions"""
-        # Patch is_git_repository
-        self.is_git_repo_patch = patch("codemcp.tools.format.is_git_repository")
+        # Patch is_git_repository in code_command.py
+        self.is_git_repo_patch = patch("codemcp.tools.code_command.is_git_repository")
         self.mock_is_git_repo = self.is_git_repo_patch.start()
         self.mock_is_git_repo.return_value = True
         self.addCleanup(self.is_git_repo_patch.stop)
 
-        # Patch commit_changes
-        self.commit_changes_patch = patch("codemcp.tools.format.commit_changes")
+        # Patch commit_changes in code_command.py
+        self.commit_changes_patch = patch("codemcp.tools.code_command.commit_changes")
         self.mock_commit_changes = self.commit_changes_patch.start()
         self.mock_commit_changes.return_value = (True, "Commit successful")
         self.addCleanup(self.commit_changes_patch.stop)
 
-        # Patch run_command
-        self.run_command_patch = patch("codemcp.tools.format.run_command")
+        # Patch run_command in code_command.py
+        self.run_command_patch = patch("codemcp.tools.code_command.run_command")
         self.mock_run_command = self.run_command_patch.start()
 
         # Set up a default return value for run_command
@@ -46,8 +46,8 @@ class TestFormat(TestCase):
 
         self.addCleanup(self.run_command_patch.stop)
 
-        # Patch normalize_file_path to return the input path for simplicity
-        self.normalize_path_patch = patch("codemcp.tools.format.normalize_file_path")
+        # Patch normalize_file_path in code_command.py
+        self.normalize_path_patch = patch("codemcp.tools.code_command.normalize_file_path")
         self.mock_normalize_path = self.normalize_path_patch.start()
         self.mock_normalize_path.side_effect = lambda x: x
         self.addCleanup(self.normalize_path_patch.stop)
