@@ -205,7 +205,7 @@ Example:
 
 Runs a command.  This does NOT support arbitrary code execution, ONLY call
 with this set of valid commands: {command_help}
-{self._generate_command_docs(command_docs)}
+{_generate_command_docs(command_docs)}
 
 ## Summary
 
