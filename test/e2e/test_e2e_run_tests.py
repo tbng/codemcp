@@ -65,7 +65,7 @@ cd "$(dirname "$0")"
 [project]
 name = "test-project"
 
-[subtools]
+[commands]
 test = ["./run_test.sh"]
 """)
 

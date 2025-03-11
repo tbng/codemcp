@@ -69,7 +69,7 @@ fi
             f.write("""[project]
 name = "test-project"
 
-[subtools]
+[commands]
 format = ["./run_format.sh"]
 """)
 

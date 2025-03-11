@@ -82,7 +82,7 @@ fi
             f.write("""[project]
 name = "test-project"
 
-[subtools]
+[commands]
 lint = ["./run_lint.sh"]
 """)
 
