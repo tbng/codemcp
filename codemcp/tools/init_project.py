@@ -38,6 +38,21 @@ def init_project(directory: str) -> str:
 
         command_help = ""  # TODO
 
+        # Check if codemcp.toml file exists
+        if os.path.exists(rules_file_path):
+            try:
+                with open(rules_file_path, "rb") as f:
+                    rules_config = tomli.load(f)
+
+                # Extract global_prompt if it exists
+                if "global_prompt" in rules_config:
+                    global_prompt = rules_config["global_prompt"]
+
+                command_help = ", ".join(rules_config.get("commands", {}).keys())
+
+            except Exception as e:
+                return f"Error reading codemcp.toml file: {e!s}"
+
         # Default system prompt, cribbed from claude code
         # TODO: Figure out if we want Sonnet to make determinations about what
         # goes in the global prompt.  The current ARCHITECTURE.md rule is
@@ -171,37 +186,6 @@ with this set of valid commands: {command_help}
 """
         global_prompt = ""
         format_command_str = ""
-
-        # Check if codemcp.toml file exists
-        if os.path.exists(rules_file_path):
-            try:
-                with open(rules_file_path, "rb") as f:
-                    rules_config = tomli.load(f)
-
-                # Extract global_prompt if it exists
-                if "global_prompt" in rules_config:
-                    global_prompt = rules_config["global_prompt"]
-
-                # Check if format command is configured
-                if "commands" in rules_config and "format" in rules_config["commands"]:
-                    format_command = rules_config["commands"]["format"]
-                    if isinstance(format_command, list) and format_command:
-                        format_command_str = (
-                            "\nWhen you are done with your task, run code formatting using the Format tool: `Format "
-                            + directory
-                            + "`"
-                        )
-
-                if "commands" in rules_config and "lint" in rules_config["commands"]:
-                    lint_command = rules_config["commands"]["lint"]
-                    if isinstance(lint_command, list) and lint_command:
-                        (
-                            "\nWhen you are done with your task, run code linting using the Lint tool: `Lint "
-                            + directory
-                            + "`"
-                        )
-            except Exception as e:
-                return f"Error reading codemcp.toml file: {e!s}"
 
         # Combine system prompt, global prompt, and format command
         combined_prompt = system_prompt
