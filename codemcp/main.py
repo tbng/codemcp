@@ -9,6 +9,7 @@ from .tools.edit_file import edit_file_content
 from .tools.format import format_code
 from .tools.grep import grep_files
 from .tools.init_project import init_project
+from .tools.lint import lint_code
 from .tools.ls import ls_directory
 from .tools.read_file import read_file_content
 from .tools.run_tests import run_tests
