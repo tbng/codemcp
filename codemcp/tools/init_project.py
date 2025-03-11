@@ -230,4 +230,5 @@ Args:
 
         return combined_prompt
     except Exception as e:
+        logging.warning(f"Exception suppressed during project initialization: {e!s}", exc_info=True)
         return f"Error initializing project: {e!s}"
