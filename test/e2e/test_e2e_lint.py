@@ -6,7 +6,7 @@ import os
 import subprocess
 import unittest
 
-from codemcp import MCPEndToEndTestCase
+from codemcp.testing import MCPEndToEndTestCase
 
 
 class RunCommandLintTest(MCPEndToEndTestCase):
