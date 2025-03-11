@@ -120,7 +120,7 @@ class TestFormat(TestCase):
 
         self.mock_run_command.side_effect = run_command_side_effect
 
-        result = _check_for_changes(self.temp_dir.name)
+        result = check_for_changes(self.temp_dir.name)
         self.assertTrue(result)
 
         # Verify the git status command was called with the repo root from rev-parse
