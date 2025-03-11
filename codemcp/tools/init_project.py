@@ -13,7 +13,7 @@ __all__ = [
 
 def _generate_command_docs(command_docs: dict) -> str:
     """Generate documentation for commands from the command_docs dictionary.
-    
+
     Args:
         command_docs: A dictionary of command names to their documentation
 
@@ -22,11 +22,11 @@ def _generate_command_docs(command_docs: dict) -> str:
     """
     if not command_docs:
         return ""
-        
+
     docs = []
     for cmd_name, doc in command_docs.items():
         docs.append(f"\n- {cmd_name}: {doc}")
-    
+
     return "\n\nCommand documentation:" + "".join(docs)
 
 
@@ -73,7 +73,7 @@ def init_project(directory: str) -> str:
                 # Extract commands and their documentation
                 command_list = rules_config.get("commands", {})
                 command_help = ", ".join(command_list.keys())
-                
+
                 # Process command documentation
                 for cmd_name, cmd_config in command_list.items():
                     if isinstance(cmd_config, dict) and "doc" in cmd_config:
@@ -223,7 +223,9 @@ Args:
         format_command_str = ""
         # Check if format command is configured
         if "commands" in rules_config and "format" in rules_config["commands"]:
-            format_command_str = "\n\nYou can also run code formatting using the Format tool."
+            format_command_str = (
+                "\n\nYou can also run code formatting using the Format tool."
+            )
 
         # Combine system prompt, global prompt, and format command
         combined_prompt = system_prompt
