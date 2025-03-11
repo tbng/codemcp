@@ -262,24 +262,6 @@ async def codemcp(
 
         return init_project(file_path)
 
-    if command == "Format":
-        if file_path is None:
-            return "Error: file_path is required for Format command"
-
-        return format_code(file_path)
-
-    if command == "Lint":
-        if file_path is None:
-            return "Error: file_path is required for Lint command"
-
-        return lint_code(file_path)
-
-    if command == "RunTests":
-        if file_path is None:
-            return "Error: file_path is required for RunTests command"
-
-        return run_tests(file_path, test_selector)
-
     if command == "RunCommand":
         if file_path is None:
             return "Error: file_path is required for RunCommand command"
