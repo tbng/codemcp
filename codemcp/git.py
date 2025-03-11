@@ -151,11 +151,11 @@ def commit_pending_changes(file_path: str) -> tuple[bool, str]:
         return False, f"Error committing pending changes: {e!s}"
 
 
-def commit_changes(file_path: str, description: str) -> tuple[bool, str]:
-    """Commit changes to a file in Git.
+def commit_changes(path: str, description: str) -> tuple[bool, str]:
+    """Commit changes to a file or directory in Git.
 
     Args:
-        file_path: The path to the file to commit
+        path: The path to the file or directory to commit
         description: Commit message describing the change
 
     Returns:
@@ -164,33 +164,58 @@ def commit_changes(file_path: str, description: str) -> tuple[bool, str]:
     """
     try:
         # First, check if this is a git repository
-        if not is_git_repository(file_path):
-            return False, "File is not in a Git repository"
+        if not is_git_repository(path):
+            return False, f"Path '{path}' is not in a Git repository"
 
-        directory = os.path.dirname(file_path)
+        # Get absolute paths for consistency
+        abs_path = os.path.abspath(path)
+        
+        # Get the directory - if path is a file, use its directory, otherwise use the path itself
+        directory = os.path.dirname(abs_path) if os.path.isfile(abs_path) else abs_path
+        
+        # Try to get the git repository root for more reliable operations
+        try:
+            repo_root = run_command(
+                ["git", "rev-parse", "--show-toplevel"],
+                cwd=directory,
+                check=True,
+                capture_output=True,
+                text=True,
+            ).stdout.strip()
+            
+            # Use the repo root as the working directory for git commands
+            git_cwd = repo_root
+        except (subprocess.SubprocessError, OSError):
+            # Fall back to the directory if we can't get the repo root
+            git_cwd = directory
+            
+        # If it's a file, check if it exists
+        if os.path.isfile(abs_path) and not os.path.exists(abs_path):
+            return False, f"File does not exist: {abs_path}"
 
-        # Add the specified file to git
-        # Check if file exists first
-        if not os.path.exists(file_path):
-            return False, f"File does not exist: {file_path}"
-
-        # Try to add the file to git
-        add_result = run_command(
-            ["git", "add", file_path],
-            cwd=directory,
-            capture_output=True,
-            text=True,
-            check=False,
-        )
+        # Add the path to git - could be a file or directory
+        try:
+            # If path is a directory, do git add .
+            add_command = ["git", "add", "."] if os.path.isdir(abs_path) else ["git", "add", abs_path]
+            
+            add_result = run_command(
+                add_command,
+                cwd=git_cwd,
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+        except Exception as e:
+            return False, f"Failed to add to Git: {str(e)}"
 
         if add_result.returncode != 0:
-            return False, f"Failed to add file to Git: {add_result.stderr}"
+            return False, f"Failed to add to Git: {add_result.stderr}"
 
         # First check if there's already a commit in the repository
         has_commits = False
         rev_parse_result = run_command(
             ["git", "rev-parse", "--verify", "HEAD"],
-            cwd=directory,
+            cwd=git_cwd,
             capture_output=True,
             text=True,
             check=False,
@@ -198,29 +223,28 @@ def commit_changes(file_path: str, description: str) -> tuple[bool, str]:
 
         has_commits = rev_parse_result.returncode == 0
 
-        # Only check for changes if we already have commits
+        # Check if there are any staged changes to commit
         if has_commits:
             # Check if there are any changes to commit after git add
-            # Using git diff-index HEAD to check for staged changes against HEAD
             diff_result = run_command(
-                ["git", "diff-index", "--cached", "--quiet", "HEAD", "--", file_path],
-                cwd=directory,
+                ["git", "diff-index", "--cached", "--quiet", "HEAD"],
+                cwd=git_cwd,
                 capture_output=True,
                 text=True,
                 check=False,
             )
 
-            # If diff-index returns 0, there are no changes to commit for this file
+            # If diff-index returns 0, there are no changes to commit
             if diff_result.returncode == 0:
                 return (
                     True,
-                    "No changes to commit (file is identical to what's already committed)",
+                    "No changes to commit (changes already committed or no changes detected)",
                 )
 
         # Commit the change
         commit_result = run_command(
             ["git", "commit", "-m", description],
-            cwd=directory,
+            cwd=git_cwd,
             capture_output=True,
             text=True,
             check=False,
