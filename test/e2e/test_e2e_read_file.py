@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-"""Tests for the ReadFile command."""
+"""Tests for the ReadFile subtool."""
 
 import os
 import unittest
@@ -9,10 +9,10 @@ from codemcp import MCPEndToEndTestCase
 
 
 class ReadFileTest(MCPEndToEndTestCase):
-    """Test the ReadFile command."""
+    """Test the ReadFile subtool."""
 
     async def test_read_file(self):
-        """Test the ReadFile command."""
+        """Test the ReadFile subtool."""
         # Create a test file
         test_file_path = os.path.join(self.temp_dir.name, "test_file.txt")
         test_content = "Test content\nLine 2\nLine 3"
@@ -23,7 +23,7 @@ class ReadFileTest(MCPEndToEndTestCase):
             # Call the ReadFile tool
             result = await session.call_tool(
                 "codemcp",
-                {"command": "ReadFile", "path": test_file_path},
+                {"subtool": "ReadFile", "path": test_file_path},
             )
 
             # Normalize the result for easier comparison
@@ -35,7 +35,7 @@ class ReadFileTest(MCPEndToEndTestCase):
                 self.assertIn(line, result_text)
 
     async def test_read_file_with_offset_limit(self):
-        """Test the ReadFile command with offset and limit."""
+        """Test the ReadFile subtool with offset and limit."""
         # Create a test file with multiple lines
         test_file_path = os.path.join(self.temp_dir.name, "multi_line.txt")
         lines = ["Line 1", "Line 2", "Line 3", "Line 4", "Line 5"]
@@ -47,7 +47,7 @@ class ReadFileTest(MCPEndToEndTestCase):
             result = await session.call_tool(
                 "codemcp",
                 {
-                    "command": "ReadFile",
+                    "subtool": "ReadFile",
                     "path": test_file_path,
                     "offset": "2",  # Start from line 2
                     "limit": "2",  # Read 2 lines

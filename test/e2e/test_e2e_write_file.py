@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-"""Tests for the WriteFile command."""
+"""Tests for the WriteFile subtool."""
 
 import os
 import subprocess
@@ -10,10 +10,10 @@ from codemcp import MCPEndToEndTestCase
 
 
 class WriteFileTest(MCPEndToEndTestCase):
-    """Test the WriteFile command."""
+    """Test the WriteFile subtool."""
 
     async def test_write_file(self):
-        """Test the WriteFile command, which writes to a file and automatically commits the changes."""
+        """Test the WriteFile subtool, which writes to a file and automatically commits the changes."""
         test_file_path = os.path.join(self.temp_dir.name, "new_file.txt")
         content = "New content\nLine 2"
 
@@ -42,7 +42,7 @@ class WriteFileTest(MCPEndToEndTestCase):
             result = await session.call_tool(
                 "codemcp",
                 {
-                    "command": "WriteFile",
+                    "subtool": "WriteFile",
                     "path": test_file_path,
                     "content": content,
                     "description": "Create new file",
@@ -91,7 +91,7 @@ nothing to commit, working tree clean
             result = await session.call_tool(
                 "codemcp",
                 {
-                    "command": "WriteFile",
+                    "subtool": "WriteFile",
                     "path": new_file_path,
                     "content": "This is a brand new file",
                     "description": "Create a new file with WriteFile",
@@ -177,7 +177,7 @@ nothing to commit, working tree clean
             result = await session.call_tool(
                 "codemcp",
                 {
-                    "command": "WriteFile",
+                    "subtool": "WriteFile",
                     "path": untracked_file_path,
                     "content": new_content,
                     "description": "Attempt to write to untracked file",
@@ -232,7 +232,7 @@ nothing to commit, working tree clean
             result = await session.call_tool(
                 "codemcp",
                 {
-                    "command": "WriteFile",
+                    "subtool": "WriteFile",
                     "path": new_file_path,
                     "content": "New file in untracked directory",
                     "description": "Attempt to create file in untracked directory",

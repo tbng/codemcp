@@ -62,7 +62,7 @@ async def codemcp(
         },
         "LS": {"path"},
         "InitProject": {"path"},
-        "RunCommand": {"path", "command_type", "arguments"},
+        "RunCommand": {"path", "command", "arguments"},
         "Grep": {"pattern", "path", "include"},
     }
 
