@@ -263,19 +263,31 @@ class TestFormat(TestCase):
         """Test code formatting when commit fails after changes"""
         # Create a config file
         self.create_config_file()
-
-        # Configure mocks to show changes after formatting
-        def side_effect(cmd, **kwargs):
-            if cmd == ["git", "status", "--porcelain"]:
-                return MagicMock(stdout=" M modified_file.py\n")
+        
+        # Set up responses for different commands
+        def run_command_side_effect(*args, **kwargs):
+            cmd = args[0]
+            mock_result = MagicMock()
+            
+            if cmd[0:2] == ["git", "rev-parse"]:
+                # Return the repo root
+                mock_result.stdout = self.temp_dir.name + "\n"
+            elif cmd[0:2] == ["git", "status"]:
+                # Return changes in git status
+                mock_result.stdout = " M modified_file.py\n"
+            elif cmd == ["./run_format.sh"]:
+                # Format command output
+                mock_result.stdout = "Formatting successful"
             else:
-                return MagicMock(stdout="Formatting successful")
-
-        self.mock_run_command.side_effect = side_effect
-
+                mock_result.stdout = ""
+                
+            return mock_result
+            
+        self.mock_run_command.side_effect = run_command_side_effect
+        
         # Configure commit to fail
         self.mock_commit_changes.return_value = (False, "Commit failed: merge conflict")
-
+        
         result = format_code(self.temp_dir.name)
         self.assertIn("Code formatting successful but failed to commit changes", result)
         self.assertIn("Commit error: Commit failed: merge conflict", result)
