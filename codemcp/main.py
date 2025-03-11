@@ -148,6 +148,27 @@ async def codemcp(
         limit: Line limit for ReadFile command
         description: Short description of the change (for WriteFile/EditFile)
         arguments: Extra arguments to pass to RunCommand
+        command_key = "test"
+        
+    ## RunCommand directory_path command_type arguments?
+        
+    Runs a command that is supported in codemcp.toml, typically providing a
+    way to do things like format, lint, test, typecheck or build.  This does
+    NOT support arbitrary code execution, ONLY call with valid commands as
+    described by InitProject.
+        
+    Args:
+        ctx: The MCP context
+        command: The subcommand to execute (ReadFile, WriteFile, EditFile, LS, InitProject, RunCommand)
+        file_path: The path to the file or directory to operate on
+        content: Content for WriteFile command
+        old_string: String to replace for EditFile command
+        new_string: Replacement string for EditFile command
+        offset: Line offset for ReadFile command
+        limit: Line limit for ReadFile command
+        description: Short description of the change (for WriteFile/EditFile)
+        command_type: Type of command to run (e.g., "format", "lint", "test")
+        arguments: Extra arguments to pass to RunCommand
 
     """
     # Define expected parameters for each command
