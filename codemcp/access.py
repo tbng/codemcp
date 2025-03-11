@@ -31,12 +31,25 @@ def get_git_base_dir(file_path: str) -> str | None:
                 os.path.dirname(file_path) if os.path.isfile(file_path) else file_path
             )
         else:
-            # For non-existent files, use the parent directory
+            # For non-existent files, walk up the directory tree until we find an existing directory
             directory = os.path.dirname(file_path)
-            # If directory doesn't exist either, stop here
-            if not os.path.exists(directory):
-                logging.debug(f"Directory doesn't exist: {directory}")
+            
+            # Walk up the directory tree until we find an existing directory
+            while directory and not os.path.exists(directory):
+                logging.debug(f"Directory doesn't exist, walking up: {directory}")
+                parent = os.path.dirname(directory)
+                # If we've reached the root directory and it doesn't exist, stop
+                if parent == directory:
+                    logging.debug(f"Reached root directory and it doesn't exist: {directory}")
+                    return None
+                directory = parent
+                
+            # If we couldn't find an existing parent directory, stop
+            if not directory or not os.path.exists(directory):
+                logging.debug(f"Could not find an existing parent directory for: {file_path}")
                 return None
+                
+            logging.debug(f"Found existing parent directory: {directory}")
 
         # Run git command to get the top-level directory of the repository
         result = run_command(
