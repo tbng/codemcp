@@ -55,10 +55,27 @@ def _check_for_changes(project_dir: str) -> bool:
         True if changes were detected, False otherwise
     """
     try:
+        # Get the git repository root for reliable status checking
+        try:
+            repo_root = run_command(
+                ["git", "rev-parse", "--show-toplevel"],
+                cwd=project_dir,
+                check=True,
+                capture_output=True,
+                text=True,
+            ).stdout.strip()
+            
+            # Use the repo root as working directory for git commands
+            git_cwd = repo_root
+        except (subprocess.SubprocessError, OSError) as e:
+            logging.error(f"Error getting git repository root: {e}")
+            # Fall back to the project directory
+            git_cwd = project_dir
+        
         # Check if working directory has uncommitted changes
         status_result = run_command(
             ["git", "status", "--porcelain"],
-            cwd=project_dir,
+            cwd=git_cwd,
             check=True,
             capture_output=True,
             text=True,
