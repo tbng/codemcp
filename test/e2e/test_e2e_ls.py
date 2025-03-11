@@ -5,7 +5,7 @@
 import os
 import unittest
 
-from codemcp import MCPEndToEndTestCase
+from codemcp.testing import MCPEndToEndTestCase
 
 
 class LSTest(MCPEndToEndTestCase):
