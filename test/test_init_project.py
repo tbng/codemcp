@@ -51,8 +51,8 @@ class InitProjectTestCase(unittest.TestCase):
 
         result = init_project(self.dir_path)
         # Check for a stable part of the system prompt and the custom global prompt
-        self.assertIn("# Tests", result)
-        self.assertIn("We do NOT support running tests", result)
+        self.assertIn("# Tone and style", result)
+        self.assertIn("# Following conventions", result)
         self.assertIn("This is a custom global prompt.", result)
 
     def test_init_project_invalid_directory(self):
