@@ -36,7 +36,9 @@ def init_project(directory: str) -> str:
         # Build path to codemcp.toml file
         rules_file_path = os.path.join(full_dir_path, "codemcp.toml")
 
-        command_help = ""  # TODO
+        global_prompt = ""
+        command_help = ""
+        rules_config = {}
 
         # Check if codemcp.toml file exists
         if os.path.exists(rules_file_path):
@@ -90,11 +92,11 @@ When making changes to files, first understand the file's code conventions. Mimi
 # codemcp tool
 The codemcp tool supports a number of subcommands which you should use to perform coding tasks.
 
-## ReadFile file_path offset? limit?
+## ReadFile path offset? limit?
 
-Reads a file from the local filesystem. The file_path parameter must be an absolute path, not a relative path. By default, it reads up to {MAX_LINES_TO_READ} lines starting from the beginning of the file. You can optionally specify a line offset and limit (especially handy for long files), but it's recommended to read the whole file by not providing these parameters. Any lines longer than {MAX_LINE_LENGTH} characters will be truncated. For image files, the tool will display the image for you.
+Reads a file from the local filesystem. The path parameter must be an absolute path, not a relative path. By default, it reads up to {MAX_LINES_TO_READ} lines starting from the beginning of the file. You can optionally specify a line offset and limit (especially handy for long files), but it's recommended to read the whole file by not providing these parameters. Any lines longer than {MAX_LINE_LENGTH} characters will be truncated. For image files, the tool will display the image for you.
 
-## WriteFile file_path content description
+## WriteFile path content description
 
 Write a file to the local filesystem. Overwrites the existing file if there is one.
 Provide a short description of the change.
@@ -106,7 +108,7 @@ Before using this tool:
 2. Directory Verification (only applicable when creating new files):
    - Use the LS tool to verify the parent directory exists and is the correct location
 
-## EditFile file_path old_string new_string description
+## EditFile path old_string new_string description
 
 This is a tool for editing files. For larger edits, use the Write tool to overwrite files.
 Provide a short description of the change.
@@ -119,7 +121,7 @@ Before using this tool:
    - Use the LS tool to verify the parent directory exists and is the correct location
 
 To make a file edit, provide the following:
-1. file_path: The absolute path to the file to modify (must be absolute, not relative)
+1. path: The absolute path to the file to modify (must be absolute, not relative)
 2. old_string: The text to replace (must be unique within the file, and must match the file contents exactly, including all whitespace and indentation)
 3. new_string: The edited text to replace the old_string
 
@@ -190,8 +192,10 @@ Args:
     description: Short description of the change (for WriteFile/EditFile)
     arguments: A list of string arguments for RunCommand command
 """
-        global_prompt = ""
         format_command_str = ""
+        # Check if format command is configured
+        if "commands" in rules_config and "format" in rules_config["commands"]:
+            format_command_str = "\n\nYou can also run code formatting using the Format tool."
 
         # Combine system prompt, global prompt, and format command
         combined_prompt = system_prompt

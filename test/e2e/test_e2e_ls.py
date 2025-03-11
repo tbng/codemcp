@@ -34,7 +34,7 @@ class LSTest(MCPEndToEndTestCase):
             # Call the LS tool
             result = await session.call_tool(
                 "codemcp",
-                {"command": "LS", "file_path": test_dir},
+                {"command": "LS", "path": test_dir},
             )
 
             # Normalize the result

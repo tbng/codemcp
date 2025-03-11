@@ -43,7 +43,7 @@ class WriteFileTest(MCPEndToEndTestCase):
                 "codemcp",
                 {
                     "command": "WriteFile",
-                    "file_path": test_file_path,
+                    "path": test_file_path,
                     "content": content,
                     "description": "Create new file",
                 },
@@ -92,7 +92,7 @@ nothing to commit, working tree clean
                 "codemcp",
                 {
                     "command": "WriteFile",
-                    "file_path": new_file_path,
+                    "path": new_file_path,
                     "content": "This is a brand new file",
                     "description": "Create a new file with WriteFile",
                 },
@@ -178,7 +178,7 @@ nothing to commit, working tree clean
                 "codemcp",
                 {
                     "command": "WriteFile",
-                    "file_path": untracked_file_path,
+                    "path": untracked_file_path,
                     "content": new_content,
                     "description": "Attempt to write to untracked file",
                 },
@@ -233,7 +233,7 @@ nothing to commit, working tree clean
                 "codemcp",
                 {
                     "command": "WriteFile",
-                    "file_path": new_file_path,
+                    "path": new_file_path,
                     "content": "New file in untracked directory",
                     "description": "Attempt to create file in untracked directory",
                 },

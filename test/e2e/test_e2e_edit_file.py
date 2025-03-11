@@ -44,7 +44,7 @@ class EditFileTest(MCPEndToEndTestCase):
                 "codemcp",
                 {
                     "command": "EditFile",
-                    "file_path": test_file_path,
+                    "path": test_file_path,
                     "old_string": old_string,
                     "new_string": new_string,
                     "description": "Modify line 2",
@@ -125,7 +125,7 @@ nothing to commit, working tree clean
                 "codemcp",
                 {
                     "command": "EditFile",
-                    "file_path": untracked_file_path,
+                    "path": untracked_file_path,
                     "old_string": "Untracked file content",
                     "new_string": new_content,
                     "description": "Attempt to modify untracked file",
@@ -168,7 +168,7 @@ nothing to commit, working tree clean
                 "codemcp",
                 {
                     "command": "EditFile",
-                    "file_path": new_file_path,
+                    "path": new_file_path,
                     "old_string": "",
                     "new_string": "This file in untracked dir",
                     "description": "Attempt to create file in untracked dir with EditFile",
@@ -276,7 +276,7 @@ nothing to commit, working tree clean
                 "codemcp",
                 {
                     "command": "WriteFile",
-                    "file_path": tracked_file_path,
+                    "path": tracked_file_path,
                     "content": "Attempt to write to git-removed file",
                     "description": "Attempt to modify git-removed file",
                 },

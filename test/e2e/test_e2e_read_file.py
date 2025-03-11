@@ -23,7 +23,7 @@ class ReadFileTest(MCPEndToEndTestCase):
             # Call the ReadFile tool
             result = await session.call_tool(
                 "codemcp",
-                {"command": "ReadFile", "file_path": test_file_path},
+                {"command": "ReadFile", "path": test_file_path},
             )
 
             # Normalize the result for easier comparison
@@ -48,7 +48,7 @@ class ReadFileTest(MCPEndToEndTestCase):
                 "codemcp",
                 {
                     "command": "ReadFile",
-                    "file_path": test_file_path,
+                    "path": test_file_path,
                     "offset": "2",  # Start from line 2
                     "limit": "2",  # Read 2 lines
                 },

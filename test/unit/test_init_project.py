@@ -108,7 +108,7 @@ format = ["./run_format.sh"]
 
         result = init_project(self.dir_path)
         self.assertIn("This is a global prompt with formatter config.", result)
-        self.assertIn("run code formatting using the Format tool", result)
+        self.assertIn("You can also run code formatting using the Format tool", result)
 
 
 if __name__ == "__main__":
