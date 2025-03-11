@@ -7,7 +7,8 @@ from unittest.mock import patch, MagicMock
 
 from expecttest import TestCase
 
-from codemcp.tools.format import format_code, _get_format_command, _check_for_changes
+from codemcp.tools.format import format_code, _get_format_command
+from codemcp.tools.code_command import check_for_changes
 
 
 class TestFormat(TestCase):
