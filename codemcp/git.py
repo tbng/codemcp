@@ -25,9 +25,12 @@ def is_git_repository(path: str) -> bool:
 
     """
     try:
-        # Get the directory containing the file
+        # Get the directory containing the file or use the path itself if it's a directory
         directory = os.path.dirname(path) if os.path.isfile(path) else path
-
+        
+        # Get the absolute path to ensure consistency
+        directory = os.path.abspath(directory)
+        
         # Run git command to verify this is a git repository
         result = run_command(
             ["git", "rev-parse", "--is-inside-work-tree"],
@@ -36,7 +39,24 @@ def is_git_repository(path: str) -> bool:
             capture_output=True,
             text=True,
         )
-        return True
+        
+        # Also get the repository root to use for all git operations
+        try:
+            repo_root = run_command(
+                ["git", "rev-parse", "--show-toplevel"],
+                cwd=directory,
+                check=True,
+                capture_output=True,
+                text=True,
+            ).stdout.strip()
+            
+            # Store the repository root in a global or class variable if needed
+            # This could be used to ensure all git operations use the same root
+            
+            return True
+        except (subprocess.SubprocessError, OSError):
+            # If we can't get the repo root, it's not a proper git repository
+            return False
     except (subprocess.SubprocessError, OSError):
         return False
 
