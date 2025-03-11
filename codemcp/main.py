@@ -82,7 +82,6 @@ async def codemcp(
             "description": description,
             "pattern": pattern,
             "include": include,
-            "test_selector": test_selector,
             "command": command,
             "arguments": arguments,
             # Include backward compatibility parameters
