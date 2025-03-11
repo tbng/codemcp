@@ -276,7 +276,7 @@ nothing to commit, working tree clean
                 "codemcp",
                 {
                     "command": "WriteFile",
-                    "file_path": tracked_file_path,
+                    "path": tracked_file_path,
                     "content": "Attempt to write to git-removed file",
                     "description": "Attempt to modify git-removed file",
                 },
