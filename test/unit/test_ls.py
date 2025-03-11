@@ -118,14 +118,20 @@ class TestLS(TestCase):
 
     def test_ls_directory_nonexistent(self):
         """Test listing a nonexistent directory"""
-        nonexistent_dir = os.path.join(self.temp_dir.name, "nonexistent")
-        result = ls_directory(nonexistent_dir)
-        self.assertIn("Error: Directory does not exist", result)
+        with patch('codemcp.tools.ls.is_git_repository', return_value=True), \
+             patch('codemcp.tools.ls.check_edit_permission', return_value=(True, "Permission granted.")):
+             
+            nonexistent_dir = os.path.join(self.temp_dir.name, "nonexistent")
+            result = ls_directory(nonexistent_dir)
+            self.assertIn("Error: Directory does not exist", result)
 
     def test_ls_directory_file(self):
         """Test listing a file instead of a directory"""
-        result = ls_directory(self.file1_path)
-        self.assertIn("Error: Path is not a directory", result)
+        with patch('codemcp.tools.ls.is_git_repository', return_value=True), \
+             patch('codemcp.tools.ls.check_edit_permission', return_value=(True, "Permission granted.")):
+             
+            result = ls_directory(self.file1_path)
+            self.assertIn("Error: Path is not a directory", result)
 
     def test_list_directory(self):
         """Test the list_directory function"""
