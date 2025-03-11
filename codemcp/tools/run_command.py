@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from typing import List, Optional
+from typing import Optional
 
 from .code_command import get_command_from_config, run_code_command
 
