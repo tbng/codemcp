@@ -132,11 +132,24 @@ class TestFormat(TestCase):
 
     def test_check_for_changes_no_changes(self):
         """Test checking for changes when there are no changes"""
-        # Configure the mock to show no changes
-        mock_result = MagicMock()
-        mock_result.stdout = ""
-        self.mock_run_command.return_value = mock_result
-
+        # Set up responses for different git commands
+        def run_command_side_effect(*args, **kwargs):
+            cmd = args[0]
+            mock_result = MagicMock()
+            
+            if cmd[0:2] == ["git", "rev-parse"]:
+                # Return the repo root
+                mock_result.stdout = self.temp_dir.name + "\n"
+            elif cmd[0:2] == ["git", "status"]:
+                # Return empty status (no changes)
+                mock_result.stdout = ""
+            else:
+                mock_result.stdout = ""
+                
+            return mock_result
+            
+        self.mock_run_command.side_effect = run_command_side_effect
+        
         result = _check_for_changes(self.temp_dir.name)
         self.assertFalse(result)
 
