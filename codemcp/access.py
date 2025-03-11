@@ -83,15 +83,28 @@ def get_git_base_dir(file_path: str) -> str | None:
         
         # SECURITY CHECK: Ensure file_path is within the git repository
         # This prevents path traversal across repositories
-        normalized_git_base = os.path.normpath(os.path.abspath(git_base_dir))
+        
+        # Handle symlinked paths (on macOS /tmp links to /private/tmp)
+        normalized_git_base = os.path.normpath(os.path.realpath(git_base_dir))
+        normalized_path = os.path.normpath(os.path.realpath(normalized_path))
+        
+        # Perform path traversal check - ensure target path is inside git repo
         try:
-            # Use os.path.commonpath which raises ValueError if paths are on different drives
-            # or have no common path
+            # Check if the path is within the git repo by calculating the relative path
             rel_path = os.path.relpath(normalized_path, normalized_git_base)
-            # Check if the relative path tries to escape the repository
+            
+            # If the relative path starts with "..", it's outside the git repo
             if rel_path.startswith("..") or rel_path == "..":
-                logging.warning(f"File path {normalized_path} is outside git repository {normalized_git_base}")
-                return None
+                logging.debug(f"Path traversal check: {normalized_path} is outside git repo {normalized_git_base}")
+                
+                # Special case: On macOS, check for /private/tmp vs /tmp differences
+                # If either path contains the other after normalization, they might be the same location
+                if (normalized_git_base in normalized_path or 
+                    normalized_path in normalized_git_base):
+                    logging.debug(f"Path might be the same location after symlinks: {normalized_path}, {normalized_git_base}")
+                else:
+                    logging.warning(f"File path {file_path} is outside git repository {git_base_dir}")
+                    return None
         except (ValueError, OSError) as e:
             logging.warning(f"File path {normalized_path} cannot be compared with git repository {normalized_git_base}: {e}")
             return None
