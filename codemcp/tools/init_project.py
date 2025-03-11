@@ -192,6 +192,9 @@ Args:
     arguments: A list of string arguments for RunCommand command
 """
         format_command_str = ""
+        # Check if format command is configured
+        if "commands" in rules_config and "format" in rules_config["commands"]:
+            format_command_str = "\n\nYou can also run code formatting using the Format tool."
 
         # Combine system prompt, global prompt, and format command
         combined_prompt = system_prompt
