@@ -157,4 +157,7 @@ def check_edit_permission(file_path: str) -> tuple[bool, str]:
         # For example, check for allowed_directories, deny_patterns, etc.
         return True, "Permission granted."
     except Exception as e:
+        logging.warning(
+            f"Exception suppressed when parsing codemcp.toml: {e!s}", exc_info=True
+        )
         return False, f"Error parsing codemcp.toml file: {e!s}"
