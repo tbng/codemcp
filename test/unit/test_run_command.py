@@ -86,7 +86,7 @@ class TestRunCommand(TestCase):
         # Create a config file without the specific command
         config_path = os.path.join(self.temp_dir.name, "codemcp.toml")
         with open(config_path, "w") as f:
-            f.write("[commands]\ntest = [\"./run_test.sh\"]\n")
+            f.write('[commands]\ntest = ["./run_test.sh"]\n')
 
         # Call the function and check result
         result = get_command_from_config(self.temp_dir.name, "format")
@@ -103,6 +103,7 @@ class TestRunCommand(TestCase):
 
     def test_check_for_changes_with_changes(self):
         """Test checking for changes when there are changes"""
+
         # Set up responses for different git commands
         def run_command_side_effect(*args, **kwargs):
             cmd = args[0]
@@ -152,7 +153,9 @@ class TestRunCommand(TestCase):
         self.mock_run_command.side_effect = run_command_side_effect
 
         result = run_command(self.temp_dir.name, command_type)
-        self.assertEqual(result, f"Code {command_type} successful:\nCommand executed successfully")
+        self.assertEqual(
+            result, f"Code {command_type} successful:\nCommand executed successfully"
+        )
 
     def test_run_command_with_arguments(self):
         """Test command execution with arguments"""
@@ -181,8 +184,12 @@ class TestRunCommand(TestCase):
 
         self.mock_run_command.side_effect = run_command_side_effect
 
-        result = run_command(self.temp_dir.name, command_type, ["--verbose", "TestClass"])
-        self.assertEqual(result, f"Code {command_type} successful:\nRunning tests with arguments")
+        result = run_command(
+            self.temp_dir.name, command_type, ["--verbose", "TestClass"]
+        )
+        self.assertEqual(
+            result, f"Code {command_type} successful:\nRunning tests with arguments"
+        )
 
     def test_run_command_with_changes(self):
         """Test command that makes changes to files"""
@@ -228,10 +235,12 @@ class TestRunCommand(TestCase):
         command_type = "format"
         config_path = os.path.join(self.temp_dir.name, "codemcp.toml")
         with open(config_path, "w") as f:
-            f.write("[commands]\nlint = [\"./run_lint.sh\"]\n")
+            f.write('[commands]\nlint = ["./run_lint.sh"]\n')
 
         result = run_command(self.temp_dir.name, command_type)
-        self.assertEqual(result, f"Error: No {command_type} command configured in codemcp.toml")
+        self.assertEqual(
+            result, f"Error: No {command_type} command configured in codemcp.toml"
+        )
 
     def test_run_command_directory_not_found(self):
         """Test command execution with nonexistent directory"""
@@ -311,5 +320,7 @@ class TestRunCommand(TestCase):
         self.mock_commit_changes.return_value = (False, "Commit failed: merge conflict")
 
         result = run_command(self.temp_dir.name, command_type)
-        self.assertIn(f"Code {command_type} successful but failed to commit changes", result)
+        self.assertIn(
+            f"Code {command_type} successful but failed to commit changes", result
+        )
         self.assertIn("Commit error: Commit failed: merge conflict", result)

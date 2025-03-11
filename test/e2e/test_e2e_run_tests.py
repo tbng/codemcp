@@ -89,9 +89,9 @@ test = ["./run_test.sh"]
             result = await session.call_tool(
                 "codemcp",
                 {
-                    "command": "RunCommand", 
+                    "command": "RunCommand",
                     "file_path": self.temp_dir.name,
-                    "command_type": "test"
+                    "command_type": "test",
                 },
             )
 
@@ -109,7 +109,7 @@ test = ["./run_test.sh"]
                     "command": "RunCommand",
                     "file_path": self.temp_dir.name,
                     "command_type": "test",
-                    "arguments": ["test_directory/test_another.py"]
+                    "arguments": ["test_directory/test_another.py"],
                 },
             )
 

@@ -102,9 +102,9 @@ lint = ["./run_lint.sh"]
             result = await session.call_tool(
                 "codemcp",
                 {
-                    "command": "RunCommand", 
+                    "command": "RunCommand",
                     "file_path": self.temp_dir.name,
-                    "command_type": "lint"
+                    "command_type": "lint",
                 },
             )
 
