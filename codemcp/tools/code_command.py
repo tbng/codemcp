@@ -167,12 +167,19 @@ def run_code_command(
 
             return f"Code {command_name} successful:\n{result.stdout}"
         except subprocess.CalledProcessError as e:
-            error_msg = f"{command_name.title()} command failed with exit code {e.returncode}:\n{e.stderr}"
+            # Map the command_name to keep backward compatibility with existing tests
+            command_key = command_name.title()
+            if command_name == "linting":
+                command_key = "Lint"
+            elif command_name == "formatting":
+                command_key = "Format"
+                
+            error_msg = (
+                f"{command_key} command failed with exit code {e.returncode}:\n{e.stderr}"
+            )
             # Note: run_command already logs the command and stderr at debug level
             # We just need to log the error summary at error level
-            logging.error(
-                f"{command_name.title()} command failed with exit code {e.returncode}"
-            )
+            logging.error(f"{command_name.title()} command failed with exit code {e.returncode}")
             return f"Error: {error_msg}"
 
     except Exception as e:
