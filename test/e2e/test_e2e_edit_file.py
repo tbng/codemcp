@@ -168,7 +168,7 @@ nothing to commit, working tree clean
                 "codemcp",
                 {
                     "command": "EditFile",
-                    "file_path": new_file_path,
+                    "path": new_file_path,
                     "old_string": "",
                     "new_string": "This file in untracked dir",
                     "description": "Attempt to create file in untracked dir with EditFile",
