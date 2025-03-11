@@ -10,9 +10,9 @@ from codemcp import MCPEndToEndTestCase
 
 
 class RunCommandLintTest(MCPEndToEndTestCase):
-    """Test the RunCommand with lint command."""
+    """Test the RunCommand with lint subtool."""
 
-    async def test_lint_with_run_command(self):
+    async def test_lint_with_run_subtool(self):
         """Test that RunCommand with lint commits changes made by linting."""
         # Create a file that needs linting
         unlinted_file_path = os.path.join(self.temp_dir.name, "unlinted.py")
@@ -76,7 +76,7 @@ fi
         # Make it executable
         os.chmod(lint_script_path, 0o755)
 
-        # Create a codemcp.toml file with lint command
+        # Create a codemcp.toml file with lint subtool
         codemcp_toml_path = os.path.join(self.temp_dir.name, "codemcp.toml")
         with open(codemcp_toml_path, "w") as f:
             f.write("""[project]
@@ -98,13 +98,13 @@ lint = ["./run_lint.sh"]
         )
 
         async with self.create_client_session() as session:
-            # Call the RunCommand tool with lint command_type
+            # Call the RunCommand tool with lint command
             result = await session.call_tool(
                 "codemcp",
                 {
-                    "command": "RunCommand",
+                    "subtool": "RunCommand",
                     "path": self.temp_dir.name,
-                    "command_type": "lint",
+                    "command": "lint",
                 },
             )
 

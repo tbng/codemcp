@@ -38,7 +38,7 @@ def init_project(directory: str) -> str:
         directory: The directory path containing the codemcp.toml file
 
     Returns:
-        A string containing the system prompt plus any global_prompt from the config
+        A string containing the system prompt plus any project_prompt from the config
 
     """
     try:
@@ -55,7 +55,7 @@ def init_project(directory: str) -> str:
         # Build path to codemcp.toml file
         rules_file_path = os.path.join(full_dir_path, "codemcp.toml")
 
-        global_prompt = ""
+        project_prompt = ""
         command_help = ""
         command_docs = {}
         rules_config = {}
@@ -66,9 +66,9 @@ def init_project(directory: str) -> str:
                 with open(rules_file_path, "rb") as f:
                     rules_config = tomli.load(f)
 
-                # Extract global_prompt if it exists
-                if "global_prompt" in rules_config:
-                    global_prompt = rules_config["global_prompt"]
+                # Extract project_prompt if it exists
+                if "project_prompt" in rules_config:
+                    project_prompt = rules_config["project_prompt"]
 
                 # Extract commands and their documentation
                 command_list = rules_config.get("commands", {})
@@ -117,7 +117,7 @@ When making changes to files, first understand the file's code conventions. Mimi
 - If you intend to call multiple tools and there are no dependencies between the calls, make all of the independent calls in the same function_calls block.
 
 # codemcp tool
-The codemcp tool supports a number of subcommands which you should use to perform coding tasks.
+The codemcp tool supports a number of subtools which you should use to perform coding tasks.
 
 ## ReadFile path offset? limit?
 
@@ -201,7 +201,7 @@ Example:
   Grep "function.*hello" /path/to/repo  # Find files containing functions with "hello" in their name
   Grep "console\\.log" /path/to/repo --include="*.js"  # Find JS files with console.log statements
 
-## RunCommand path command_type arguments?
+## RunCommand path command arguments?
 
 Runs a command.  This does NOT support arbitrary code execution, ONLY call
 with this set of valid commands: {command_help}
@@ -210,29 +210,21 @@ with this set of valid commands: {command_help}
 ## Summary
 
 Args:
-    command: The subcommand to execute (ReadFile, WriteFile, EditFile, LS, InitProject, RunCommand)
+    subtool: The subtool to execute (ReadFile, WriteFile, EditFile, LS, InitProject, RunCommand)
     path: The path to the file or directory to operate on
-    content: Content for WriteFile command
-    old_string: String to replace for EditFile command
-    new_string: Replacement string for EditFile command
-    offset: Line offset for ReadFile command
-    limit: Line limit for ReadFile command
+    content: Content for WriteFile subtool
+    old_string: String to replace for EditFile subtool
+    new_string: Replacement string for EditFile subtool
+    offset: Line offset for ReadFile subtool
+    limit: Line limit for ReadFile subtool
     description: Short description of the change (for WriteFile/EditFile)
-    arguments: A list of string arguments for RunCommand command
+    arguments: A list of string arguments for RunCommand subtool
 """
-        format_command_str = ""
-        # Check if format command is configured
-        if "commands" in rules_config and "format" in rules_config["commands"]:
-            format_command_str = (
-                "\n\nYou can also run code formatting using the Format tool."
-            )
 
-        # Combine system prompt, global prompt, and format command
+        # Combine system prompt, global prompt
         combined_prompt = system_prompt
-        if global_prompt:
-            combined_prompt += "\n\n" + global_prompt
-        if format_command_str:
-            combined_prompt += format_command_str
+        if project_prompt:
+            combined_prompt += "\n\n" + project_prompt
 
         return combined_prompt
     except Exception as e:

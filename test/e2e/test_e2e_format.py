@@ -10,9 +10,9 @@ from codemcp import MCPEndToEndTestCase
 
 
 class RunCommandFormatTest(MCPEndToEndTestCase):
-    """Test the RunCommand with format command."""
+    """Test the RunCommand with format subtool."""
 
-    async def test_format_with_run_command(self):
+    async def test_format_with_run_subtool(self):
         """Test that RunCommand with format commits changes made by formatting."""
         # Create a file that is not properly formatted (needs formatting)
         # We'll use Python's ruff formatter conventions
@@ -63,7 +63,7 @@ fi
         # Make it executable
         os.chmod(format_script_path, 0o755)
 
-        # Create a codemcp.toml file with format command
+        # Create a codemcp.toml file with format subtool
         codemcp_toml_path = os.path.join(self.temp_dir.name, "codemcp.toml")
         with open(codemcp_toml_path, "w") as f:
             f.write("""[project]
@@ -85,13 +85,13 @@ format = ["./run_format.sh"]
         )
 
         async with self.create_client_session() as session:
-            # Call the RunCommand tool with format command_type
+            # Call the RunCommand tool with format command
             result = await session.call_tool(
                 "codemcp",
                 {
-                    "command": "RunCommand",
+                    "subtool": "RunCommand",
                     "path": self.temp_dir.name,
-                    "command_type": "format",
+                    "command": "format",
                 },
             )
 

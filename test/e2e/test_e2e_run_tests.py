@@ -11,10 +11,10 @@ from codemcp import MCPEndToEndTestCase
 
 
 class RunCommandTestTest(MCPEndToEndTestCase):
-    """Test the RunCommand with test command."""
+    """Test the RunCommand with test subtool."""
 
-    async def test_run_tests_with_run_command(self):
-        """Test the RunCommand with test command_type."""
+    async def test_run_tests_with_run_subtool(self):
+        """Test the RunCommand with test command."""
         # Create a test directory for testing
         test_dir = os.path.join(self.temp_dir.name, "test_directory")
         os.makedirs(test_dir, exist_ok=True)
@@ -58,7 +58,7 @@ cd "$(dirname "$0")"
 """)
         os.chmod(runner_script_path, 0o755)  # Make it executable
 
-        # Update codemcp.toml to include the test command
+        # Update codemcp.toml to include the test subtool
         config_path = os.path.join(self.temp_dir.name, "codemcp.toml")
         with open(config_path, "w") as f:
             f.write("""
@@ -85,13 +85,13 @@ test = ["./run_test.sh"]
         )
 
         async with self.create_client_session() as session:
-            # Call the RunCommand tool with test command_type
+            # Call the RunCommand tool with test command
             result = await session.call_tool(
                 "codemcp",
                 {
-                    "command": "RunCommand",
+                    "subtool": "RunCommand",
                     "path": self.temp_dir.name,
-                    "command_type": "test",
+                    "command": "test",
                 },
             )
 
@@ -102,13 +102,13 @@ test = ["./run_test.sh"]
             # Verify the success message
             self.assertIn("Code test successful", result_text)
 
-            # Call the RunCommand tool with test command_type and arguments
+            # Call the RunCommand tool with test command and arguments
             selector_result = await session.call_tool(
                 "codemcp",
                 {
-                    "command": "RunCommand",
+                    "subtool": "RunCommand",
                     "path": self.temp_dir.name,
-                    "command_type": "test",
+                    "command": "test",
                     "arguments": ["test_directory/test_another.py"],
                 },
             )

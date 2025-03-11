@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-"""Tests for the LS command."""
+"""Tests for the LS subtool."""
 
 import os
 import unittest
@@ -9,10 +9,10 @@ from codemcp import MCPEndToEndTestCase
 
 
 class LSTest(MCPEndToEndTestCase):
-    """Test the LS command."""
+    """Test the LS subtool."""
 
     async def test_ls(self):
-        """Test the LS command."""
+        """Test the LS subtool."""
         # Create a test directory structure
         test_dir = os.path.join(self.temp_dir.name, "test_directory")
         os.makedirs(test_dir)
@@ -34,7 +34,7 @@ class LSTest(MCPEndToEndTestCase):
             # Call the LS tool
             result = await session.call_tool(
                 "codemcp",
-                {"command": "LS", "path": test_dir},
+                {"subtool": "LS", "path": test_dir},
             )
 
             # Normalize the result

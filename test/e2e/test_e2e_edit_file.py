@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-"""Tests for the EditFile command."""
+"""Tests for the EditFile subtool."""
 
 import os
 import subprocess
@@ -10,10 +10,10 @@ from codemcp import MCPEndToEndTestCase
 
 
 class EditFileTest(MCPEndToEndTestCase):
-    """Test the EditFile command."""
+    """Test the EditFile subtool."""
 
     async def test_edit_file(self):
-        """Test the EditFile command, which edits a file and automatically commits the changes."""
+        """Test the EditFile subtool, which edits a file and automatically commits the changes."""
         # Create a test file with multiple lines for good context
         test_file_path = os.path.join(self.temp_dir.name, "edit_file.txt")
         original_content = "Line 1\nLine 2\nLine 3\nLine 4\nLine 5\n"
@@ -34,7 +34,7 @@ class EditFileTest(MCPEndToEndTestCase):
             check=False,
         )
 
-        # Edit the file using the EditFile command with proper context
+        # Edit the file using the EditFile subtool with proper context
         old_string = "Line 1\nLine 2\nLine 3\n"
         new_string = "Line 1\nModified Line 2\nLine 3\n"
 
@@ -43,7 +43,7 @@ class EditFileTest(MCPEndToEndTestCase):
             result = await session.call_tool(
                 "codemcp",
                 {
-                    "command": "EditFile",
+                    "subtool": "EditFile",
                     "path": test_file_path,
                     "old_string": old_string,
                     "new_string": new_string,
@@ -124,7 +124,7 @@ nothing to commit, working tree clean
             result = await session.call_tool(
                 "codemcp",
                 {
-                    "command": "EditFile",
+                    "subtool": "EditFile",
                     "path": untracked_file_path,
                     "old_string": "Untracked file content",
                     "new_string": new_content,
@@ -167,7 +167,7 @@ nothing to commit, working tree clean
             result = await session.call_tool(
                 "codemcp",
                 {
-                    "command": "EditFile",
+                    "subtool": "EditFile",
                     "path": new_file_path,
                     "old_string": "",
                     "new_string": "This file in untracked dir",
@@ -275,7 +275,7 @@ nothing to commit, working tree clean
             result = await session.call_tool(
                 "codemcp",
                 {
-                    "command": "WriteFile",
+                    "subtool": "WriteFile",
                     "path": tracked_file_path,
                     "content": "Attempt to write to git-removed file",
                     "description": "Attempt to modify git-removed file",

@@ -65,7 +65,7 @@ class SecurityTest(MCPEndToEndTestCase):
                 result = await session.call_tool(
                     "codemcp",
                     {
-                        "command": "WriteFile",
+                        "subtool": "WriteFile",
                         "file_path": path,
                         "content": "This should not be allowed to write outside the repo",
                         "description": f"Attempt path traversal attack ({path_desc})",
@@ -134,7 +134,7 @@ class SecurityTest(MCPEndToEndTestCase):
             result = await session.call_tool(
                 "codemcp",
                 {
-                    "command": "EditFile",
+                    "subtool": "EditFile",
                     "file_path": ignored_file_path,
                     "old_string": "This file is ignored by git",
                     "new_string": "Modified ignored content",

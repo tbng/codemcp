@@ -9,7 +9,7 @@ from codemcp import MCPEndToEndTestCase
 
 
 class DirectoryCreationTest(MCPEndToEndTestCase):
-    """Test recursive directory creation in WriteFile and EditFile commands."""
+    """Test recursive directory creation in WriteFile and EditFile subtools."""
 
     async def test_write_file_nested_directories(self):
         """Test WriteFile can create nested directories."""
@@ -31,7 +31,7 @@ class DirectoryCreationTest(MCPEndToEndTestCase):
             result = await session.call_tool(
                 "codemcp",
                 {
-                    "command": "WriteFile",
+                    "subtool": "WriteFile",
                     "path": test_file_path,
                     "content": content,
                     "description": "Create file in nested directories",
@@ -76,7 +76,7 @@ class DirectoryCreationTest(MCPEndToEndTestCase):
             result = await session.call_tool(
                 "codemcp",
                 {
-                    "command": "EditFile",
+                    "subtool": "EditFile",
                     "path": test_file_path,
                     "old_string": "",
                     "new_string": content,
