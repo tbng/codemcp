@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import logging
 import os
 import subprocess
 
@@ -32,7 +31,7 @@ def is_git_repository(path: str) -> bool:
         directory = os.path.abspath(directory)
 
         # Run git command to verify this is a git repository
-        result = run_command(
+        run_command(
             ["git", "rev-parse", "--is-inside-work-tree"],
             cwd=directory,
             check=True,
@@ -42,7 +41,7 @@ def is_git_repository(path: str) -> bool:
 
         # Also get the repository root to use for all git operations
         try:
-            repo_root = run_command(
+            run_command(
                 ["git", "rev-parse", "--show-toplevel"],
                 cwd=directory,
                 check=True,
@@ -128,7 +127,7 @@ def commit_pending_changes(file_path: str) -> tuple[bool, str]:
 
             if changed_files:
                 # Commit other changes first with a default message
-                add_result = run_command(
+                run_command(
                     ["git", "add", "."],
                     cwd=directory,
                     check=True,
@@ -136,7 +135,7 @@ def commit_pending_changes(file_path: str) -> tuple[bool, str]:
                     text=True,
                 )
 
-                commit_snapshot_result = run_command(
+                run_command(
                     ["git", "commit", "-m", "Snapshot before codemcp change"],
                     cwd=directory,
                     check=True,

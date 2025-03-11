@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 
 import os
-import unittest
-from unittest import mock
 import subprocess
 import tempfile
+import unittest
+from unittest import mock
 
 from codemcp.tools.run_tests import run_tests
 

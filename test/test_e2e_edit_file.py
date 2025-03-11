@@ -98,7 +98,7 @@ nothing to commit, working tree clean
             env=self.env,
         ).decode()
 
-        ls_files_before = (
+        (
             subprocess.run(
                 ["git", "ls-files", untracked_file_path],
                 cwd=self.temp_dir.name,
@@ -115,7 +115,7 @@ nothing to commit, working tree clean
         self.assertIn("untracked.txt", status)
 
         # Save the original modification time to check if file was modified
-        original_mtime = os.path.getmtime(untracked_file_path)
+        os.path.getmtime(untracked_file_path)
 
         async with self.create_client_session() as session:
             # Try to edit the untracked file
@@ -133,7 +133,7 @@ nothing to commit, working tree clean
             )
 
             # Get the result content
-            result_content = (
+            (
                 result.content if hasattr(result, "content") else str(result)
             )
 
@@ -144,7 +144,7 @@ nothing to commit, working tree clean
             if os.path.exists(untracked_file_path):
                 with open(untracked_file_path) as f:
                     actual_content = f.read()
-                new_mtime = os.path.getmtime(untracked_file_path)
+                os.path.getmtime(untracked_file_path)
             else:
                 self.fail("File doesn't exist anymore!")
 

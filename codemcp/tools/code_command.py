@@ -3,12 +3,12 @@
 import logging
 import os
 import subprocess
-from pathlib import Path
+from typing import List, Optional
+
 import tomli
-from typing import List, Optional, Tuple
 
 from ..common import normalize_file_path
-from ..git import is_git_repository, commit_changes
+from ..git import commit_changes, is_git_repository
 from ..shell import run_command
 
 __all__ = [

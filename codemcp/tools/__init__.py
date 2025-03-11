@@ -1,4 +1,4 @@
-from .code_command import get_command_from_config, check_for_changes, run_code_command
+from .code_command import check_for_changes, get_command_from_config, run_code_command
 from .edit_file import edit_file_content
 from .format import format_code
 from .grep import grep_files

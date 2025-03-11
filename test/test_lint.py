@@ -2,13 +2,12 @@
 
 import os
 import tempfile
-import unittest
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 from expecttest import TestCase
 
-from codemcp.tools.lint import lint_code, _get_lint_command
 from codemcp.tools.code_command import check_for_changes
+from codemcp.tools.lint import _get_lint_command, lint_code
 
 
 class TestLint(TestCase):
