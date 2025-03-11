@@ -54,7 +54,7 @@ class TestRunCommand(TestCase):
         self.mock_normalize_path.side_effect = lambda x: x
         self.addCleanup(self.normalize_path_patch.stop)
 
-    def create_config_file(self, command_type="format", command=None):
+    def create_config_file(self, command_type="format", command=None, is_dict=False, doc=None):
         """Create a test codemcp.toml file with the specified command"""
         config_path = os.path.join(self.temp_dir.name, "codemcp.toml")
 
@@ -63,8 +63,15 @@ class TestRunCommand(TestCase):
 
         config_content = "[commands]\n"
         if command:
-            command_str = str(command).replace("'", '"')
-            config_content += f"{command_type} = {command_str}\n"
+            if is_dict:
+                config_content += f"[commands.{command_type}]\n"
+                command_str = str(command).replace("'", '"')
+                config_content += f"command = {command_str}\n"
+                if doc:
+                    config_content += f'doc = "{doc}"\n'
+            else:
+                command_str = str(command).replace("'", '"')
+                config_content += f"{command_type} = {command_str}\n"
 
         with open(config_path, "w") as f:
             f.write(config_content)
