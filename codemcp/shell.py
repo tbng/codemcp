@@ -2,7 +2,7 @@
 
 import logging
 import subprocess
-from typing import List, Dict, Any, Optional, Union, Tuple
+from typing import Dict, List, Optional
 
 
 def run_command(

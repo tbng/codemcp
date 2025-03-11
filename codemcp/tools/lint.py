@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
-import logging
-from typing import Optional, List
+from typing import List, Optional
 
 from .code_command import get_command_from_config, run_code_command
 

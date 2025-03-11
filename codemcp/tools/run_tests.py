@@ -3,9 +3,9 @@
 import logging
 import os
 import subprocess
-from pathlib import Path
-import tomli
 from typing import List, Optional
+
+import tomli
 
 from ..common import normalize_file_path
 from ..shell import run_command
