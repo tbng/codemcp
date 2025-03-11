@@ -32,7 +32,7 @@ class DirectoryCreationTest(MCPEndToEndTestCase):
                 "codemcp",
                 {
                     "command": "WriteFile",
-                    "file_path": test_file_path,
+                    "path": test_file_path,
                     "content": content,
                     "description": "Create file in nested directories",
                 },
