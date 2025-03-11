@@ -75,6 +75,12 @@ class TestLS(TestCase):
         self.mock_git_base_dir = self.git_base_dir_patch.start()
         self.mock_git_base_dir.return_value = self.temp_dir.name
         self.addCleanup(self.git_base_dir_patch.stop)
+        
+        # Create patch for check_edit_permission
+        self.check_edit_permission_patch = patch("codemcp.access.check_edit_permission")
+        self.mock_check_edit_permission = self.check_edit_permission_patch.start()
+        self.mock_check_edit_permission.return_value = (True, "Permission granted.")
+        self.addCleanup(self.check_edit_permission_patch.stop)
 
         # Create a mock codemcp.toml file to satisfy permission check
         config_path = os.path.join(self.temp_dir.name, "codemcp.toml")
