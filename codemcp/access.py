@@ -81,11 +81,19 @@ def get_git_base_dir(file_path: str) -> str | None:
         git_base_dir = result.stdout.strip()
         logging.debug(f"Git base directory: {git_base_dir}")
         
-        # SECURITY CHECK: Make sure git_base_dir contains the file_path
-        # This prevents path traversal across git repositories
+        # SECURITY CHECK: Ensure file_path is within the git repository
+        # This prevents path traversal across repositories
         normalized_git_base = os.path.normpath(os.path.abspath(git_base_dir))
-        if not normalized_path.startswith(normalized_git_base):
-            logging.warning(f"File path {normalized_path} is outside git repository {normalized_git_base}")
+        try:
+            # Use os.path.commonpath which raises ValueError if paths are on different drives
+            # or have no common path
+            rel_path = os.path.relpath(normalized_path, normalized_git_base)
+            # Check if the relative path tries to escape the repository
+            if rel_path.startswith("..") or rel_path == "..":
+                logging.warning(f"File path {normalized_path} is outside git repository {normalized_git_base}")
+                return None
+        except (ValueError, OSError) as e:
+            logging.warning(f"File path {normalized_path} cannot be compared with git repository {normalized_git_base}: {e}")
             return None
             
         return git_base_dir
