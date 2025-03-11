@@ -111,6 +111,9 @@ def write_file_content(file_path: str, content: str, description: str = "") -> s
             line_endings = detect_line_endings(file_path)
         else:
             line_endings = detect_repo_line_endings(os.path.dirname(file_path))
+            # Ensure directory exists for new files
+            directory = os.path.dirname(file_path)
+            os.makedirs(directory, exist_ok=True)
 
         # Write the content with proper encoding and line endings
         write_text_content(file_path, content, encoding, line_endings)
