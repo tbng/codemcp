@@ -260,4 +260,5 @@ def commit_changes(path: str, description: str) -> tuple[bool, str]:
 
         return True, "Changes committed successfully"
     except Exception as e:
+        logging.warning(f"Exception suppressed when committing changes: {e!s}", exc_info=True)
         return False, f"Error committing changes: {e!s}"
