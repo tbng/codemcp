@@ -66,6 +66,9 @@ When making changes to files, first understand the file's code conventions. Mimi
 
 # Tool usage policy
 - If you intend to call multiple tools and there are no dependencies between the calls, make all of the independent calls in the same function_calls block.
+
+# Tests
+We do NOT support running tests within any code generation commands. When the user asks you to generate tests, just explain how they should test the code themselves.
 """
         global_prompt = ""
         format_command_str = ""
