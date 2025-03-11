@@ -54,7 +54,9 @@ class TestRunCommand(TestCase):
         self.mock_normalize_path.side_effect = lambda x: x
         self.addCleanup(self.normalize_path_patch.stop)
 
-    def create_config_file(self, command_type="format", command=None, is_dict=False, doc=None):
+    def create_config_file(
+        self, command_type="format", command=None, is_dict=False, doc=None
+    ):
         """Create a test codemcp.toml file with the specified command"""
         config_path = os.path.join(self.temp_dir.name, "codemcp.toml")
 
@@ -92,7 +94,9 @@ class TestRunCommand(TestCase):
         """Test retrieving command when configured as a dictionary with command field"""
         # Create a config file with a command in dictionary format
         expected_command = ["./run_test.sh"]
-        self.create_config_file("test", expected_command, is_dict=True, doc="Test documentation")
+        self.create_config_file(
+            "test", expected_command, is_dict=True, doc="Test documentation"
+        )
 
         # Call the function and check result
         result = get_command_from_config(self.temp_dir.name, "test")
@@ -103,7 +107,9 @@ class TestRunCommand(TestCase):
         # Create a config file with a command in dictionary format
         command_type = "test"
         expected_command = ["./run_test.sh"]
-        self.create_config_file(command_type, expected_command, is_dict=True, doc="Run tests with pytest")
+        self.create_config_file(
+            command_type, expected_command, is_dict=True, doc="Run tests with pytest"
+        )
 
         # Set up responses for different commands
         def run_command_side_effect(*args, **kwargs):

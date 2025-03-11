@@ -112,7 +112,10 @@ doc = "Accepts a pytest-style test selector as an argument to run a specific tes
         result = init_project(self.dir_path)
         self.assertIn("This is a global prompt with command docs.", result)
         self.assertIn("Command documentation:", result)
-        self.assertIn("- test: Accepts a pytest-style test selector as an argument to run a specific test.", result)
+        self.assertIn(
+            "- test: Accepts a pytest-style test selector as an argument to run a specific test.",
+            result,
+        )
 
     def test_multiple_command_docs(self):
         """Test handling of multiple command documentations."""
