@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-"""Tests for the Lint command."""
+"""Tests for the RunCommand with lint."""
 
 import os
 import subprocess
@@ -9,11 +9,11 @@ import unittest
 from codemcp import MCPEndToEndTestCase
 
 
-class LintTest(MCPEndToEndTestCase):
-    """Test the Lint command."""
+class RunCommandLintTest(MCPEndToEndTestCase):
+    """Test the RunCommand with lint command."""
 
-    async def test_lint_commits_changes(self):
-        """Test that Lint commits changes made by linting."""
+    async def test_lint_with_run_command(self):
+        """Test that RunCommand with lint commits changes made by linting."""
         # Create a file that needs linting
         unlinted_file_path = os.path.join(self.temp_dir.name, "unlinted.py")
         unlinted_content = """import math
@@ -98,10 +98,14 @@ lint = ["./run_lint.sh"]
         )
 
         async with self.create_client_session() as session:
-            # Call the Lint tool
+            # Call the RunCommand tool with lint command_type
             result = await session.call_tool(
                 "codemcp",
-                {"command": "Lint", "file_path": self.temp_dir.name},
+                {
+                    "command": "RunCommand", 
+                    "file_path": self.temp_dir.name,
+                    "command_type": "lint"
+                },
             )
 
             # Normalize the result
@@ -109,7 +113,7 @@ lint = ["./run_lint.sh"]
             result_text = self.extract_text_from_result(normalized_result)
 
             # Verify the success message
-            self.assertIn("Code linting successful", result_text)
+            self.assertIn("Code lint successful", result_text)
 
             # Verify the file was linted correctly
             with open(unlinted_file_path) as f:
@@ -167,7 +171,7 @@ nothing to commit, working tree clean
                 .strip()
             )
 
-            self.assertEqual(commit_msg, "Auto-commit linting changes")
+            self.assertEqual(commit_msg, "Auto-commit lint changes")
 
 
 if __name__ == "__main__":
