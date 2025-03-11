@@ -174,7 +174,11 @@ def run_code_command(
             elif command_name == "formatting":
                 command_key = "Format"
 
-            error_msg = f"{command_key} command failed with exit code {e.returncode}:\n{e.stderr}"
+            # Include both stdout and stderr in the error message
+            stdout_info = f"STDOUT:\n{e.output}" if e.output else "STDOUT: <empty>"
+            stderr_info = f"STDERR:\n{e.stderr}" if e.stderr else "STDERR: <empty>"
+            error_msg = f"{command_key} command failed with exit code {e.returncode}:\n{stdout_info}\n{stderr_info}"
+            
             # Note: run_command already logs the command and stderr at debug level
             # We just need to log the error summary at error level
             logging.error(
