@@ -125,7 +125,7 @@ nothing to commit, working tree clean
                 "codemcp",
                 {
                     "command": "EditFile",
-                    "file_path": untracked_file_path,
+                    "path": untracked_file_path,
                     "old_string": "Untracked file content",
                     "new_string": new_content,
                     "description": "Attempt to modify untracked file",
