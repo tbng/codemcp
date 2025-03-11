@@ -33,7 +33,7 @@ async def codemcp(
     pattern: str | None = None,
     include: str | None = None,
     command: str | None = None,
-    arguments: list[str] | None = None,
+    arguments: list[str] | str | None = None,
     old_str: str | None = None,  # Added for backward compatibility
     new_str: str | None = None,  # Added for backward compatibility
 ) -> str:
@@ -68,6 +68,10 @@ async def codemcp(
     # Check if subtool exists
     if subtool not in expected_params:
         return f"Unknown subtool: {subtool}. Available subtools: {', '.join(expected_params.keys())}"
+
+    # Handle string arguments - convert to a list with one element
+    if isinstance(arguments, str):
+        arguments = [arguments]
 
     # Get all provided non-None parameters
     provided_params = {
