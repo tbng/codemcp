@@ -610,6 +610,27 @@ nothing to commit, working tree clean
                     self.fail(
                         "SECURITY VULNERABILITY: No commit history found for the file after editing",
                     )
+                        # the modified content, then we've lost the original untracked content forever
+                        original_content_recoverable = (
+                            original_content_from_git == original_content
+                        )
+                        print(
+                            f"Original content recoverable from git? {original_content_recoverable}",
+                        )
+
+                        self.assertEqual(
+                            original_content_from_git,
+                            original_content,
+                            "SECURITY VULNERABILITY: Original content of untracked file was lost during edit",
+                        )
+                    else:
+                        self.fail(
+                            "SECURITY VULNERABILITY: File is tracked but has no commits in git history",
+                        )
+                else:
+                    self.fail(
+                        "SECURITY VULNERABILITY: No commit history found for the file after editing",
+                    )
 
                 if git_log:
                     # Get the first/earliest commit for this file
