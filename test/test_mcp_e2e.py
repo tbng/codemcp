@@ -1031,7 +1031,7 @@ class AnotherTestCase(unittest.TestCase):
             f.write("""#!/bin/bash
 set -e
 cd "$(dirname "$0")"
-python -m pytest $@
+import sys; sys.executable -m pytest $@
 """)
         os.chmod(runner_script_path, 0o755)  # Make it executable
 
