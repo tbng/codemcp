@@ -95,7 +95,7 @@ The codemcp tool supports a number of subcommands which you should use to perfor
 
 Reads a file from the local filesystem. The path parameter must be an absolute path, not a relative path. By default, it reads up to {MAX_LINES_TO_READ} lines starting from the beginning of the file. You can optionally specify a line offset and limit (especially handy for long files), but it's recommended to read the whole file by not providing these parameters. Any lines longer than {MAX_LINE_LENGTH} characters will be truncated. For image files, the tool will display the image for you.
 
-## WriteFile file_path content description
+## WriteFile path content description
 
 Write a file to the local filesystem. Overwrites the existing file if there is one.
 Provide a short description of the change.
