@@ -172,13 +172,6 @@ Example:
   Grep "function.*hello" /path/to/repo  # Find files containing functions with "hello" in their name
   Grep "console\\.log" /path/to/repo --include="*.js"  # Find JS files with console.log statements
 
-## RunCommand path command arguments?
-
-Runs a command that is supported in codemcp.toml, typically providing a
-way to do things like format, lint, test, typecheck or build.  This does
-NOT support arbitrary code execution, ONLY call with valid commands as
-described by InitProject.
-
 ## RunCommand path command_type arguments?
 
 Runs a command.  This does NOT support arbitrary code execution, ONLY call
@@ -187,7 +180,7 @@ with this set of valid commands: {command_help}
 ## Summary
 
 Args:
-    command: The subcommand to execute (ReadFile, WriteFile, EditFile, LS, InitProject, Format, Lint, RunTests)
+    command: The subcommand to execute (ReadFile, WriteFile, EditFile, LS, InitProject, RunCommand)
     path: The path to the file or directory to operate on
     content: Content for WriteFile command
     old_string: String to replace for EditFile command
@@ -195,7 +188,7 @@ Args:
     offset: Line offset for ReadFile command
     limit: Line limit for ReadFile command
     description: Short description of the change (for WriteFile/EditFile)
-    test_selector: Optional selector for RunTests command
+    arguments: A list of string arguments for RunCommand command
 """
         global_prompt = ""
         format_command_str = ""
