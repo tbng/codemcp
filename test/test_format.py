@@ -157,19 +157,28 @@ class TestFormat(TestCase):
         """Test successful code formatting"""
         # Create a config file
         self.create_config_file()
-
-        # Configure the mock to not show changes after formatting
-        mock_result = MagicMock()
-        mock_result.stdout = "Formatting successful"
-        self.mock_run_command.return_value = mock_result
-
-        # Mark git status as having no changes
-        self.mock_run_command.side_effect = lambda cmd, **kwargs: (
-            MagicMock(stdout="")
-            if cmd == ["git", "status", "--porcelain"]
-            else MagicMock(stdout="Formatting successful")
-        )
-
+        
+        # Set up responses for different commands
+        def run_command_side_effect(*args, **kwargs):
+            cmd = args[0]
+            mock_result = MagicMock()
+            
+            if cmd[0:2] == ["git", "rev-parse"]:
+                # Return the repo root
+                mock_result.stdout = self.temp_dir.name + "\n"
+            elif cmd[0:2] == ["git", "status"]:
+                # Return empty status (no changes)
+                mock_result.stdout = ""
+            elif cmd == ["./run_format.sh"]:
+                # Format command output
+                mock_result.stdout = "Formatting successful"
+            else:
+                mock_result.stdout = ""
+                
+            return mock_result
+            
+        self.mock_run_command.side_effect = run_command_side_effect
+        
         result = format_code(self.temp_dir.name)
         self.assertEqual(result, "Code formatting successful:\nFormatting successful")
 
