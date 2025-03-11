@@ -36,13 +36,13 @@ class TestFormat(TestCase):
         # Patch run_command
         self.run_command_patch = patch("codemcp.tools.format.run_command")
         self.mock_run_command = self.run_command_patch.start()
-        
+
         # Set up a default return value for run_command
         mock_result = MagicMock()
         mock_result.stdout = ""
         mock_result.stderr = ""
         self.mock_run_command.return_value = mock_result
-        
+
         self.addCleanup(self.run_command_patch.stop)
 
         # Patch normalize_file_path to return the input path for simplicity
@@ -54,18 +54,18 @@ class TestFormat(TestCase):
     def create_config_file(self, format_command=None):
         """Create a test codemcp.toml file with the specified format command"""
         config_path = os.path.join(self.temp_dir.name, "codemcp.toml")
-        
+
         if format_command is None:
             format_command = ["./run_format.sh"]
-            
+
         config_content = "[commands]\n"
         if format_command:
             command_str = str(format_command).replace("'", '"')
             config_content += f"format = {command_str}\n"
-        
+
         with open(config_path, "w") as f:
             f.write(config_content)
-        
+
         return config_path
 
     def test_get_format_command_success(self):
@@ -73,7 +73,7 @@ class TestFormat(TestCase):
         # Create a config file with a format command
         expected_command = ["./run_format.sh"]
         self.create_config_file(expected_command)
-        
+
         # Call the function and check result
         result = _get_format_command(self.temp_dir.name)
         self.assertEqual(result, expected_command)
@@ -84,7 +84,7 @@ class TestFormat(TestCase):
         config_path = os.path.join(self.temp_dir.name, "codemcp.toml")
         with open(config_path, "w") as f:
             f.write("[commands]\n")
-        
+
         # Call the function and check result
         result = _get_format_command(self.temp_dir.name)
         self.assertIsNone(result)
@@ -94,7 +94,7 @@ class TestFormat(TestCase):
         # Call the function with a directory that doesn't have a config file
         empty_dir = os.path.join(self.temp_dir.name, "empty")
         os.makedirs(empty_dir, exist_ok=True)
-        
+
         result = _get_format_command(empty_dir)
         self.assertIsNone(result)
 
@@ -104,10 +104,10 @@ class TestFormat(TestCase):
         mock_result = MagicMock()
         mock_result.stdout = " M modified_file.py\n?? new_file.py\n"
         self.mock_run_command.return_value = mock_result
-        
+
         result = _check_for_changes(self.temp_dir.name)
         self.assertTrue(result)
-        
+
         # Verify the git status command was called
         self.mock_run_command.assert_any_call(
             ["git", "status", "--porcelain"],
@@ -123,7 +123,7 @@ class TestFormat(TestCase):
         mock_result = MagicMock()
         mock_result.stdout = ""
         self.mock_run_command.return_value = mock_result
-        
+
         result = _check_for_changes(self.temp_dir.name)
         self.assertFalse(result)
 
@@ -131,18 +131,19 @@ class TestFormat(TestCase):
         """Test successful code formatting"""
         # Create a config file
         self.create_config_file()
-        
+
         # Configure the mock to not show changes after formatting
         mock_result = MagicMock()
         mock_result.stdout = "Formatting successful"
         self.mock_run_command.return_value = mock_result
-        
+
         # Mark git status as having no changes
         self.mock_run_command.side_effect = lambda cmd, **kwargs: (
-            MagicMock(stdout="") if cmd == ["git", "status", "--porcelain"] else 
-            MagicMock(stdout="Formatting successful")
+            MagicMock(stdout="")
+            if cmd == ["git", "status", "--porcelain"]
+            else MagicMock(stdout="Formatting successful")
         )
-        
+
         result = format_code(self.temp_dir.name)
         self.assertEqual(result, "Code formatting successful:\nFormatting successful")
 
@@ -150,22 +151,22 @@ class TestFormat(TestCase):
         """Test code formatting that makes changes to files"""
         # Create a config file
         self.create_config_file()
-        
+
         # Configure mocks to show changes after formatting
         def side_effect(cmd, **kwargs):
             if cmd == ["git", "status", "--porcelain"]:
                 return MagicMock(stdout=" M modified_file.py\n")
             else:
                 return MagicMock(stdout="Formatting successful")
-                
+
         self.mock_run_command.side_effect = side_effect
-        
+
         result = format_code(self.temp_dir.name)
         self.assertEqual(
-            result, 
-            "Code formatting successful and changes committed:\nFormatting successful"
+            result,
+            "Code formatting successful and changes committed:\nFormatting successful",
         )
-        
+
         # Verify commit_changes was called
         self.mock_commit_changes.assert_called_with(
             self.temp_dir.name, "Auto-commit formatting changes"
@@ -177,30 +178,33 @@ class TestFormat(TestCase):
         config_path = os.path.join(self.temp_dir.name, "codemcp.toml")
         with open(config_path, "w") as f:
             f.write("[commands]\n")
-        
+
         result = format_code(self.temp_dir.name)
         self.assertEqual(result, "Error: No format command configured in codemcp.toml")
 
     def test_format_code_directory_not_found(self):
         """Test code formatting with nonexistent directory"""
         nonexistent_dir = "/path/does/not/exist"
-        
+
         # Patch os.path.exists to return False for the nonexistent directory
         with patch("os.path.exists", return_value=False):
             result = format_code(nonexistent_dir)
-            self.assertEqual(result, f"Error: Directory does not exist: {nonexistent_dir}")
+            self.assertEqual(
+                result, f"Error: Directory does not exist: {nonexistent_dir}"
+            )
 
     def test_format_code_command_failure(self):
         """Test code formatting when the format command fails"""
         # Create a config file
         self.create_config_file()
-        
+
         # Configure the mock to fail when running the format command
         from subprocess import CalledProcessError
+
         error = CalledProcessError(1, ["./run_format.sh"])
         error.stderr = "Command failed: syntax error"
         self.mock_run_command.side_effect = error
-        
+
         result = format_code(self.temp_dir.name)
         self.assertIn("Error:", result)
         self.assertIn("Format command failed with exit code 1", result)
@@ -209,19 +213,19 @@ class TestFormat(TestCase):
         """Test code formatting when commit fails after changes"""
         # Create a config file
         self.create_config_file()
-        
+
         # Configure mocks to show changes after formatting
         def side_effect(cmd, **kwargs):
             if cmd == ["git", "status", "--porcelain"]:
                 return MagicMock(stdout=" M modified_file.py\n")
             else:
                 return MagicMock(stdout="Formatting successful")
-                
+
         self.mock_run_command.side_effect = side_effect
-        
+
         # Configure commit to fail
         self.mock_commit_changes.return_value = (False, "Commit failed: merge conflict")
-        
+
         result = format_code(self.temp_dir.name)
         self.assertIn("Code formatting successful but failed to commit changes", result)
         self.assertIn("Commit error: Commit failed: merge conflict", result)
