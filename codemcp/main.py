@@ -186,6 +186,7 @@ async def codemcp(
             "pattern": pattern,
             "path": path,
             "include": include,
+            "test_selector": test_selector,
             # Include backward compatibility parameters
             "old_str": old_str,
             "new_str": new_str,
