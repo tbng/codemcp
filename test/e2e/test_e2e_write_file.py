@@ -178,7 +178,7 @@ nothing to commit, working tree clean
                 "codemcp",
                 {
                     "command": "WriteFile",
-                    "file_path": untracked_file_path,
+                    "path": untracked_file_path,
                     "content": new_content,
                     "description": "Attempt to write to untracked file",
                 },
