@@ -100,17 +100,21 @@ class TestLS(TestCase):
 
     def test_ls_directory_basic(self):
         """Test basic directory listing functionality"""
-        result = ls_directory(self.test_dir)
-        normalized_result = self.normalize_result(result)
+        # Mock the is_git_repository and check_edit_permission functions directly in the ls module
+        with patch('codemcp.tools.ls.is_git_repository', return_value=True), \
+             patch('codemcp.tools.ls.check_edit_permission', return_value=(True, "Permission granted.")):
+            
+            result = ls_directory(self.test_dir)
+            normalized_result = self.normalize_result(result)
 
-        # Check that the output contains the expected files and directories
-        self.assertIn("file1.txt", normalized_result)
-        self.assertIn("file2.txt", normalized_result)
-        self.assertIn("subdir", normalized_result)
+            # Check that the output contains the expected files and directories
+            self.assertIn("file1.txt", normalized_result)
+            self.assertIn("file2.txt", normalized_result)
+            self.assertIn("subdir", normalized_result)
 
-        # Check that hidden files and __pycache__ are excluded
-        self.assertNotIn(".hidden_file", normalized_result)
-        self.assertNotIn("__pycache__", normalized_result)
+            # Check that hidden files and __pycache__ are excluded
+            self.assertNotIn(".hidden_file", normalized_result)
+            self.assertNotIn("__pycache__", normalized_result)
 
     def test_ls_directory_nonexistent(self):
         """Test listing a nonexistent directory"""
