@@ -37,7 +37,7 @@ async def codemcp(
     include: str | None = None,
     test_selector: str | None = None,
     command_type: str | None = None,
-    arguments: str | None = None,
+    arguments: list[str] | None = None,
     old_str: str | None = None,  # Added for backward compatibility
     new_str: str | None = None,  # Added for backward compatibility
 ) -> str:
