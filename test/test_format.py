@@ -100,15 +100,28 @@ class TestFormat(TestCase):
 
     def test_check_for_changes_with_changes(self):
         """Test checking for changes when there are changes"""
-        # Configure the mock to show changes
-        mock_result = MagicMock()
-        mock_result.stdout = " M modified_file.py\n?? new_file.py\n"
-        self.mock_run_command.return_value = mock_result
-
+        # Set up responses for different git commands
+        def run_command_side_effect(*args, **kwargs):
+            cmd = args[0]
+            mock_result = MagicMock()
+            
+            if cmd[0:2] == ["git", "rev-parse"]:
+                # Return the repo root
+                mock_result.stdout = self.temp_dir.name + "\n"
+            elif cmd[0:2] == ["git", "status"]:
+                # Return changes in git status
+                mock_result.stdout = " M modified_file.py\n?? new_file.py\n"
+            else:
+                mock_result.stdout = ""
+                
+            return mock_result
+            
+        self.mock_run_command.side_effect = run_command_side_effect
+        
         result = _check_for_changes(self.temp_dir.name)
         self.assertTrue(result)
-
-        # Verify the git status command was called
+        
+        # Verify the git status command was called with the repo root from rev-parse
         self.mock_run_command.assert_any_call(
             ["git", "status", "--porcelain"],
             cwd=self.temp_dir.name,
