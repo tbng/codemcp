@@ -21,6 +21,30 @@ class DirectoryCreationTest(MCPEndToEndTestCase):
         # Verify directory doesn't exist
         self.assertFalse(os.path.exists(nested_path), "Nested directory should not exist initially")
         
+        # Make sure the parent directory (test_nest) is tracked to avoid git permission issues
+        parent_dir = os.path.join(self.temp_dir.name, "test_nest")
+        os.makedirs(parent_dir, exist_ok=True)
+        
+        # Add a dummy file to make sure the directory is tracked
+        dummy_file = os.path.join(parent_dir, "dummy.txt")
+        with open(dummy_file, "w") as f:
+            f.write("Dummy file to ensure parent directory is tracked")
+            
+        # Add the parent directory to git
+        subprocess.run(
+            ["git", "add", dummy_file],
+            cwd=self.temp_dir.name,
+            env=self.env,
+            check=True,
+        )
+        
+        subprocess.run(
+            ["git", "commit", "-m", "Add parent directory for WriteFile test"],
+            cwd=self.temp_dir.name,
+            env=self.env,
+            check=True,
+        )
+        
         content = "Content in a deeply nested directory"
         
         async with self.create_client_session() as session:
