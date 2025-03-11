@@ -9,7 +9,9 @@ __all__ = [
 ]
 
 
-def run_command(project_dir: str, command_type: str, arguments: Optional[str] = None) -> str:
+def run_command(
+    project_dir: str, command_type: str, arguments: Optional[str] = None
+) -> str:
     """Run a command that is configured in codemcp.toml.
 
     Args:
@@ -21,15 +23,12 @@ def run_command(project_dir: str, command_type: str, arguments: Optional[str] = 
         A string containing the result of the command operation
     """
     command_list = get_command_from_config(project_dir, command_type)
-    
+
     # If arguments are provided, append them to the command
     if arguments and command_list:
         command_list = command_list.copy()
         command_list.append(arguments)
-    
+
     return run_code_command(
-        project_dir, 
-        command_type, 
-        command_list, 
-        f"Auto-commit {command_type} changes"
+        project_dir, command_type, command_list, f"Auto-commit {command_type} changes"
     )
