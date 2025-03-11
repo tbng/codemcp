@@ -131,6 +131,17 @@ class TestRunCommand(TestCase):
             result, f"Code {command_type} successful:\nTests executed successfully"
         )
 
+    def test_get_command_from_config_missing(self):
+        """Test retrieving command when it's not in the config"""
+        # Create a config file without the specific command
+        config_path = os.path.join(self.temp_dir.name, "codemcp.toml")
+        with open(config_path, "w") as f:
+            f.write('[commands]\ntest = ["./run_test.sh"]\n')
+
+        # Call the function and check result
+        result = get_command_from_config(self.temp_dir.name, "format")
+        self.assertIsNone(result)
+
     def test_get_command_from_config_no_config(self):
         """Test retrieving command when config file doesn't exist"""
         # Call the function with a directory that doesn't have a config file
