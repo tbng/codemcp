@@ -11,6 +11,12 @@ from ..common import normalize_file_path
 from ..git import is_git_repository, commit_changes
 from ..shell import run_command
 
+__all__ = [
+    "get_command_from_config",
+    "check_for_changes",
+    "run_code_command",
+]
+
 
 def get_command_from_config(project_dir: str, command_name: str) -> Optional[List[str]]:
     """Get a command from the codemcp.toml file.
