@@ -286,6 +286,14 @@ async def codemcp(
 
         return run_tests(file_path, test_selector)
 
+    if command == "RunCommand":
+        if file_path is None:
+            return "Error: file_path is required for RunCommand command"
+        if command_type is None:
+            return "Error: command_type is required for RunCommand command"
+
+        return run_command(file_path, command_type, arguments)
+
     if command == "Grep":
         if pattern is None:
             return "Error: pattern is required for Grep command"
