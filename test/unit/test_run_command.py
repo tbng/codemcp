@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
 import os
-import tempfile
 import subprocess
+import tempfile
 from unittest.mock import MagicMock, patch
 
 from expecttest import TestCase
@@ -287,7 +287,7 @@ class TestRunCommand(TestCase):
 
         result = run_command(self.temp_dir.name, command_type)
         self.assertIn("Error:", result)
-        self.assertIn(f"Format command failed with exit code 1", result)
+        self.assertIn("Format command failed with exit code 1", result)
 
     def test_run_command_commit_failure(self):
         """Test when commit fails after changes"""
