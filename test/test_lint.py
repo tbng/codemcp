@@ -153,7 +153,7 @@ class TestLint(TestCase):
 
         self.mock_run_command.side_effect = run_command_side_effect
 
-        result = _check_for_changes(self.temp_dir.name)
+        result = check_for_changes(self.temp_dir.name)
         self.assertFalse(result)
 
     def test_lint_code_success(self):
