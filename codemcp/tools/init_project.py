@@ -11,6 +11,25 @@ __all__ = [
 ]
 
 
+def _generate_command_docs(command_docs: dict) -> str:
+    """Generate documentation for commands from the command_docs dictionary.
+
+    Args:
+        command_docs: A dictionary of command names to their documentation
+
+    Returns:
+        A formatted string with command documentation
+    """
+    if not command_docs:
+        return ""
+
+    docs = []
+    for cmd_name, doc in command_docs.items():
+        docs.append(f"\n- {cmd_name}: {doc}")
+
+    return "\n\nCommand documentation:" + "".join(docs)
+
+
 def init_project(directory: str) -> str:
     """Initialize a project by reading the codemcp.toml TOML file and returning
     a combined system prompt.
@@ -38,6 +57,7 @@ def init_project(directory: str) -> str:
 
         global_prompt = ""
         command_help = ""
+        command_docs = {}
         rules_config = {}
 
         # Check if codemcp.toml file exists
@@ -50,7 +70,14 @@ def init_project(directory: str) -> str:
                 if "global_prompt" in rules_config:
                     global_prompt = rules_config["global_prompt"]
 
-                command_help = ", ".join(rules_config.get("commands", {}).keys())
+                # Extract commands and their documentation
+                command_list = rules_config.get("commands", {})
+                command_help = ", ".join(command_list.keys())
+
+                # Process command documentation
+                for cmd_name, cmd_config in command_list.items():
+                    if isinstance(cmd_config, dict) and "doc" in cmd_config:
+                        command_docs[cmd_name] = cmd_config["doc"]
 
             except Exception as e:
                 return f"Error reading codemcp.toml file: {e!s}"
@@ -178,6 +205,7 @@ Example:
 
 Runs a command.  This does NOT support arbitrary code execution, ONLY call
 with this set of valid commands: {command_help}
+{_generate_command_docs(command_docs)}
 
 ## Summary
 
@@ -195,7 +223,9 @@ Args:
         format_command_str = ""
         # Check if format command is configured
         if "commands" in rules_config and "format" in rules_config["commands"]:
-            format_command_str = "\n\nYou can also run code formatting using the Format tool."
+            format_command_str = (
+                "\n\nYou can also run code formatting using the Format tool."
+            )
 
         # Combine system prompt, global prompt, and format command
         combined_prompt = system_prompt

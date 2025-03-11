@@ -95,20 +95,66 @@ class InitProjectTestCase(unittest.TestCase):
         self.assertIn("This is a global prompt without formatter config.", result)
         self.assertNotIn("run code formatting using the Format tool", result)
 
-    def test_format_exposed_when_configured(self):
-        """Test that the format command is exposed in the system prompt when a formatter is configured."""
-        # Create a codemcp.toml file with format command
+    def test_command_docs_exposed_when_configured(self):
+        """Test that command documentation is included in the system prompt when configured."""
+        # Create a codemcp.toml file with command documentation
         rules_file_path = os.path.join(self.dir_path, "codemcp.toml")
         with open(rules_file_path, "w") as f:
             f.write("""
-global_prompt = "This is a global prompt with formatter config."
+global_prompt = "This is a global prompt with command docs."
 [commands]
 format = ["./run_format.sh"]
+[commands.test]
+command = ["./run_test.sh"]
+doc = "Accepts a pytest-style test selector as an argument to run a specific test."
 """)
 
         result = init_project(self.dir_path)
-        self.assertIn("This is a global prompt with formatter config.", result)
-        self.assertIn("You can also run code formatting using the Format tool", result)
+        self.assertIn("This is a global prompt with command docs.", result)
+        self.assertIn("Command documentation:", result)
+        self.assertIn(
+            "- test: Accepts a pytest-style test selector as an argument to run a specific test.",
+            result,
+        )
+
+    def test_multiple_command_docs(self):
+        """Test handling of multiple command documentations."""
+        # Create a codemcp.toml file with multiple command documentations
+        rules_file_path = os.path.join(self.dir_path, "codemcp.toml")
+        with open(rules_file_path, "w") as f:
+            f.write("""
+global_prompt = "This is a global prompt with multiple command docs."
+[commands]
+format = ["./run_format.sh"]
+[commands.test]
+command = ["./run_test.sh"]
+doc = "Accepts a pytest-style test selector."
+[commands.lint]
+command = ["./run_lint.sh"]
+doc = "Runs linting tools on the codebase."
+""")
+
+        result = init_project(self.dir_path)
+        self.assertIn("This is a global prompt with multiple command docs.", result)
+        self.assertIn("Command documentation:", result)
+        self.assertIn("- test: Accepts a pytest-style test selector.", result)
+        self.assertIn("- lint: Runs linting tools on the codebase.", result)
+
+    def test_no_command_docs(self):
+        """Test that no command documentation is included when none is configured."""
+        # Create a codemcp.toml file without command documentation
+        rules_file_path = os.path.join(self.dir_path, "codemcp.toml")
+        with open(rules_file_path, "w") as f:
+            f.write("""
+global_prompt = "This is a global prompt without command docs."
+[commands]
+format = ["./run_format.sh"]
+test = ["./run_test.sh"]
+""")
+
+        result = init_project(self.dir_path)
+        self.assertIn("This is a global prompt without command docs.", result)
+        self.assertNotIn("Command documentation:", result)
 
 
 if __name__ == "__main__":
