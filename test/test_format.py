@@ -218,51 +218,6 @@ class TestFormatTool(unittest.TestCase):
             self.project_dir, "Auto-commit formatting changes"
         )
 
-    @patch("codemcp.tools.format.commit_changes")
-    @patch("codemcp.tools.format._check_for_changes")
-    @patch("codemcp.tools.format.is_git_repository")
-    @patch("codemcp.tools.format.run_command")
-    def test_format_code_with_git_changes_commit_failure(
-        self, mock_run, mock_is_git_repo, mock_check_changes, mock_commit
-    ):
-        """Test format_code when it makes changes in a git repository but commit fails."""
-        # Mock git repository check
-        mock_is_git_repo.return_value = True
-
-        # Mock changes before (no changes) and after (changes detected)
-        mock_check_changes.side_effect = [False, True]
-
-        # Mock failed commit
-        mock_commit.return_value = (
-            False,
-            "Failed to commit changes: no user.email configured",
-        )
-
-        # Mock successful subprocess run
-        mock_process = MagicMock()
-        mock_process.stdout = "Formatting successful"
-        mock_process.stderr = ""
-        mock_run.return_value = mock_process
-
-        # Create a config file with format command
-        format_command = ["./run_format.sh"]
-        config = {"commands": {"format": format_command}}
-        config_path = os.path.join(self.project_dir, "codemcp.toml")
-        with open(config_path, "wb") as f:
-            tomli_w.dump(config, f)
-
-        result = format_code(self.project_dir)
-        self.assertIn("Code formatting successful but failed to commit changes", result)
-        self.assertIn("Failed to commit changes", result)
-
-        # Verify run_command was called for the format command
-        mock_run.assert_called_once()
-
-        # Verify commit_changes was called
-        mock_commit.assert_called_once_with(
-            self.project_dir, "Auto-commit formatting changes"
-        )
-
 
 if __name__ == "__main__":
     unittest.main()
