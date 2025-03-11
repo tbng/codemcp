@@ -6,14 +6,11 @@ import os
 from mcp.server.fastmcp import Context, FastMCP
 
 from .tools.edit_file import edit_file_content
-from .tools.format import format_code
 from .tools.grep import grep_files
 from .tools.init_project import init_project
-from .tools.lint import lint_code
 from .tools.ls import ls_directory
 from .tools.read_file import read_file_content
 from .tools.run_command import run_command
-from .tools.run_tests import run_tests
 from .tools.write_file import write_file_content
 
 # Initialize FastMCP server
