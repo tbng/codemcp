@@ -36,7 +36,9 @@ class TestDirectoryCreation(TestCase):
         self.addCleanup(self.git_base_dir_patch.stop)
 
         # Create patch for commit operations
-        self.commit_changes_patch_write = patch("codemcp.tools.write_file.commit_changes")
+        self.commit_changes_patch_write = patch(
+            "codemcp.tools.write_file.commit_changes"
+        )
         self.mock_commit_changes_write = self.commit_changes_patch_write.start()
         self.mock_commit_changes_write.return_value = (True, "Mocked commit success")
         self.addCleanup(self.commit_changes_patch_write.stop)
@@ -48,7 +50,9 @@ class TestDirectoryCreation(TestCase):
         self.addCleanup(self.commit_changes_patch_edit.stop)
 
         # Create patch for pending commit operations
-        self.commit_pending_patch = patch("codemcp.tools.file_utils.commit_pending_changes")
+        self.commit_pending_patch = patch(
+            "codemcp.tools.file_utils.commit_pending_changes"
+        )
         self.mock_commit_pending = self.commit_pending_patch.start()
         self.mock_commit_pending.return_value = (True, "No pending changes to commit")
         self.addCleanup(self.commit_pending_patch.stop)
@@ -61,7 +65,9 @@ class TestDirectoryCreation(TestCase):
     def test_write_file_creates_nested_directories(self):
         """Test that write_file_content creates nested directories"""
         # Path with multiple levels of nested directories that don't exist
-        nested_dirs = os.path.join(self.temp_dir.name, "level1", "level2", "level3", "level4")
+        nested_dirs = os.path.join(
+            self.temp_dir.name, "level1", "level2", "level3", "level4"
+        )
         file_path = os.path.join(nested_dirs, "test_file.txt")
         content = "Test content in deeply nested directory"
 
@@ -73,10 +79,10 @@ class TestDirectoryCreation(TestCase):
 
         # Check the result
         self.assertIn(f"Successfully wrote to {file_path}", result)
-        
+
         # Verify directories were created
         self.assertTrue(os.path.exists(nested_dirs))
-        
+
         # Verify file was created with correct content
         self.assertTrue(os.path.exists(file_path))
         with open(file_path, "r") as f:
@@ -97,24 +103,24 @@ class TestDirectoryCreation(TestCase):
 
         # Check the result
         self.assertIn(f"Successfully created {file_path}", result)
-        
+
         # Verify directories were created
         self.assertTrue(os.path.exists(nested_dirs))
-        
+
         # Verify file was created with correct content
         self.assertTrue(os.path.exists(file_path))
         with open(file_path, "r") as f:
             self.assertEqual(f.read(), content)
-            
+
     def test_edit_file_git_commit_on_new_file(self):
         """Test that edit_file_content commits changes when creating a new file"""
         # Path to a new file
         file_path = os.path.join(self.temp_dir.name, "commit_test", "new_file.txt")
         content = "Content that should be committed"
-        
+
         # Create the file with edit_file_content
         edit_file_content(file_path, "", content, description="Test commit")
-        
+
         # Verify that commit_changes was called
         self.mock_commit_changes_edit.assert_called_once()
         args, kwargs = self.mock_commit_changes_edit.call_args
