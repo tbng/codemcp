@@ -121,7 +121,7 @@ def run_code_command(
                 command_key = "lint"
             elif command_name == "formatting":
                 command_key = "format"
-                
+
             return f"Error: No {command_key} command configured in codemcp.toml"
 
         # Check if directory is in a git repository
@@ -173,13 +173,13 @@ def run_code_command(
                 command_key = "Lint"
             elif command_name == "formatting":
                 command_key = "Format"
-                
-            error_msg = (
-                f"{command_key} command failed with exit code {e.returncode}:\n{e.stderr}"
-            )
+
+            error_msg = f"{command_key} command failed with exit code {e.returncode}:\n{e.stderr}"
             # Note: run_command already logs the command and stderr at debug level
             # We just need to log the error summary at error level
-            logging.error(f"{command_name.title()} command failed with exit code {e.returncode}")
+            logging.error(
+                f"{command_name.title()} command failed with exit code {e.returncode}"
+            )
             return f"Error: {error_msg}"
 
     except Exception as e:

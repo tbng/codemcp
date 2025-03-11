@@ -14,7 +14,7 @@ __all__ = [
     "edit_file_content",
     "format_code",
     "get_command_from_config",
-    "grep_files", 
+    "grep_files",
     "init_project",
     "lint_code",
     "ls_directory",
