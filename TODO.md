@@ -10,7 +10,7 @@ CODE QUAL
 - General logging to repro problems (CLI logging helps, but some signpost
   logging would be good too)
 - Stop using catch all exceptions
-- Split E2E tests into a test per file
+- Move E2E tests to directory
 
 TOOLS:
 - Linter integration
