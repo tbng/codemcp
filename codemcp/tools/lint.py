@@ -33,8 +33,5 @@ def lint_code(project_dir: str) -> str:
     """
     lint_command = _get_lint_command(project_dir)
     return run_code_command(
-        project_dir, 
-        "linting", 
-        lint_command, 
-        "Auto-commit linting changes"
+        project_dir, "linting", lint_command, "Auto-commit linting changes"
     )

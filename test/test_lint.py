@@ -47,7 +47,9 @@ class TestLint(TestCase):
         self.addCleanup(self.run_command_patch.stop)
 
         # Patch normalize_file_path in code_command.py
-        self.normalize_path_patch = patch("codemcp.tools.code_command.normalize_file_path")
+        self.normalize_path_patch = patch(
+            "codemcp.tools.code_command.normalize_file_path"
+        )
         self.mock_normalize_path = self.normalize_path_patch.start()
         self.mock_normalize_path.side_effect = lambda x: x
         self.addCleanup(self.normalize_path_patch.stop)

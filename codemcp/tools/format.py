@@ -33,8 +33,5 @@ def format_code(project_dir: str) -> str:
     """
     format_command = _get_format_command(project_dir)
     return run_code_command(
-        project_dir, 
-        "formatting", 
-        format_command, 
-        "Auto-commit formatting changes"
+        project_dir, "formatting", format_command, "Auto-commit formatting changes"
     )
