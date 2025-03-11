@@ -611,6 +611,58 @@ nothing to commit, working tree clean
                         "SECURITY VULNERABILITY: No commit history found for the file after editing",
                     )
 
+                if git_log:
+                    # Get the first/earliest commit for this file
+                    first_commit = git_log[-1] if git_log else None
+                    print(f"First commit that includes this file: {first_commit}")
+
+                    if first_commit:
+                        # Try to extract the original content
+                        original_content_from_git = (
+                            subprocess.run(
+                                [
+                                    "git",
+                                    "show",
+                                    f"{first_commit}:{os.path.basename(untracked_file_path)}",
+                                ],
+                                cwd=self.temp_dir.name,
+                                env=self.env,
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE,
+                                check=False,
+                            )
+                            .stdout.decode()
+                            .strip()
+                        )
+
+                        print(
+                            f"Content from first commit: '{original_content_from_git}'",
+                        )
+
+                        # POTENTIAL SECURITY ISSUE:
+                        # If we can't recover the original content, or if the first commit already has
+                        # the modified content, then we've lost the original untracked content forever
+                        original_content_recoverable = (
+                            original_content_from_git == original_content
+                        )
+                        print(
+                            f"Original content recoverable from git? {original_content_recoverable}",
+                        )
+
+                        self.assertEqual(
+                            original_content_from_git,
+                            original_content,
+                            "SECURITY VULNERABILITY: Original content of untracked file was lost during edit",
+                        )
+                    else:
+                        self.fail(
+                            "SECURITY VULNERABILITY: File is tracked but has no commits in git history",
+                        )
+                else:
+                    self.fail(
+                        "SECURITY VULNERABILITY: No commit history found for the file after editing",
+                    )
+
     async def test_write_file_outside_tracked_paths(self):
         """Test that codemcp properly handles writing to paths outside tracked paths."""
         # Create a subdirectory but don't add it to git
