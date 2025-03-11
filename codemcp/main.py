@@ -144,7 +144,7 @@ async def codemcp(
 
     Args:
         ctx: The MCP context
-        command: The subcommand to execute (ReadFile, WriteFile, EditFile, LS, InitProject, Format, RunTests)
+        command: The subcommand to execute (ReadFile, WriteFile, EditFile, LS, InitProject, Format, Lint, RunTests)
         file_path: The path to the file or directory to operate on
         content: Content for WriteFile command
         old_string: String to replace for EditFile command
