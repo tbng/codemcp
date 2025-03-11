@@ -33,6 +33,7 @@ async def codemcp(
     pattern: str | None = None,
     path: str | None = None,
     include: str | None = None,
+    test_selector: str | None = None,
     old_str: str | None = None,  # Added for backward compatibility
     new_str: str | None = None,  # Added for backward compatibility
 ) -> str:
