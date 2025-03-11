@@ -1,19 +1,17 @@
 BIGGEST PROBLEMS
-- Branchy git structure for ease of review
-  - This is less pressing now with the 'git diff origin/main' trick
-  - Trying out develop/main branch split, maybe this is basically what you
-    want except you just don't get the final proposed commit message
+- Git structure seems good, maybe want a way to make the LLM generate the
+  commit message
 - Audit the tests to make sure they actually do the right thing
 
 CODE QUAL
 - Setup types
 - General logging to repro problems (CLI logging helps, but some signpost
   logging would be good too)
+    - An attempt was done at e6b49ee but I think it's overlogging, and the
+      logging format is not right
 - Stop using catch all exceptions
-- Move E2E tests to directory
 
 TOOLS:
-- Linter integration
 - Typecheck/build integration
 - Scrape webpage and add to context
 - Explicitly add file to context
@@ -27,18 +25,6 @@ FEATURES
 SHARPEN THE SAW
 - Use the Anthropic export data to do some token counting / analysis
 
-~~~~
-
-HARD TO FIX
-- Deal with output length limit from Claude Desktop (cannot do an edit longer
-  than the limit)
-
-UNCLEAR PAYOFF
-- More faithfully copy claude code's line numbering algorithm
-- Figure out if "compact output" is a good idea
-- Figure out how to make Claude stop trying to do things I don't want it to do
-  (like running tests)
-
 LLM AFFORDANCE
 - Support this style of grep
 {
@@ -50,3 +36,15 @@ LLM AFFORDANCE
   needs to review changes)
 - Make CLAUDE.md system prompt work (let's be compat with claude code)
 - Infer my codemcp.toml
+
+~~~~
+
+HARD TO FIX
+- Deal with output length limit from Claude Desktop (cannot do an edit longer
+  than the limit)
+
+UNCLEAR PAYOFF
+- More faithfully copy claude code's line numbering algorithm
+- Figure out if "compact output" is a good idea
+- Figure out how to make Claude stop trying to do things I don't want it to do
+  (like running tests)
