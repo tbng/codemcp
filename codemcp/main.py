@@ -68,7 +68,11 @@ async def codemcp(
     # Check if subtool exists
     if subtool not in expected_params:
         return f"Unknown subtool: {subtool}. Available subtools: {', '.join(expected_params.keys())}"
-
+        
+    # Handle string arguments - convert to a list with one element
+    if isinstance(arguments, str):
+        arguments = [arguments]
+        
     # Get all provided non-None parameters
     provided_params = {
         param: value
