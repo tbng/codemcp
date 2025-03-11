@@ -133,9 +133,7 @@ nothing to commit, working tree clean
             )
 
             # Get the result content
-            (
-                result.content if hasattr(result, "content") else str(result)
-            )
+            (result.content if hasattr(result, "content") else str(result))
 
             # Normalize the result
             self.normalize_path(result)

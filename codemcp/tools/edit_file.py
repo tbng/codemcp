@@ -684,7 +684,7 @@ def edit_file_content(
             directory = os.path.dirname(full_file_path)
             os.makedirs(directory, exist_ok=True)
             write_text_content(full_file_path, new_string)
-            
+
             # Commit the changes
             success, message = commit_changes(full_file_path, description)
             git_message = ""
@@ -692,7 +692,7 @@ def edit_file_content(
                 git_message = f"\nChanges committed to git: {description}"
             else:
                 git_message = f"\nFailed to commit changes to git: {message}"
-                
+
             return f"Successfully created {full_file_path}{git_message}"
 
         # Check if file exists
