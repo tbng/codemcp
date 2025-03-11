@@ -17,6 +17,7 @@ from .tools.write_file import write_file_content
 mcp = FastMCP("codemcp")
 
 
+# NB: If you edit this, also edit codemcp/tools/init_project.py
 @mcp.tool()
 async def codemcp(
     ctx: Context,
@@ -38,135 +39,10 @@ async def codemcp(
     old_str: str | None = None,  # Added for backward compatibility
     new_str: str | None = None,  # Added for backward compatibility
 ) -> str:
-    """This is a multipurpose tool that supports the following subcommands:
-
-    ## ReadFile file_path offset? limit?
-
-    Reads a file from the local filesystem. The file_path parameter must be an absolute path, not a relative path. By default, it reads up to ${MAX_LINES_TO_READ} lines starting from the beginning of the file. You can optionally specify a line offset and limit (especially handy for long files), but it's recommended to read the whole file by not providing these parameters. Any lines longer than ${MAX_LINE_LENGTH} characters will be truncated. For image files, the tool will display the image for you.
-
-    ## WriteFile file_path content description
-
-    Write a file to the local filesystem. Overwrites the existing file if there is one.
-    Provide a short description of the change.
-
-    Before using this tool:
-
-    1. Use the ReadFile tool to understand the file's contents and context
-
-    2. Directory Verification (only applicable when creating new files):
-       - Use the LS tool to verify the parent directory exists and is the correct location
-
-    ## EditFile file_path old_string new_string description
-
-    This is a tool for editing files. For larger edits, use the Write tool to overwrite files.
-    Provide a short description of the change.
-
-    Before using this tool:
-
-    1. Use the View tool to understand the file's contents and context
-
-    2. Verify the directory path is correct (only applicable when creating new files):
-       - Use the LS tool to verify the parent directory exists and is the correct location
-
-    To make a file edit, provide the following:
-    1. file_path: The absolute path to the file to modify (must be absolute, not relative)
-    2. old_string: The text to replace (must be unique within the file, and must match the file contents exactly, including all whitespace and indentation)
-    3. new_string: The edited text to replace the old_string
-
-    The tool will replace ONE occurrence of old_string with new_string in the specified file.
-
-    CRITICAL REQUIREMENTS FOR USING THIS TOOL:
-
-    1. UNIQUENESS: The old_string MUST uniquely identify the specific instance you want to change. This means:
-       - Include AT LEAST 3-5 lines of context BEFORE the change point
-       - Include AT LEAST 3-5 lines of context AFTER the change point
-       - Include all whitespace, indentation, and surrounding code exactly as it appears in the file
-
-    2. SINGLE INSTANCE: This tool can only change ONE instance at a time. If you need to change multiple instances:
-       - Make separate calls to this tool for each instance
-       - Each call must uniquely identify its specific instance using extensive context
-
-    3. VERIFICATION: Before using this tool:
-       - Check how many instances of the target text exist in the file
-       - If multiple instances exist, gather enough context to uniquely identify each one
-       - Plan separate tool calls for each instance
-
-    WARNING: If you do not follow these requirements:
-       - The tool will fail if old_string matches multiple locations
-       - The tool will fail if old_string doesn't match exactly (including whitespace)
-       - You may change the wrong instance if you don't include enough context
-
-    When making edits:
-       - Ensure the edit results in idiomatic, correct code
-       - Do not leave the code in a broken state
-       - Always use absolute file paths (starting with /)
-
-    If you want to create a new file, use:
-       - A new file path, including dir name if needed
-       - An empty old_string
-       - The new file's contents as new_string
-
-    Remember: when making multiple file edits in a row to the same file, you should prefer to send all edits in a single message with multiple calls to this tool, rather than multiple messages with a single call each.
-
-    ## LS directory_path
-
-    Lists files and directories in a given path. The path parameter must be an absolute path, not a relative path. You should generally prefer the Glob and Grep tools, if you know which directories to search.
-
-    ## Grep pattern path include?
-
-    Searches for files containing a specified pattern (regular expression) using git grep.
-    Files with a match are returned, up to a maximum of 100 files.
-    Note that this tool only works inside git repositories.
-
-    Example:
-      Grep "function.*hello" /path/to/repo  # Find files containing functions with "hello" in their name
-      Grep "console\\.log" /path/to/repo --include="*.js"  # Find JS files with console.log statements
-
-    ## InitProject directory_path
-
-    Initializes a project by reading the .codemcprules TOML file from the specified directory.
-    Returns instructions which you should IMMEDIATELY follow before continuing.
-
-    ## RunCommand directory_path command arguments?
-
-    Runs a command that is supported in codemcp.toml, typically providing a
-    way to do things like format, lint, test, typecheck or build.  This does
-    NOT support arbitrary code execution, ONLY call with valid commands as
-    described by InitProject.
-
-    Args:
-        ctx: The MCP context
-        command: The subcommand to execute (ReadFile, WriteFile, EditFile, LS, InitProject, RunCommand)
-        file_path: The path to the file or directory to operate on
-        content: Content for WriteFile command
-        old_string: String to replace for EditFile command
-        new_string: Replacement string for EditFile command
-        offset: Line offset for ReadFile command
-        limit: Line limit for ReadFile command
-        description: Short description of the change (for WriteFile/EditFile)
-        arguments: Extra arguments to pass to RunCommand
-        command_key = "test"
-
-    ## RunCommand directory_path command_type arguments?
-
-    Runs a command that is supported in codemcp.toml, typically providing a
-    way to do things like format, lint, test, typecheck or build.  This does
-    NOT support arbitrary code execution, ONLY call with valid commands as
-    described by InitProject.
-
-    Args:
-        ctx: The MCP context
-        command: The subcommand to execute (ReadFile, WriteFile, EditFile, LS, InitProject, RunCommand)
-        file_path: The path to the file or directory to operate on
-        content: Content for WriteFile command
-        old_string: String to replace for EditFile command
-        new_string: Replacement string for EditFile command
-        offset: Line offset for ReadFile command
-        limit: Line limit for ReadFile command
-        description: Short description of the change (for WriteFile/EditFile)
-        command_type: Type of command to run (e.g., "format", "lint", "test")
-        arguments: List of extra arguments to pass to RunCommand
-
+    """If and only if the user explicitly asks you to initialize codemcp with
+    directory_path, you should invoke this tool with arguments `InitProject
+    directory_path`.  This will return instructions which you should
+    IMMEDIATELY follow before continuing.
     """
     # Define expected parameters for each command
     expected_params = {
