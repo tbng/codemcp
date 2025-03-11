@@ -6,12 +6,12 @@ This document provides an overview of the architecture and design decisions of c
 
 The codemcp tool uses a TOML file (`codemcp.toml`) in the project root for configuration. This file has several sections:
 
-### Global Prompt
+### Project Prompt
 
-The `global_prompt` string is included in system prompts to provide project-specific instructions to Claude.
+The `project_prompt` string is included in system prompts to provide project-specific instructions to Claude.
 
 ```toml
-global_prompt = """
+project_prompt = """
 Project-specific instructions for Claude go here.
 """
 ```
@@ -45,7 +45,7 @@ codemcp provides several tools that Claude can use during interaction:
 When a project is initialized using `InitProject`, codemcp reads the `codemcp.toml` file and constructs a system prompt that includes:
 
 1. Default system instructions
-2. The project's `global_prompt`
+2. The project's `project_prompt`
 3. Instructions to use specific tools at appropriate times
 
 For example, if a format command is configured, the system prompt will include an instruction for Claude to use the Format tool when the task is complete.

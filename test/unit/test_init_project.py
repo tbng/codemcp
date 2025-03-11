@@ -44,10 +44,10 @@ class InitProjectTestCase(unittest.TestCase):
 
     def test_init_project_with_rules_file(self):
         """Test initializing a project with a codemcp.toml file."""
-        # Create a codemcp.toml file with a global_prompt
+        # Create a codemcp.toml file with a project_prompt
         rules_file_path = os.path.join(self.dir_path, "codemcp.toml")
         with open(rules_file_path, "w") as f:
-            f.write('global_prompt = "This is a custom global prompt."\n')
+            f.write('project_prompt = "This is a custom global prompt."\n')
 
         result = init_project(self.dir_path)
         # Check for a stable part of the system prompt and the custom global prompt
@@ -76,7 +76,7 @@ class InitProjectTestCase(unittest.TestCase):
         rules_file_path = os.path.join(self.dir_path, "codemcp.toml")
         with open(rules_file_path, "w") as f:
             f.write(
-                'global_prompt = "This is an invalid TOML file\n',
+                'project_prompt = "This is an invalid TOML file\n',
             )  # Missing closing quote
 
         result = init_project(self.dir_path)
@@ -88,7 +88,7 @@ class InitProjectTestCase(unittest.TestCase):
         rules_file_path = os.path.join(self.dir_path, "codemcp.toml")
         with open(rules_file_path, "w") as f:
             f.write(
-                'global_prompt = "This is a global prompt without formatter config."\n'
+                'project_prompt = "This is a global prompt without formatter config."\n'
             )
 
         result = init_project(self.dir_path)
@@ -101,7 +101,7 @@ class InitProjectTestCase(unittest.TestCase):
         rules_file_path = os.path.join(self.dir_path, "codemcp.toml")
         with open(rules_file_path, "w") as f:
             f.write("""
-global_prompt = "This is a global prompt with command docs."
+project_prompt = "This is a global prompt with command docs."
 [commands]
 format = ["./run_format.sh"]
 [commands.test]
@@ -123,7 +123,7 @@ doc = "Accepts a pytest-style test selector as an argument to run a specific tes
         rules_file_path = os.path.join(self.dir_path, "codemcp.toml")
         with open(rules_file_path, "w") as f:
             f.write("""
-global_prompt = "This is a global prompt with multiple command docs."
+project_prompt = "This is a global prompt with multiple command docs."
 [commands]
 format = ["./run_format.sh"]
 [commands.test]
@@ -146,7 +146,7 @@ doc = "Runs linting tools on the codebase."
         rules_file_path = os.path.join(self.dir_path, "codemcp.toml")
         with open(rules_file_path, "w") as f:
             f.write("""
-global_prompt = "This is a global prompt without command docs."
+project_prompt = "This is a global prompt without command docs."
 [commands]
 format = ["./run_format.sh"]
 test = ["./run_test.sh"]

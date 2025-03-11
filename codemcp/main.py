@@ -21,7 +21,7 @@ mcp = FastMCP("codemcp")
 @mcp.tool()
 async def codemcp(
     ctx: Context,
-    command: str,
+    subtool: str,
     *,
     path: str | None = None,
     content: str | None = None,
@@ -33,7 +33,7 @@ async def codemcp(
     pattern: str | None = None,
     include: str | None = None,
     test_selector: str | None = None,
-    command_type: str | None = None,
+    command: str | None = None,
     arguments: list[str] | None = None,
     old_str: str | None = None,  # Added for backward compatibility
     new_str: str | None = None,  # Added for backward compatibility
@@ -44,11 +44,11 @@ async def codemcp(
     IMMEDIATELY follow before continuing.
 
     Arguments:
-      command: The command to run (InitProject, ...)
+      subtool: The subtool to run (InitProject, ...)
       path: The path to the file or directory to operate on
       ... (there are other arguments which are documented later)
     """
-    # Define expected parameters for each command
+    # Define expected parameters for each subtool
     expected_params = {
         "ReadFile": {"path", "offset", "limit"},
         "WriteFile": {"path", "content", "description"},
@@ -66,9 +66,9 @@ async def codemcp(
         "Grep": {"pattern", "path", "include"},
     }
 
-    # Check if command exists
-    if command not in expected_params:
-        return f"Unknown command: {command}. Available commands: {', '.join(expected_params.keys())}"
+    # Check if subtool exists
+    if subtool not in expected_params:
+        return f"Unknown subtool: {subtool}. Available subtools: {', '.join(expected_params.keys())}"
 
     # Get all provided non-None parameters
     provided_params = {
@@ -84,7 +84,7 @@ async def codemcp(
             "pattern": pattern,
             "include": include,
             "test_selector": test_selector,
-            "command_type": command_type,
+            "command": command,
             "arguments": arguments,
             # Include backward compatibility parameters
             "old_str": old_str,
@@ -94,34 +94,34 @@ async def codemcp(
     }
 
     # Check for unexpected parameters
-    unexpected_params = set(provided_params.keys()) - expected_params[command]
+    unexpected_params = set(provided_params.keys()) - expected_params[subtool]
     if unexpected_params:
-        return f"Error: Unexpected parameters for {command} command: {', '.join(unexpected_params)}"
+        return f"Error: Unexpected parameters for {subtool} subtool: {', '.join(unexpected_params)}"
 
-    # Now handle each command with its expected parameters
-    if command == "ReadFile":
+    # Now handle each subtool with its expected parameters
+    if subtool == "ReadFile":
         if path is None:
-            return "Error: path is required for ReadFile command"
+            return "Error: path is required for ReadFile subtool"
 
         return read_file_content(path, offset, limit)
 
-    if command == "WriteFile":
+    if subtool == "WriteFile":
         if path is None:
-            return "Error: path is required for WriteFile command"
+            return "Error: path is required for WriteFile subtool"
         if description is None:
-            return "Error: description is required for WriteFile command"
+            return "Error: description is required for WriteFile subtool"
 
         content_str = content or ""
         return write_file_content(path, content_str, description)
 
-    if command == "EditFile":
+    if subtool == "EditFile":
         if path is None:
-            return "Error: path is required for EditFile command"
+            return "Error: path is required for EditFile subtool"
         if description is None:
-            return "Error: description is required for EditFile command"
+            return "Error: description is required for EditFile subtool"
         if old_string is None and old_str is None:
             # TODO: I want telemetry to tell me when this occurs.
-            return "Error: Either old_string or old_str is required for EditFile command (use empty string for new file creation)"
+            return "Error: Either old_string or old_str is required for EditFile subtool (use empty string for new file creation)"
 
         # Accept either old_string or old_str (prefer old_string if both are provided)
         old_content = old_string or old_str or ""
@@ -129,32 +129,37 @@ async def codemcp(
         new_content = new_string or new_str or ""
         return edit_file_content(path, old_content, new_content, None, description)
 
-    if command == "LS":
+    if subtool == "LS":
         if path is None:
-            return "Error: path is required for LS command"
+            return "Error: path is required for LS subtool"
 
         return ls_directory(path)
 
-    if command == "InitProject":
+    if subtool == "InitProject":
         if path is None:
-            return "Error: path is required for InitProject command"
+            return "Error: path is required for InitProject subtool"
 
         return init_project(path)
 
-    if command == "RunCommand":
+    if subtool == "RunCommand":
+        # When is something a command as opposed to a subtool?  They are
+        # basically the same thing, but commands are always USER defined.
+        # This means we shove them all in RunCommand so they are guaranteed
+        # not to conflict with codemcp's subtools.
+
         if path is None:
-            return "Error: path is required for RunCommand command"
-        if command_type is None:
-            return "Error: command_type is required for RunCommand command"
+            return "Error: path is required for RunCommand subtool"
+        if command is None:
+            return "Error: command is required for RunCommand subtool"
 
-        return run_command(path, command_type, arguments)
+        return run_command(path, command, arguments)
 
-    if command == "Grep":
+    if subtool == "Grep":
         if pattern is None:
-            return "Error: pattern is required for Grep command"
+            return "Error: pattern is required for Grep subtool"
 
         if path is None:
-            return "Error: path is required for Grep command"
+            return "Error: path is required for Grep subtool"
 
         try:
             result = grep_files(pattern, path, include)

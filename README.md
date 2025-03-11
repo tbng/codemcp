@@ -109,7 +109,7 @@ branch from the default branch.  Suppose that codemcp is operating on
 Here are all the config options supported by `codemcp.toml`:
 
 ```toml
-global_prompt = """
+project_prompt = """
 Before beginning work on this feature, write a short haiku.  Do this only once.
 """
 
@@ -118,7 +118,7 @@ format = ["./run_format.sh"]
 test = ["./run_test.sh"]
 ```
 
-The `global_prompt` will be loaded when you initialize the project in chats.
+The `project_prompt` will be loaded when you initialize the project in chats.
 
 The `commands` section allows you to configure commands for specific tools:
 - `format`: used to format code according to project standards.  Formatting is
