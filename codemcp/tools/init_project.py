@@ -81,7 +81,10 @@ def init_project(directory: str) -> str:
                         command_docs[cmd_name] = cmd_config["doc"]
 
             except Exception as e:
-                logging.warning(f"Exception suppressed when reading codemcp.toml: {e!s}", exc_info=True)
+                logging.warning(
+                    f"Exception suppressed when reading codemcp.toml: {e!s}",
+                    exc_info=True,
+                )
                 return f"Error reading codemcp.toml file: {e!s}"
 
         # Default system prompt, cribbed from claude code
@@ -230,5 +233,7 @@ Args:
 
         return combined_prompt
     except Exception as e:
-        logging.warning(f"Exception suppressed during project initialization: {e!s}", exc_info=True)
+        logging.warning(
+            f"Exception suppressed during project initialization: {e!s}", exc_info=True
+        )
         return f"Error initializing project: {e!s}"

@@ -170,7 +170,9 @@ async def codemcp(
                 f"Found {result.get('numFiles', 0)} file(s)",
             )
         except Exception as e:
-            logging.warning(f"Exception suppressed in grep subtool: {e!s}", exc_info=True)
+            logging.warning(
+                f"Exception suppressed in grep subtool: {e!s}", exc_info=True
+            )
             return f"Error executing grep: {e!s}"
 
 

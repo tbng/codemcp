@@ -68,7 +68,9 @@ def ls_directory(directory_path: str) -> str:
             return tree_output
         return f"{TRUNCATED_MESSAGE}{tree_output}"
     except Exception as e:
-        logging.warning(f"Exception suppressed during directory listing: {e!s}", exc_info=True)
+        logging.warning(
+            f"Exception suppressed during directory listing: {e!s}", exc_info=True
+        )
         return f"Error listing directory: {e!s}"
 
 
