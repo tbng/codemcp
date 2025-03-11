@@ -5,6 +5,7 @@ import os
 import subprocess
 import sys
 import tempfile
+import unittest
 from contextlib import asynccontextmanager
 
 from expecttest import TestCase
