@@ -13,7 +13,7 @@ class RunTestsTestCase(unittest.TestCase):
     def setUp(self):
         self.temp_dir = tempfile.TemporaryDirectory()
         self.project_dir = self.temp_dir.name
-        
+
         # Create a mock codemcp.toml file
         os.makedirs(self.project_dir, exist_ok=True)
         with open(os.path.join(self.project_dir, "codemcp.toml"), "w") as f:
@@ -36,7 +36,7 @@ test = ["./run_test.sh"]
 
         # Run the test function
         result = run_tests(self.project_dir)
-        
+
         # Verify run_command was called with the correct arguments
         mock_run_command.assert_called_once_with(
             ["./run_test.sh"],
@@ -45,7 +45,7 @@ test = ["./run_test.sh"]
             capture_output=True,
             text=True,
         )
-        
+
         # Verify the result
         self.assertIn("Tests completed successfully", result)
         self.assertIn("Tests passed successfully", result)
@@ -60,7 +60,7 @@ test = ["./run_test.sh"]
 
         # Run the test function with a selector
         result = run_tests(self.project_dir, "test_specific")
-        
+
         # Verify run_command was called with the correct arguments including the selector
         mock_run_command.assert_called_once_with(
             ["./run_test.sh", "test_specific"],
@@ -69,7 +69,7 @@ test = ["./run_test.sh"]
             capture_output=True,
             text=True,
         )
-        
+
         # Verify the result
         self.assertIn("Tests completed successfully", result)
         self.assertIn("Selected tests passed", result)
@@ -84,10 +84,10 @@ test = ["./run_test.sh"]
 
         # Run the test function
         result = run_tests(self.project_dir)
-        
+
         # Verify run_command was called
         mock_run_command.assert_called_once()
-        
+
         # Verify the result
         self.assertIn("Tests failed", result)
         self.assertIn("Some tests failed", result)
@@ -96,17 +96,17 @@ test = ["./run_test.sh"]
     def test_run_tests_no_config(self):
         # Remove the codemcp.toml file
         os.remove(os.path.join(self.project_dir, "codemcp.toml"))
-        
+
         # Run the test function
         result = run_tests(self.project_dir)
-        
+
         # Verify the result
         self.assertIn("Error: No test command configured", result)
 
     def test_run_tests_invalid_directory(self):
         # Test with a non-existent directory
         result = run_tests("/path/that/does/not/exist")
-        
+
         # Verify the result
         self.assertIn("Error: Directory does not exist", result)
 

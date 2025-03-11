@@ -999,7 +999,7 @@ nothing to commit, working tree clean
         # Create a test script that prepares for testing
         test_dir = os.path.join(self.temp_dir.name, "test_directory")
         os.makedirs(test_dir, exist_ok=True)
-        
+
         # Create a test.py file with a simple test
         test_file_path = os.path.join(test_dir, "test_simple.py")
         with open(test_file_path, "w") as f:
@@ -1013,7 +1013,7 @@ class SimpleTestCase(unittest.TestCase):
     def test_another_success(self):
         self.assertTrue(True)
 """)
-        
+
         # Create a second test file with another test
         test_file_path2 = os.path.join(test_dir, "test_another.py")
         with open(test_file_path2, "w") as f:
@@ -1024,7 +1024,7 @@ class AnotherTestCase(unittest.TestCase):
     def test_success(self):
         self.assertEqual(2 + 2, 4)
 """)
-        
+
         # Create a run_test.sh script to mimic the real one
         runner_script_path = os.path.join(self.temp_dir.name, "run_test.sh")
         with open(runner_script_path, "w") as f:
@@ -1034,7 +1034,7 @@ cd "$(dirname "$0")"
 python -m pytest $@
 """)
         os.chmod(runner_script_path, 0o755)  # Make it executable
-        
+
         # Update codemcp.toml to include the test command
         config_path = os.path.join(self.temp_dir.name, "codemcp.toml")
         with open(config_path, "w") as f:
@@ -1045,7 +1045,7 @@ name = "test-project"
 [commands]
 test = ["./run_test.sh"]
 """)
-        
+
         # Add files to git
         subprocess.run(
             ["git", "add", "."],
@@ -1053,42 +1053,44 @@ test = ["./run_test.sh"]
             env=self.env,
             check=True,
         )
-        
+
         subprocess.run(
             ["git", "commit", "-m", "Add test files"],
             cwd=self.temp_dir.name,
             env=self.env,
             check=True,
         )
-        
+
         async with self.create_client_session() as session:
             # Call the RunTests tool without a selector
             result = await session.call_tool(
                 "codemcp",
                 {"command": "RunTests", "file_path": self.temp_dir.name},
             )
-            
+
             # Normalize the result
             normalized_result = self.normalize_path(result)
             result_text = self.extract_text_from_result(normalized_result)
-            
+
             # Verify the success message
             self.assertIn("Tests completed successfully", result_text)
-            
+
             # Call the RunTests tool with a selector to run only the second test file
             selector_result = await session.call_tool(
                 "codemcp",
                 {
-                    "command": "RunTests", 
+                    "command": "RunTests",
                     "file_path": self.temp_dir.name,
-                    "test_selector": "test_directory/test_another.py" 
+                    "test_selector": "test_directory/test_another.py",
                 },
             )
-            
+
             # Normalize the result
             normalized_selector_result = self.normalize_path(selector_result)
-            selector_result_text = self.extract_text_from_result(normalized_selector_result)
-            
+            selector_result_text = self.extract_text_from_result(
+                normalized_selector_result
+            )
+
             # Verify the success message
             self.assertIn("Tests completed successfully", selector_result_text)
             # Verify that the selector was used
