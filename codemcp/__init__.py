@@ -2,6 +2,7 @@
 
 from .main import codemcp, configure_logging, mcp, run
 from .shell import run_command
+from .testing import MCPEndToEndTestCase
 
 __all__ = [
     "configure_logging",
@@ -9,4 +10,5 @@ __all__ = [
     "mcp",
     "codemcp",
     "run_command",
+    "MCPEndToEndTestCase",
 ]
