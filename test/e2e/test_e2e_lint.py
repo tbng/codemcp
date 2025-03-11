@@ -103,7 +103,7 @@ lint = ["./run_lint.sh"]
                 "codemcp",
                 {
                     "command": "RunCommand",
-                    "file_path": self.temp_dir.name,
+                    "path": self.temp_dir.name,
                     "command_type": "lint",
                 },
             )
