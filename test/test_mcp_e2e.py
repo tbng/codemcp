@@ -1095,10 +1095,10 @@ test = ["./run_test.sh"]
             self.assertIn("test_another.py", selector_result_text)
             self.assertNotIn("test_simple.py", selector_result_text)
 
-
-        # Make sure it doesn't exist
-        if os.path.exists(new_file_path):
-            os.unlink(new_file_path)
+    async def test_create_new_file_with_write_file(self):
+        """Test creating a new file that doesn't exist yet with WriteFile."""
+        # Path to a new file that doesn't exist yet, within the git repository
+        new_file_path = os.path.join(self.temp_dir.name, "completely_new_file.txt")
 
         self.assertFalse(
             os.path.exists(new_file_path),
