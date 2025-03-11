@@ -40,9 +40,14 @@ async def codemcp(
     new_str: str | None = None,  # Added for backward compatibility
 ) -> str:
     """If and only if the user explicitly asks you to initialize codemcp with
-    directory_path, you should invoke this tool with arguments `InitProject
-    directory_path`.  This will return instructions which you should
+    file_path, you should invoke this tool with arguments `InitProject
+    file_path`.  This will return instructions which you should
     IMMEDIATELY follow before continuing.
+
+    Arguments:
+      command: The command to run (InitProject, ...)
+      file_path: The path to the file or directory to operate on
+      ... (there are other arguments which are documented later)
     """
     # Define expected parameters for each command
     expected_params = {
