@@ -64,14 +64,14 @@ def _check_for_changes(project_dir: str) -> bool:
                 capture_output=True,
                 text=True,
             ).stdout.strip()
-            
+
             # Use the repo root as working directory for git commands
             git_cwd = repo_root
         except (subprocess.SubprocessError, OSError) as e:
             logging.error(f"Error getting git repository root: {e}")
             # Fall back to the project directory
             git_cwd = project_dir
-        
+
         # Check if working directory has uncommitted changes
         status_result = run_command(
             ["git", "status", "--porcelain"],
