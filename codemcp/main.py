@@ -6,13 +6,11 @@ import os
 from mcp.server.fastmcp import Context, FastMCP
 
 from .tools.edit_file import edit_file_content
-from .tools.format import format_code
 from .tools.grep import grep_files
 from .tools.init_project import init_project
-from .tools.lint import lint_code
 from .tools.ls import ls_directory
 from .tools.read_file import read_file_content
-from .tools.run_tests import run_tests
+from .tools.run_command import run_command
 from .tools.write_file import write_file_content
 
 # Initialize FastMCP server
@@ -35,6 +33,8 @@ async def codemcp(
     path: str | None = None,
     include: str | None = None,
     test_selector: str | None = None,
+    command_type: str | None = None,
+    arguments: list[str] | None = None,
     old_str: str | None = None,  # Added for backward compatibility
     new_str: str | None = None,  # Added for backward compatibility
 ) -> str:
@@ -127,24 +127,16 @@ async def codemcp(
     Initializes a project by reading the .codemcprules TOML file from the specified directory.
     Returns instructions which you should IMMEDIATELY follow before continuing.
 
-    ## Format directory_path
+    ## RunCommand directory_path command arguments?
 
-    Formats code according to the format command specified in the codemcp.toml file.
-    Use this to ensure code follows the project's style guidelines.
-
-    ## Lint directory_path
-
-    Lints code according to the lint command specified in the codemcp.toml file.
-    Use this to identify and automatically fix code issues.
-
-    ## RunTests directory_path test_selector?
-
-    Runs tests according to the test command specified in the codemcp.toml file.
-    An optional test_selector can be provided to run specific tests.
+    Runs a command that is supported in codemcp.toml, typically providing a
+    way to do things like format, lint, test, typecheck or build.  This does
+    NOT support arbitrary code execution, ONLY call with valid commands as
+    described by InitProject.
 
     Args:
         ctx: The MCP context
-        command: The subcommand to execute (ReadFile, WriteFile, EditFile, LS, InitProject, Format, Lint, RunTests)
+        command: The subcommand to execute (ReadFile, WriteFile, EditFile, LS, InitProject, RunCommand)
         file_path: The path to the file or directory to operate on
         content: Content for WriteFile command
         old_string: String to replace for EditFile command
@@ -152,7 +144,28 @@ async def codemcp(
         offset: Line offset for ReadFile command
         limit: Line limit for ReadFile command
         description: Short description of the change (for WriteFile/EditFile)
-        test_selector: Optional selector for RunTests command
+        arguments: Extra arguments to pass to RunCommand
+        command_key = "test"
+
+    ## RunCommand directory_path command_type arguments?
+
+    Runs a command that is supported in codemcp.toml, typically providing a
+    way to do things like format, lint, test, typecheck or build.  This does
+    NOT support arbitrary code execution, ONLY call with valid commands as
+    described by InitProject.
+
+    Args:
+        ctx: The MCP context
+        command: The subcommand to execute (ReadFile, WriteFile, EditFile, LS, InitProject, RunCommand)
+        file_path: The path to the file or directory to operate on
+        content: Content for WriteFile command
+        old_string: String to replace for EditFile command
+        new_string: Replacement string for EditFile command
+        offset: Line offset for ReadFile command
+        limit: Line limit for ReadFile command
+        description: Short description of the change (for WriteFile/EditFile)
+        command_type: Type of command to run (e.g., "format", "lint", "test")
+        arguments: List of extra arguments to pass to RunCommand
 
     """
     # Define expected parameters for each command
@@ -169,9 +182,7 @@ async def codemcp(
         },
         "LS": {"file_path"},
         "InitProject": {"file_path"},
-        "Format": {"file_path"},
-        "Lint": {"file_path"},
-        "RunTests": {"file_path", "test_selector"},
+        "RunCommand": {"file_path", "command_type", "arguments"},
         "Grep": {"pattern", "path", "include"},
     }
 
@@ -194,6 +205,8 @@ async def codemcp(
             "path": path,
             "include": include,
             "test_selector": test_selector,
+            "command_type": command_type,
+            "arguments": arguments,
             # Include backward compatibility parameters
             "old_str": old_str,
             "new_str": new_str,
@@ -249,23 +262,13 @@ async def codemcp(
 
         return init_project(file_path)
 
-    if command == "Format":
+    if command == "RunCommand":
         if file_path is None:
-            return "Error: file_path is required for Format command"
+            return "Error: file_path is required for RunCommand command"
+        if command_type is None:
+            return "Error: command_type is required for RunCommand command"
 
-        return format_code(file_path)
-
-    if command == "Lint":
-        if file_path is None:
-            return "Error: file_path is required for Lint command"
-
-        return lint_code(file_path)
-
-    if command == "RunTests":
-        if file_path is None:
-            return "Error: file_path is required for RunTests command"
-
-        return run_tests(file_path, test_selector)
+        return run_command(file_path, command_type, arguments)
 
     if command == "Grep":
         if pattern is None:
