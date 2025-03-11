@@ -107,7 +107,7 @@ Before using this tool:
 2. Directory Verification (only applicable when creating new files):
    - Use the LS tool to verify the parent directory exists and is the correct location
 
-## EditFile file_path old_string new_string description
+## EditFile path old_string new_string description
 
 This is a tool for editing files. For larger edits, use the Write tool to overwrite files.
 Provide a short description of the change.
