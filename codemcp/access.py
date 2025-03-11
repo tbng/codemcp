@@ -25,31 +25,48 @@ def get_git_base_dir(file_path: str) -> str | None:
 
     """
     try:
+        # First normalize the path to resolve any .. or symlinks
+        normalized_path = os.path.normpath(os.path.abspath(file_path))
+        
         # Get the directory containing the file - handle non-existent files
-        if os.path.exists(file_path):
+        if os.path.exists(normalized_path):
             directory = (
-                os.path.dirname(file_path) if os.path.isfile(file_path) else file_path
+                os.path.dirname(normalized_path) if os.path.isfile(normalized_path) else normalized_path
             )
         else:
-            # For non-existent files, walk up the directory tree until we find an existing directory
-            directory = os.path.dirname(file_path)
+            # For non-existent files, get the parent directory
+            directory = os.path.dirname(normalized_path)
             
-            # Walk up the directory tree until we find an existing directory
-            while directory and not os.path.exists(directory):
-                logging.debug(f"Directory doesn't exist, walking up: {directory}")
-                parent = os.path.dirname(directory)
-                # If we've reached the root directory and it doesn't exist, stop
-                if parent == directory:
-                    logging.debug(f"Reached root directory and it doesn't exist: {directory}")
+            # If trying to access a directory outside of the repo via path traversal,
+            # we should detect it by checking if the directory exists after normalization
+            if not os.path.exists(directory):
+                # Store the original parent for security check
+                original_parent = os.path.dirname(normalized_path)
+                
+                # Walk up the directory tree until we find an existing directory
+                while directory and not os.path.exists(directory):
+                    logging.debug(f"Directory doesn't exist, walking up: {directory}")
+                    parent = os.path.dirname(directory)
+                    # If we've reached the root directory and it doesn't exist, stop
+                    if parent == directory:
+                        logging.debug(f"Reached root directory and it doesn't exist: {directory}")
+                        return None
+                    directory = parent
+                
+                # If we couldn't find an existing parent directory, stop
+                if not directory or not os.path.exists(directory):
+                    logging.debug(f"Could not find an existing parent directory for: {normalized_path}")
                     return None
-                directory = parent
                 
-            # If we couldn't find an existing parent directory, stop
-            if not directory or not os.path.exists(directory):
-                logging.debug(f"Could not find an existing parent directory for: {file_path}")
-                return None
+                # SECURITY CHECK: Prevent path traversal attacks
+                # Make sure the found directory is a subdirectory of the original parent
+                # or is the original parent itself
+                if not (directory.startswith(original_parent) or 
+                        os.path.commonpath([directory, original_parent]) == original_parent):
+                    logging.warning(f"Potential path traversal attempt: {file_path} -> {directory}")
+                    return None
                 
-            logging.debug(f"Found existing parent directory: {directory}")
+                logging.debug(f"Found existing parent directory: {directory}")
 
         # Run git command to get the top-level directory of the repository
         result = run_command(
@@ -63,6 +80,14 @@ def get_git_base_dir(file_path: str) -> str | None:
         # Return the path
         git_base_dir = result.stdout.strip()
         logging.debug(f"Git base directory: {git_base_dir}")
+        
+        # SECURITY CHECK: Make sure git_base_dir contains the file_path
+        # This prevents path traversal across git repositories
+        normalized_git_base = os.path.normpath(os.path.abspath(git_base_dir))
+        if not normalized_path.startswith(normalized_git_base):
+            logging.warning(f"File path {normalized_path} is outside git repository {normalized_git_base}")
+            return None
+            
         return git_base_dir
     except (subprocess.SubprocessError, OSError) as e:
         logging.debug(f"Error finding git base directory: {e!s}")
