@@ -75,7 +75,7 @@ class TestLS(TestCase):
         self.mock_git_base_dir = self.git_base_dir_patch.start()
         self.mock_git_base_dir.return_value = self.temp_dir.name
         self.addCleanup(self.git_base_dir_patch.stop)
-        
+
         # Create patch for check_edit_permission
         self.check_edit_permission_patch = patch("codemcp.access.check_edit_permission")
         self.mock_check_edit_permission = self.check_edit_permission_patch.start()
@@ -101,9 +101,13 @@ class TestLS(TestCase):
     def test_ls_directory_basic(self):
         """Test basic directory listing functionality"""
         # Mock the is_git_repository and check_edit_permission functions directly in the ls module
-        with patch('codemcp.tools.ls.is_git_repository', return_value=True), \
-             patch('codemcp.tools.ls.check_edit_permission', return_value=(True, "Permission granted.")):
-            
+        with (
+            patch("codemcp.tools.ls.is_git_repository", return_value=True),
+            patch(
+                "codemcp.tools.ls.check_edit_permission",
+                return_value=(True, "Permission granted."),
+            ),
+        ):
             result = ls_directory(self.test_dir)
             normalized_result = self.normalize_result(result)
 
@@ -118,18 +122,26 @@ class TestLS(TestCase):
 
     def test_ls_directory_nonexistent(self):
         """Test listing a nonexistent directory"""
-        with patch('codemcp.tools.ls.is_git_repository', return_value=True), \
-             patch('codemcp.tools.ls.check_edit_permission', return_value=(True, "Permission granted.")):
-             
+        with (
+            patch("codemcp.tools.ls.is_git_repository", return_value=True),
+            patch(
+                "codemcp.tools.ls.check_edit_permission",
+                return_value=(True, "Permission granted."),
+            ),
+        ):
             nonexistent_dir = os.path.join(self.temp_dir.name, "nonexistent")
             result = ls_directory(nonexistent_dir)
             self.assertIn("Error: Directory does not exist", result)
 
     def test_ls_directory_file(self):
         """Test listing a file instead of a directory"""
-        with patch('codemcp.tools.ls.is_git_repository', return_value=True), \
-             patch('codemcp.tools.ls.check_edit_permission', return_value=(True, "Permission granted.")):
-             
+        with (
+            patch("codemcp.tools.ls.is_git_repository", return_value=True),
+            patch(
+                "codemcp.tools.ls.check_edit_permission",
+                return_value=(True, "Permission granted."),
+            ),
+        ):
             result = ls_directory(self.file1_path)
             self.assertIn("Error: Path is not a directory", result)
 

@@ -40,11 +40,11 @@ def ls_directory(directory_path: str) -> str:
 
         if not os.path.isdir(full_directory_path):
             return f"Error: Path is not a directory: {directory_path}"
-            
+
         # Safety check: Verify the directory is within a git repository with codemcp.toml
         if not is_git_repository(full_directory_path):
             return f"Error: Directory is not in a Git repository: {directory_path}"
-            
+
         # Check edit permission (which verifies codemcp.toml exists)
         is_permitted, permission_message = check_edit_permission(full_directory_path)
         if not is_permitted:
