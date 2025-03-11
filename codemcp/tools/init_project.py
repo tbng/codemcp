@@ -38,6 +38,7 @@ def init_project(directory: str) -> str:
 
         global_prompt = ""
         command_help = ""
+        command_docs = {}
         rules_config = {}
 
         # Check if codemcp.toml file exists
@@ -50,7 +51,14 @@ def init_project(directory: str) -> str:
                 if "global_prompt" in rules_config:
                     global_prompt = rules_config["global_prompt"]
 
-                command_help = ", ".join(rules_config.get("commands", {}).keys())
+                # Extract commands and their documentation
+                command_list = rules_config.get("commands", {})
+                command_help = ", ".join(command_list.keys())
+                
+                # Process command documentation
+                for cmd_name, cmd_config in command_list.items():
+                    if isinstance(cmd_config, dict) and "doc" in cmd_config:
+                        command_docs[cmd_name] = cmd_config["doc"]
 
             except Exception as e:
                 return f"Error reading codemcp.toml file: {e!s}"
