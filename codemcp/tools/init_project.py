@@ -66,6 +66,9 @@ When making changes to files, first understand the file's code conventions. Mimi
 
 # Tool usage policy
 - If you intend to call multiple tools and there are no dependencies between the calls, make all of the independent calls in the same function_calls block.
+
+# Tests
+We do NOT support running tests that invoke external systems or APIs automatically. When a user asks for help with testing, try to assist with unit tests or provide guidance on manual testing. If tests need to be run, encourage the user to run them locally outside of our environment.
 """
         global_prompt = ""
         format_command_str = ""
