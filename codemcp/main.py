@@ -127,24 +127,16 @@ async def codemcp(
     Initializes a project by reading the .codemcprules TOML file from the specified directory.
     Returns instructions which you should IMMEDIATELY follow before continuing.
 
-    ## Format directory_path
+    ## RunCommand directory_path command arguments?
 
-    Formats code according to the format command specified in the codemcp.toml file.
-    Use this to ensure code follows the project's style guidelines.
-
-    ## Lint directory_path
-
-    Lints code according to the lint command specified in the codemcp.toml file.
-    Use this to identify and automatically fix code issues.
-
-    ## RunTests directory_path test_selector?
-
-    Runs tests according to the test command specified in the codemcp.toml file.
-    An optional test_selector can be provided to run specific tests.
+    Runs a command that is supported in codemcp.toml, typically providing a
+    way to do things like format, lint, test, typecheck or build.  This does
+    NOT support arbitrary code execution, ONLY call with valid commands as
+    described by InitProject.
 
     Args:
         ctx: The MCP context
-        command: The subcommand to execute (ReadFile, WriteFile, EditFile, LS, InitProject, Format, Lint, RunTests)
+        command: The subcommand to execute (ReadFile, WriteFile, EditFile, LS, InitProject, RunCommand)
         file_path: The path to the file or directory to operate on
         content: Content for WriteFile command
         old_string: String to replace for EditFile command
@@ -152,7 +144,7 @@ async def codemcp(
         offset: Line offset for ReadFile command
         limit: Line limit for ReadFile command
         description: Short description of the change (for WriteFile/EditFile)
-        test_selector: Optional selector for RunTests command
+        arguments: Extra arguments to pass to RunCommand
 
     """
     # Define expected parameters for each command
