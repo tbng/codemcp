@@ -168,7 +168,7 @@ async def codemcp(
         limit: Line limit for ReadFile command
         description: Short description of the change (for WriteFile/EditFile)
         command_type: Type of command to run (e.g., "format", "lint", "test")
-        arguments: Extra arguments to pass to RunCommand
+        arguments: List of extra arguments to pass to RunCommand
 
     """
     # Define expected parameters for each command
