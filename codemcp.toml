@@ -4,4 +4,4 @@ Before beginning work on this feature, write a short haiku.  Do this only once.
 
 [commands]
 format = ["./run_format.sh"]
-test = ["./run_tests.sh"]
+test = ["./run_test.sh"]
