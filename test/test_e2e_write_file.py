@@ -75,7 +75,7 @@ class WriteFileTest(MCPEndToEndTestCase):
 nothing to commit, working tree clean
 """,
             )
-    
+
     async def test_create_new_file_with_write_file(self):
         """Test creating a new file that doesn't exist yet with WriteFile."""
         # Path to a new file that doesn't exist yet, within the git repository
@@ -135,7 +135,7 @@ nothing to commit, working tree clean
                 ls_files_output,
                 "New file was created but not added to git",
             )
-    
+
     async def test_write_to_untracked_file(self):
         """Test that writes to untracked files are rejected."""
         # Create an untracked file (not added to git)
@@ -218,7 +218,7 @@ nothing to commit, working tree clean
                 original_mtime,
                 "File modification time should not have changed",
             )
-    
+
     async def test_write_file_outside_tracked_paths(self):
         """Test that codemcp properly handles writing to paths outside tracked paths."""
         # Create a subdirectory but don't add it to git

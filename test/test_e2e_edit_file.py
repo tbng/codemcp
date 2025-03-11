@@ -154,7 +154,7 @@ nothing to commit, working tree clean
                 edit_succeeded,
                 "POLICY ERROR: Editing untracked files should be rejected",
             )
-    
+
     async def test_create_file_with_edit_file_in_untracked_dir(self):
         """Test that codemcp properly handles creating new files with EditFile in untracked directories."""
         # Create an untracked subdirectory within the Git repository
@@ -235,7 +235,7 @@ nothing to commit, working tree clean
                 ls_files_output,
                 "Failed to add file to git even after manual commit",
             )
-    
+
     async def test_edit_after_git_rm(self):
         """Test that codemcp properly handles editing files that have been removed with git rm."""
         # Create a tracked file
