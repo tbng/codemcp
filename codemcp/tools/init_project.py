@@ -11,6 +11,25 @@ __all__ = [
 ]
 
 
+def _generate_command_docs(command_docs: dict) -> str:
+    """Generate documentation for commands from the command_docs dictionary.
+    
+    Args:
+        command_docs: A dictionary of command names to their documentation
+
+    Returns:
+        A formatted string with command documentation
+    """
+    if not command_docs:
+        return ""
+        
+    docs = []
+    for cmd_name, doc in command_docs.items():
+        docs.append(f"\n- {cmd_name}: {doc}")
+    
+    return "\n\nCommand documentation:" + "".join(docs)
+
+
 def init_project(directory: str) -> str:
     """Initialize a project by reading the codemcp.toml TOML file and returning
     a combined system prompt.
