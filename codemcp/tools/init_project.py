@@ -158,7 +158,7 @@ If you want to create a new file, use:
 
 Remember: when making multiple file edits in a row to the same file, you should prefer to send all edits in a single message with multiple calls to this tool, rather than multiple messages with a single call each.
 
-## LS directory_path
+## LS path
 
 Lists files and directories in a given path. The path parameter must be an absolute path, not a relative path. You should generally prefer the Glob and Grep tools, if you know which directories to search.
 
@@ -172,17 +172,30 @@ Example:
   Grep "function.*hello" /path/to/repo  # Find files containing functions with "hello" in their name
   Grep "console\\.log" /path/to/repo --include="*.js"  # Find JS files with console.log statements
 
-## RunCommand directory_path command arguments?
+## RunCommand path command arguments?
 
 Runs a command that is supported in codemcp.toml, typically providing a
 way to do things like format, lint, test, typecheck or build.  This does
 NOT support arbitrary code execution, ONLY call with valid commands as
 described by InitProject.
 
-## RunCommand directory_path command_type arguments?
+## RunCommand path command_type arguments?
 
 Runs a command.  This does NOT support arbitrary code execution, ONLY call
 with this set of valid commands: {command_help}
+
+## Summary
+
+Args:
+    command: The subcommand to execute (ReadFile, WriteFile, EditFile, LS, InitProject, Format, Lint, RunTests)
+    path: The path to the file or directory to operate on
+    content: Content for WriteFile command
+    old_string: String to replace for EditFile command
+    new_string: Replacement string for EditFile command
+    offset: Line offset for ReadFile command
+    limit: Line limit for ReadFile command
+    description: Short description of the change (for WriteFile/EditFile)
+    test_selector: Optional selector for RunTests command
 """
         global_prompt = ""
         format_command_str = ""
