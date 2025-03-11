@@ -38,6 +38,7 @@ def init_project(directory: str) -> str:
 
         global_prompt = ""
         command_help = ""
+        rules_config = {}
 
         # Check if codemcp.toml file exists
         if os.path.exists(rules_file_path):
