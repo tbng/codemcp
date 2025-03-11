@@ -1028,7 +1028,7 @@ class AnotherTestCase(unittest.TestCase):
         # Create a run_test.sh script to mimic the real one
         # Get the current Python executable path
         current_python = os.path.abspath(sys.executable)
-        
+
         # Create run_test.sh script using the current Python executable
         runner_script_path = os.path.join(self.temp_dir.name, "run_test.sh")
         with open(runner_script_path, "w") as f:
