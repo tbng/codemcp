@@ -43,9 +43,6 @@ def init_project(directory: str) -> str:
         # conveyed in chats.
         # TODO: This prompt is pretty long, maybe we want it shorter
         system_prompt = """\
-# Tests
-IMPORTANT! We do NOT support running tests.  Do NOT try to run them.  Do NOT make helper scripts to try to run tests.
-
 # Tone and style
 IMPORTANT: You should minimize output tokens as much as possible while maintaining helpfulness, quality, and accuracy. Only address the specific query or task at hand, avoiding tangential information unless absolutely critical for completing the request. If you can answer in 1-3 sentences or a short paragraph, please do.
 IMPORTANT: You should NOT answer with unnecessary preamble or postamble (such as explaining your code or summarizing your action), unless the user asks you to.

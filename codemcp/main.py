@@ -11,6 +11,7 @@ from .tools.grep import grep_files
 from .tools.init_project import init_project
 from .tools.ls import ls_directory
 from .tools.read_file import read_file_content
+from .tools.run_tests import run_tests
 from .tools.write_file import write_file_content
 
 # Initialize FastMCP server
@@ -32,6 +33,7 @@ async def codemcp(
     pattern: str | None = None,
     path: str | None = None,
     include: str | None = None,
+    test_selector: str | None = None,
     old_str: str | None = None,  # Added for backward compatibility
     new_str: str | None = None,  # Added for backward compatibility
 ) -> str:
@@ -129,9 +131,14 @@ async def codemcp(
     Formats code according to the format command specified in the codemcp.toml file.
     Use this to ensure code follows the project's style guidelines.
 
+    ## RunTests directory_path test_selector?
+
+    Runs tests according to the test command specified in the codemcp.toml file.
+    An optional test_selector can be provided to run specific tests.
+
     Args:
         ctx: The MCP context
-        command: The subcommand to execute (ReadFile, WriteFile, EditFile, LS, InitProject)
+        command: The subcommand to execute (ReadFile, WriteFile, EditFile, LS, InitProject, Format, RunTests)
         file_path: The path to the file or directory to operate on
         content: Content for WriteFile command
         old_string: String to replace for EditFile command
@@ -139,6 +146,7 @@ async def codemcp(
         offset: Line offset for ReadFile command
         limit: Line limit for ReadFile command
         description: Short description of the change (for WriteFile/EditFile)
+        test_selector: Optional selector for RunTests command
 
     """
     # Define expected parameters for each command
@@ -156,6 +164,7 @@ async def codemcp(
         "LS": {"file_path"},
         "InitProject": {"file_path"},
         "Format": {"file_path"},
+        "RunTests": {"file_path", "test_selector"},
         "Grep": {"pattern", "path", "include"},
     }
 
@@ -177,6 +186,7 @@ async def codemcp(
             "pattern": pattern,
             "path": path,
             "include": include,
+            "test_selector": test_selector,
             # Include backward compatibility parameters
             "old_str": old_str,
             "new_str": new_str,
@@ -237,6 +247,12 @@ async def codemcp(
             return "Error: file_path is required for Format command"
 
         return format_code(file_path)
+
+    if command == "RunTests":
+        if file_path is None:
+            return "Error: file_path is required for RunTests command"
+
+        return run_tests(file_path, test_selector)
 
     if command == "Grep":
         if pattern is None:
