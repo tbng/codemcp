@@ -39,8 +39,8 @@ class InitProjectTestCase(unittest.TestCase):
         """Test initializing a project without a codemcp.toml file."""
         result = init_project(self.dir_path)
         # Check for a stable part of the system prompt instead of the exact string
-        self.assertIn("# Tests", result)
-        self.assertIn("We do NOT support running tests", result)
+        self.assertIn("# Tone and style", result)
+        self.assertIn("# Following conventions", result)
 
     def test_init_project_with_rules_file(self):
         """Test initializing a project with a codemcp.toml file."""
