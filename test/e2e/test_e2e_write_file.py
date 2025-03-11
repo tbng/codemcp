@@ -233,7 +233,7 @@ nothing to commit, working tree clean
                 "codemcp",
                 {
                     "command": "WriteFile",
-                    "file_path": new_file_path,
+                    "path": new_file_path,
                     "content": "New file in untracked directory",
                     "description": "Attempt to create file in untracked directory",
                 },
