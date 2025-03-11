@@ -247,14 +247,35 @@ class TestFormat(TestCase):
         """Test code formatting when the format command fails"""
         # Create a config file
         self.create_config_file()
-
-        # Configure the mock to fail when running the format command
+        
+        # Set up responses for git commands, but make format command fail
         from subprocess import CalledProcessError
-
         error = CalledProcessError(1, ["./run_format.sh"])
         error.stderr = "Command failed: syntax error"
-        self.mock_run_command.side_effect = error
-
+        
+        # Configure command responses
+        call_count = 0
+        def run_command_side_effect(*args, **kwargs):
+            nonlocal call_count
+            cmd = args[0]
+            
+            # First handle git repo commands
+            if cmd[0:2] == ["git", "rev-parse"]:
+                mock_result = MagicMock()
+                mock_result.stdout = self.temp_dir.name + "\n"
+                return mock_result
+            
+            # Make the format command fail
+            if cmd == ["./run_format.sh"]:
+                raise error
+                
+            # Default response for other commands
+            mock_result = MagicMock()
+            mock_result.stdout = ""
+            return mock_result
+            
+        self.mock_run_command.side_effect = run_command_side_effect
+        
         result = format_code(self.temp_dir.name)
         self.assertIn("Error:", result)
         self.assertIn("Format command failed with exit code 1", result)
