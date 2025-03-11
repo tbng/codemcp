@@ -23,7 +23,7 @@ async def codemcp(
     ctx: Context,
     command: str,
     *,
-    file_path: str | None = None,
+    path: str | None = None,
     content: str | None = None,
     old_string: str | None = None,
     new_string: str | None = None,
@@ -31,7 +31,6 @@ async def codemcp(
     limit: int | None = None,
     description: str | None = None,
     pattern: str | None = None,
-    path: str | None = None,
     include: str | None = None,
     test_selector: str | None = None,
     command_type: str | None = None,
@@ -40,30 +39,30 @@ async def codemcp(
     new_str: str | None = None,  # Added for backward compatibility
 ) -> str:
     """If and only if the user explicitly asks you to initialize codemcp with
-    file_path, you should invoke this tool with arguments `InitProject
-    file_path`.  This will return instructions which you should
+    path, you should invoke this tool with arguments `InitProject
+    path`.  This will return instructions which you should
     IMMEDIATELY follow before continuing.
 
     Arguments:
       command: The command to run (InitProject, ...)
-      file_path: The path to the file or directory to operate on
+      path: The path to the file or directory to operate on
       ... (there are other arguments which are documented later)
     """
     # Define expected parameters for each command
     expected_params = {
-        "ReadFile": {"file_path", "offset", "limit"},
-        "WriteFile": {"file_path", "content", "description"},
+        "ReadFile": {"path", "offset", "limit"},
+        "WriteFile": {"path", "content", "description"},
         "EditFile": {
-            "file_path",
+            "path",
             "old_string",
             "new_string",
             "description",
             "old_str",
             "new_str",
         },
-        "LS": {"file_path"},
-        "InitProject": {"file_path"},
-        "RunCommand": {"file_path", "command_type", "arguments"},
+        "LS": {"path"},
+        "InitProject": {"path"},
+        "RunCommand": {"path", "command_type", "arguments"},
         "Grep": {"pattern", "path", "include"},
     }
 
@@ -75,7 +74,7 @@ async def codemcp(
     provided_params = {
         param: value
         for param, value in {
-            "file_path": file_path,
+            "path": path,
             "content": content,
             "old_string": old_string,
             "new_string": new_string,
@@ -83,7 +82,6 @@ async def codemcp(
             "limit": limit,
             "description": description,
             "pattern": pattern,
-            "path": path,
             "include": include,
             "test_selector": test_selector,
             "command_type": command_type,
@@ -102,23 +100,23 @@ async def codemcp(
 
     # Now handle each command with its expected parameters
     if command == "ReadFile":
-        if file_path is None:
-            return "Error: file_path is required for ReadFile command"
+        if path is None:
+            return "Error: path is required for ReadFile command"
 
-        return read_file_content(file_path, offset, limit)
+        return read_file_content(path, offset, limit)
 
     if command == "WriteFile":
-        if file_path is None:
-            return "Error: file_path is required for WriteFile command"
+        if path is None:
+            return "Error: path is required for WriteFile command"
         if description is None:
             return "Error: description is required for WriteFile command"
 
         content_str = content or ""
-        return write_file_content(file_path, content_str, description)
+        return write_file_content(path, content_str, description)
 
     if command == "EditFile":
-        if file_path is None:
-            return "Error: file_path is required for EditFile command"
+        if path is None:
+            return "Error: path is required for EditFile command"
         if description is None:
             return "Error: description is required for EditFile command"
         if old_string is None and old_str is None:
@@ -129,34 +127,34 @@ async def codemcp(
         old_content = old_string or old_str or ""
         # Accept either new_string or new_str (prefer new_string if both are provided)
         new_content = new_string or new_str or ""
-        return edit_file_content(file_path, old_content, new_content, None, description)
+        return edit_file_content(path, old_content, new_content, None, description)
 
     if command == "LS":
-        if file_path is None:
-            return "Error: file_path is required for LS command"
+        if path is None:
+            return "Error: path is required for LS command"
 
-        return ls_directory(file_path)
+        return ls_directory(path)
 
     if command == "InitProject":
-        if file_path is None:
-            return "Error: file_path is required for InitProject command"
+        if path is None:
+            return "Error: path is required for InitProject command"
 
-        return init_project(file_path)
+        return init_project(path)
 
     if command == "RunCommand":
-        if file_path is None:
-            return "Error: file_path is required for RunCommand command"
+        if path is None:
+            return "Error: path is required for RunCommand command"
         if command_type is None:
             return "Error: command_type is required for RunCommand command"
 
-        return run_command(file_path, command_type, arguments)
+        return run_command(path, command_type, arguments)
 
     if command == "Grep":
         if pattern is None:
             return "Error: pattern is required for Grep command"
 
         if path is None:
-            path = file_path
+            return "Error: path is required for Grep command"
 
         try:
             result = grep_files(pattern, path, include)
