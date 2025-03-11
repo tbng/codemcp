@@ -4,7 +4,7 @@
 
 import unittest
 
-from codemcp import MCPEndToEndTestCase
+from codemcp.testing import MCPEndToEndTestCase
 
 
 class ListToolsTest(MCPEndToEndTestCase):

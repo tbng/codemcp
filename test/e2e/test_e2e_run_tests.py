@@ -7,7 +7,7 @@ import subprocess
 import sys
 import unittest
 
-from codemcp import MCPEndToEndTestCase
+from codemcp.testing import MCPEndToEndTestCase
 
 
 class RunCommandTestTest(MCPEndToEndTestCase):
