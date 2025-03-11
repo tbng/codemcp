@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-"""Tests for the RunTests command."""
+"""Tests for the RunCommand with test."""
 
 import os
 import subprocess
@@ -10,11 +10,11 @@ import unittest
 from codemcp import MCPEndToEndTestCase
 
 
-class RunTestsTest(MCPEndToEndTestCase):
-    """Test the RunTests command."""
+class RunCommandTestTest(MCPEndToEndTestCase):
+    """Test the RunCommand with test command."""
 
-    async def test_run_tests(self):
-        """Test the RunTests command."""
+    async def test_run_tests_with_run_command(self):
+        """Test the RunCommand with test command_type."""
         # Create a test directory for testing
         test_dir = os.path.join(self.temp_dir.name, "test_directory")
         os.makedirs(test_dir, exist_ok=True)
@@ -85,10 +85,14 @@ test = ["./run_test.sh"]
         )
 
         async with self.create_client_session() as session:
-            # Call the RunTests tool without a selector
+            # Call the RunCommand tool with test command_type
             result = await session.call_tool(
                 "codemcp",
-                {"command": "RunTests", "file_path": self.temp_dir.name},
+                {
+                    "command": "RunCommand", 
+                    "file_path": self.temp_dir.name,
+                    "command_type": "test"
+                },
             )
 
             # Normalize the result
@@ -96,15 +100,16 @@ test = ["./run_test.sh"]
             result_text = self.extract_text_from_result(normalized_result)
 
             # Verify the success message
-            self.assertIn("Tests completed successfully", result_text)
+            self.assertIn("Code test successful", result_text)
 
-            # Call the RunTests tool with a selector to run only the second test file
+            # Call the RunCommand tool with test command_type and arguments
             selector_result = await session.call_tool(
                 "codemcp",
                 {
-                    "command": "RunTests",
+                    "command": "RunCommand",
                     "file_path": self.temp_dir.name,
-                    "test_selector": "test_directory/test_another.py",
+                    "command_type": "test",
+                    "arguments": ["test_directory/test_another.py"]
                 },
             )
 
@@ -115,7 +120,7 @@ test = ["./run_test.sh"]
             )
 
             # Verify the success message
-            self.assertIn("Tests completed successfully", selector_result_text)
+            self.assertIn("Code test successful", selector_result_text)
             # Verify that the selector was used
             self.assertIn("test_another.py", selector_result_text)
             self.assertNotIn("test_simple.py", selector_result_text)
