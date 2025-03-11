@@ -2,6 +2,7 @@ from .edit_file import edit_file_content
 from .format import format_code
 from .grep import grep_files
 from .init_project import init_project
+from .lint import lint_code
 from .ls import ls_directory
 from .read_file import read_file_content
 from .run_tests import run_tests
@@ -12,6 +13,7 @@ __all__ = [
     "format_code",
     "grep_files",
     "init_project",
+    "lint_code",
     "ls_directory",
     "read_file_content",
     "run_tests",

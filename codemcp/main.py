@@ -9,6 +9,7 @@ from .tools.edit_file import edit_file_content
 from .tools.format import format_code
 from .tools.grep import grep_files
 from .tools.init_project import init_project
+from .tools.lint import lint_code
 from .tools.ls import ls_directory
 from .tools.read_file import read_file_content
 from .tools.run_tests import run_tests
@@ -131,6 +132,11 @@ async def codemcp(
     Formats code according to the format command specified in the codemcp.toml file.
     Use this to ensure code follows the project's style guidelines.
 
+    ## Lint directory_path
+
+    Lints code according to the lint command specified in the codemcp.toml file.
+    Use this to identify and automatically fix code issues.
+
     ## RunTests directory_path test_selector?
 
     Runs tests according to the test command specified in the codemcp.toml file.
@@ -138,7 +144,7 @@ async def codemcp(
 
     Args:
         ctx: The MCP context
-        command: The subcommand to execute (ReadFile, WriteFile, EditFile, LS, InitProject, Format, RunTests)
+        command: The subcommand to execute (ReadFile, WriteFile, EditFile, LS, InitProject, Format, Lint, RunTests)
         file_path: The path to the file or directory to operate on
         content: Content for WriteFile command
         old_string: String to replace for EditFile command
@@ -164,6 +170,7 @@ async def codemcp(
         "LS": {"file_path"},
         "InitProject": {"file_path"},
         "Format": {"file_path"},
+        "Lint": {"file_path"},
         "RunTests": {"file_path", "test_selector"},
         "Grep": {"pattern", "path", "include"},
     }
@@ -247,6 +254,12 @@ async def codemcp(
             return "Error: file_path is required for Format command"
 
         return format_code(file_path)
+
+    if command == "Lint":
+        if file_path is None:
+            return "Error: file_path is required for Lint command"
+
+        return lint_code(file_path)
 
     if command == "RunTests":
         if file_path is None:
