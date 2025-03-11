@@ -803,4 +803,5 @@ def edit_file_content(
 
         return f"Successfully edited {full_file_path}\n\nHere's a snippet of the edited file:\n{snippet}{git_message}"
     except Exception as e:
+        logger.warning(f"Exception suppressed during file editing: {e!s}", exc_info=True)
         return f"Error editing file: {e!s}"
