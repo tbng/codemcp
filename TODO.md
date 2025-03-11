@@ -4,20 +4,17 @@ BIGGEST PROBLEMS
   - Trying out develop/main branch split, maybe this is basically what you
     want except you just don't get the final proposed commit message
 - Audit the tests to make sure they actually do the right thing
-- I think format isn't doing the right thing?
 
 CODE QUAL
-- Whenever we do a subprocess call, we MUST log the stdout/stderr
-  - Add a wrapper here to make sure this consistently happens
 - Setup types
-- General logging to repro problems
+- General logging to repro problems (CLI logging helps, but some signpost
+  logging would be good too)
 - Stop using catch all exceptions
 - Split E2E tests into a test per file
 
 TOOLS:
-- ✅ Linter/autoformatter integration
+- Linter integration
 - Typecheck/build integration
-- Test runner integration
 - Scrape webpage and add to context
 - Explicitly add file to context
 - Make file executable tool
@@ -25,13 +22,16 @@ TOOLS:
 
 FEATURES
 - Diff review mode
+- Rage
+
+SHARPEN THE SAW
+- Use the Anthropic export data to do some token counting / analysis
+
+~~~~
 
 HARD TO FIX
 - Deal with output length limit from Claude Desktop (cannot do an edit longer
   than the limit)
-
-SHARPEN THE SAW
-- Use the Anthropic export data to do some token counting / analysis
 
 UNCLEAR PAYOFF
 - More faithfully copy claude code's line numbering algorithm
@@ -46,8 +46,7 @@ LLM AFFORDANCE
   `pattern`: `self\\.assertIn.*normalized_result`,
   `path`: `/Users/ezyang/Dev/codemcp/test/test_mcp_e2e.py`
 }
-- Figure out how to stop LLM from creating lots of random shell scripts to try
-  to execute commands
 - Regex search replace for refactor-y stuff (need to prompt this well, cuz LLM
   needs to review changes)
 - Make CLAUDE.md system prompt work (let's be compat with claude code)
+- Infer my codemcp.toml
