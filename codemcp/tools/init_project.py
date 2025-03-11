@@ -93,7 +93,7 @@ When making changes to files, first understand the file's code conventions. Mimi
                 if "commands" in rules_config and "lint" in rules_config["commands"]:
                     lint_command = rules_config["commands"]["lint"]
                     if isinstance(lint_command, list) and lint_command:
-                        lint_command_str = (
+                        (
                             "\nWhen you are done with your task, run code linting using the Lint tool: `Lint "
                             + directory
                             + "`"
