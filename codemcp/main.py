@@ -131,6 +131,11 @@ async def codemcp(
 
     Formats code according to the format command specified in the codemcp.toml file.
     Use this to ensure code follows the project's style guidelines.
+    
+    ## Lint directory_path
+    
+    Lints code according to the lint command specified in the codemcp.toml file.
+    Use this to identify and automatically fix code issues.
 
     ## RunTests directory_path test_selector?
 
