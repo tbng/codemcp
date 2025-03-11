@@ -36,7 +36,8 @@ def init_project(directory: str) -> str:
         # Build path to codemcp.toml file
         rules_file_path = os.path.join(full_dir_path, "codemcp.toml")
 
-        command_help = ""  # TODO
+        global_prompt = ""
+        command_help = ""
 
         # Check if codemcp.toml file exists
         if os.path.exists(rules_file_path):
@@ -190,7 +191,6 @@ Args:
     description: Short description of the change (for WriteFile/EditFile)
     arguments: A list of string arguments for RunCommand command
 """
-        global_prompt = ""
         format_command_str = ""
 
         # Combine system prompt, global prompt, and format command

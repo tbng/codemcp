@@ -44,7 +44,7 @@ class EditFileTest(MCPEndToEndTestCase):
                 "codemcp",
                 {
                     "command": "EditFile",
-                    "file_path": test_file_path,
+                    "path": test_file_path,
                     "old_string": old_string,
                     "new_string": new_string,
                     "description": "Modify line 2",
