@@ -92,7 +92,7 @@ nothing to commit, working tree clean
                 "codemcp",
                 {
                     "command": "WriteFile",
-                    "file_path": new_file_path,
+                    "path": new_file_path,
                     "content": "This is a brand new file",
                     "description": "Create a new file with WriteFile",
                 },
