@@ -1,7 +1,10 @@
 BIGGEST PROBLEMS
 - Branchy git structure for ease of review
   - This is less pressing now with the 'git diff origin/main' trick
+  - Trying out develop/main branch split, maybe this is basically what you
+    want except you just don't get the final proposed commit message
 - Audit the tests to make sure they actually do the right thing
+- I think format isn't doing the right thing?
 
 CODE QUAL
 - Whenever we do a subprocess call, we MUST log the stdout/stderr
@@ -9,6 +12,7 @@ CODE QUAL
 - Setup types
 - General logging to repro problems
 - Stop using catch all exceptions
+- Split E2E tests into a test per file
 
 TOOLS:
 - ✅ Linter/autoformatter integration
@@ -46,3 +50,4 @@ LLM AFFORDANCE
   to execute commands
 - Regex search replace for refactor-y stuff (need to prompt this well, cuz LLM
   needs to review changes)
+- Make CLAUDE.md system prompt work (let's be compat with claude code)
