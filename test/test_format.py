@@ -181,27 +181,42 @@ class TestFormat(TestCase):
         
         result = format_code(self.temp_dir.name)
         self.assertEqual(result, "Code formatting successful:\nFormatting successful")
-
     def test_format_code_with_changes(self):
         """Test code formatting that makes changes to files"""
         # Create a config file
         self.create_config_file()
-
-        # Configure mocks to show changes after formatting
-        def side_effect(cmd, **kwargs):
-            if cmd == ["git", "status", "--porcelain"]:
-                return MagicMock(stdout=" M modified_file.py\n")
+        
+        # Set up responses for different commands
+        def run_command_side_effect(*args, **kwargs):
+            cmd = args[0]
+            mock_result = MagicMock()
+            
+            if cmd[0:2] == ["git", "rev-parse"]:
+                # Return the repo root
+                mock_result.stdout = self.temp_dir.name + "\n"
+            elif cmd[0:2] == ["git", "status"]:
+                # Return changes in git status
+                mock_result.stdout = " M modified_file.py\n"
+            elif cmd == ["./run_format.sh"]:
+                # Format command output
+                mock_result.stdout = "Formatting successful"
             else:
-                return MagicMock(stdout="Formatting successful")
-
-        self.mock_run_command.side_effect = side_effect
-
+                mock_result.stdout = ""
+                
+            return mock_result
+            
+        self.mock_run_command.side_effect = run_command_side_effect
+        
         result = format_code(self.temp_dir.name)
         self.assertEqual(
-            result,
-            "Code formatting successful and changes committed:\nFormatting successful",
+            result, 
+            "Code formatting successful and changes committed:\nFormatting successful"
         )
-
+        
+        # Verify commit_changes was called
+        self.mock_commit_changes.assert_called_with(
+            self.temp_dir.name, "Auto-commit formatting changes"
+        )
         # Verify commit_changes was called
         self.mock_commit_changes.assert_called_with(
             self.temp_dir.name, "Auto-commit formatting changes"
