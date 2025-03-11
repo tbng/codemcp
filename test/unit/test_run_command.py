@@ -88,16 +88,48 @@ class TestRunCommand(TestCase):
         result = get_command_from_config(self.temp_dir.name, "format")
         self.assertEqual(result, expected_command)
 
-    def test_get_command_from_config_missing(self):
-        """Test retrieving command when it's not in the config"""
-        # Create a config file without the specific command
-        config_path = os.path.join(self.temp_dir.name, "codemcp.toml")
-        with open(config_path, "w") as f:
-            f.write('[commands]\ntest = ["./run_test.sh"]\n')
+    def test_get_command_from_config_dict_format(self):
+        """Test retrieving command when configured as a dictionary with command field"""
+        # Create a config file with a command in dictionary format
+        expected_command = ["./run_test.sh"]
+        self.create_config_file("test", expected_command, is_dict=True, doc="Test documentation")
 
         # Call the function and check result
-        result = get_command_from_config(self.temp_dir.name, "format")
-        self.assertIsNone(result)
+        result = get_command_from_config(self.temp_dir.name, "test")
+        self.assertEqual(result, expected_command)
+
+    def test_run_command_with_dict_format(self):
+        """Test command execution when command is configured as a dictionary"""
+        # Create a config file with a command in dictionary format
+        command_type = "test"
+        expected_command = ["./run_test.sh"]
+        self.create_config_file(command_type, expected_command, is_dict=True, doc="Run tests with pytest")
+
+        # Set up responses for different commands
+        def run_command_side_effect(*args, **kwargs):
+            cmd = args[0]
+            mock_result = MagicMock()
+
+            if cmd[0:2] == ["git", "rev-parse"]:
+                # Return the repo root
+                mock_result.stdout = self.temp_dir.name + "\n"
+            elif cmd[0:2] == ["git", "status"]:
+                # Return empty status (no changes)
+                mock_result.stdout = ""
+            elif cmd == ["./run_test.sh"]:
+                # Command output
+                mock_result.stdout = "Tests executed successfully"
+            else:
+                mock_result.stdout = ""
+
+            return mock_result
+
+        self.mock_run_command.side_effect = run_command_side_effect
+
+        result = run_command(self.temp_dir.name, command_type)
+        self.assertEqual(
+            result, f"Code {command_type} successful:\nTests executed successfully"
+        )
 
     def test_get_command_from_config_no_config(self):
         """Test retrieving command when config file doesn't exist"""
