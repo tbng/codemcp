@@ -115,7 +115,14 @@ def run_code_command(
             return f"Error: Path is not a directory: {project_dir}"
 
         if not command:
-            return f"Error: No {command_name} command configured in codemcp.toml"
+            # Map the command_name to keep backward compatibility with existing tests
+            command_key = command_name
+            if command_name == "linting":
+                command_key = "lint"
+            elif command_name == "formatting":
+                command_key = "format"
+                
+            return f"Error: No {command_key} command configured in codemcp.toml"
 
         # Check if directory is in a git repository
         is_git_repo = is_git_repository(full_dir_path)
