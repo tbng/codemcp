@@ -131,9 +131,14 @@ async def codemcp(
     Formats code according to the format command specified in the codemcp.toml file.
     Use this to ensure code follows the project's style guidelines.
 
+    ## RunTests directory_path test_selector?
+
+    Runs tests according to the test command specified in the codemcp.toml file.
+    An optional test_selector can be provided to run specific tests.
+
     Args:
         ctx: The MCP context
-        command: The subcommand to execute (ReadFile, WriteFile, EditFile, LS, InitProject)
+        command: The subcommand to execute (ReadFile, WriteFile, EditFile, LS, InitProject, Format, RunTests)
         file_path: The path to the file or directory to operate on
         content: Content for WriteFile command
         old_string: String to replace for EditFile command
@@ -141,6 +146,7 @@ async def codemcp(
         offset: Line offset for ReadFile command
         limit: Line limit for ReadFile command
         description: Short description of the change (for WriteFile/EditFile)
+        test_selector: Optional selector for RunTests command
 
     """
     # Define expected parameters for each command
