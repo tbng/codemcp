@@ -44,9 +44,7 @@ def _generate_chat_id(directory: str) -> str:
         A string containing the unique chat ID, e.g., "23-initproject-unique-id"
     """
     # Generate a human-readable short identifier
-    human_readable_part = "initproject-" + "".join(
-        random.choices(string.ascii_lowercase, k=6)
-    )
+    human_readable_part = "untitled"
 
     try:
         # Check if we're in a git repository
