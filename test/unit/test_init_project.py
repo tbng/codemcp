@@ -3,9 +3,9 @@
 import os
 import tempfile
 import unittest
-from unittest.mock import patch
+from unittest.mock import patch, mock_open
 
-from codemcp.tools.init_project import init_project
+from codemcp.tools.init_project import init_project, _generate_chat_id
 
 
 class InitProjectTestCase(unittest.TestCase):
@@ -34,6 +34,12 @@ class InitProjectTestCase(unittest.TestCase):
         self.mock_git_base_dir = self.git_base_dir_patch.start()
         self.mock_git_base_dir.return_value = self.dir_path
         self.addCleanup(self.git_base_dir_patch.stop)
+        
+        # Create patch for git repository root
+        self.git_repo_root_patch = patch("codemcp.tools.init_project.get_repository_root")
+        self.mock_git_repo_root = self.git_repo_root_patch.start()
+        self.mock_git_repo_root.return_value = self.dir_path
+        self.addCleanup(self.git_repo_root_patch.stop)
 
     def test_init_project_no_rules_file(self):
         """Test initializing a project without a codemcp.toml file."""
@@ -41,6 +47,8 @@ class InitProjectTestCase(unittest.TestCase):
         # Check for a stable part of the system prompt instead of the exact string
         self.assertIn("# Tone and style", result)
         self.assertIn("# Following conventions", result)
+        # Check that chat ID is generated and included in the prompt
+        self.assertIn("This chat has been assigned a unique ID:", result)
 
     def test_init_project_with_rules_file(self):
         """Test initializing a project with a codemcp.toml file."""
@@ -54,6 +62,8 @@ class InitProjectTestCase(unittest.TestCase):
         self.assertIn("# Tone and style", result)
         self.assertIn("# Following conventions", result)
         self.assertIn("This is a custom global prompt.", result)
+        # Check that chat ID is generated and included in the prompt
+        self.assertIn("This chat has been assigned a unique ID:", result)
 
     def test_init_project_invalid_directory(self):
         """Test initializing a project with an invalid directory."""
@@ -155,6 +165,35 @@ test = ["./run_test.sh"]
         result = init_project(self.dir_path)
         self.assertIn("This is a global prompt without command docs.", result)
         self.assertNotIn("Command documentation:", result)
+
+    @patch("codemcp.tools.init_project.open", new_callable=mock_open, read_data="42")
+    def test_generate_chat_id_with_existing_counter(self, mock_file):
+        """Test that _generate_chat_id correctly reads an existing counter."""
+        # Set up the mock to return "42" when reading the counter file
+        chat_id = _generate_chat_id(self.dir_path)
+        
+        # Check that the chat ID starts with the incremented counter
+        self.assertTrue(chat_id.startswith("43-"), f"Chat ID {chat_id} should start with '43-'")
+        
+        # Check that the ID format contains the expected parts
+        parts = chat_id.split("-")
+        self.assertEqual(len(parts), 3, "Chat ID should have 3 parts")
+        self.assertEqual(parts[0], "43", "Counter should be '43'")
+        self.assertEqual(parts[1], "initproject", "Second part should be 'initproject'")
+        
+    @patch("codemcp.tools.init_project.is_git_repository", return_value=False)
+    def test_generate_chat_id_not_in_git_repo(self, mock_is_git_repo):
+        """Test that _generate_chat_id handles case when not in a git repository."""
+        chat_id = _generate_chat_id(self.dir_path)
+        
+        # Check that the chat ID starts with the fallback counter
+        self.assertTrue(chat_id.startswith("0-"), f"Chat ID {chat_id} should start with '0-'")
+        
+        # Check that the ID format contains the expected parts
+        parts = chat_id.split("-")
+        self.assertEqual(len(parts), 3, "Chat ID should have 3 parts")
+        self.assertEqual(parts[0], "0", "Counter should be '0'")
+        self.assertEqual(parts[1], "initproject", "Second part should be 'initproject'")
 
 
 if __name__ == "__main__":
