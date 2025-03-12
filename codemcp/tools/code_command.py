@@ -99,7 +99,11 @@ async def check_for_changes(project_dir: str) -> bool:
 
 
 async def run_code_command(
-    project_dir: str, command_name: str, command: List[str], commit_message: str, chat_id: str = None
+    project_dir: str,
+    command_name: str,
+    command: List[str],
+    commit_message: str,
+    chat_id: str = None,
 ) -> str:
     """Run a code command (lint, format, etc.) and handle git operations.
 

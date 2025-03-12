@@ -387,13 +387,15 @@ class GitAmendTest(MCPEndToEndTestCase):
 
             # Verify the latest commit has AI chat_id
             self.assertIn(f"codemcp-id: {chat_id}", commit_msgs)
-            
+
             # Verify the user commit message is included
             self.assertIn("User-generated commit", commit_msgs)
-            
+
             # Make sure there's only one codemcp-id in the output
             codemcp_id_count = commit_msgs.count("codemcp-id:")
-            self.assertEqual(codemcp_id_count, 1, "Should be only one codemcp-id metadata tag")
+            self.assertEqual(
+                codemcp_id_count, 1, "Should be only one codemcp-id metadata tag"
+            )
 
     async def test_commit_history_with_nonhead_match(self):
         """Test behavior when HEAD~ has the same chat_id as current but HEAD doesn't."""
@@ -423,32 +425,32 @@ class GitAmendTest(MCPEndToEndTestCase):
 
         # First chat ID
         chat_id1 = "chat-history-1"
-        
+
         # Helper function to create a commit with chat ID
         def create_chat_commit(content, message, chat_id):
             with open(test_file_path, "w") as f:
                 f.write(content)
-                
+
             subprocess.run(
                 ["git", "add", test_file_path],
                 cwd=self.temp_dir.name,
                 env=self.env,
                 check=True,
             )
-            
+
             subprocess.run(
                 ["git", "commit", "-m", f"{message}\n\ncodemcp-id: {chat_id}"],
                 cwd=self.temp_dir.name,
                 env=self.env,
                 check=True,
             )
-        
+
         # Create first AI commit with chat_id1
         create_chat_commit("Modified by chat 1", "First AI edit", chat_id1)
-        
+
         # Create a user commit (different chat_id)
         create_chat_commit("Modified by user", "User edit", "some-other-chat")
-        
+
         # Get the current commit count
         initial_commit_count = len(
             subprocess.check_output(
@@ -460,7 +462,7 @@ class GitAmendTest(MCPEndToEndTestCase):
             .strip()
             .split("\n")
         )
-        
+
         async with self.create_client_session() as session:
             # New edit with the original chat_id1
             result = await session.call_tool(
@@ -606,14 +608,15 @@ class GitAmendTest(MCPEndToEndTestCase):
             # Verify new commit has AI chat_id
             self.assertIn(f"codemcp-id: {ai_chat_id}", commit_msgs)
             self.assertIn("Write with AI chat ID", commit_msgs)
-            
+
             # Verify previous commit message is included
             self.assertIn("Regular commit without chat ID", commit_msgs)
-            
+
             # Make sure there's only one codemcp-id in the output
             codemcp_id_count = commit_msgs.count("codemcp-id:")
-            self.assertEqual(codemcp_id_count, 1, "Should be only one codemcp-id metadata tag")
-
+            self.assertEqual(
+                codemcp_id_count, 1, "Should be only one codemcp-id metadata tag"
+            )
 
     async def test_write_with_different_chatid(self):
         """Test that WriteFile creates a new commit if HEAD has a different chat ID."""
@@ -708,10 +711,12 @@ class GitAmendTest(MCPEndToEndTestCase):
             # Verify both chat IDs are in the commit history
             self.assertIn(f"codemcp-id: {second_chat_id}", commit_msgs)
             self.assertIn(f"codemcp-id: {first_chat_id}", commit_msgs)
-            
+
             # Make sure there are exactly two codemcp-id tags in the output
             codemcp_id_count = commit_msgs.count("codemcp-id:")
-            self.assertEqual(codemcp_id_count, 2, "Should be exactly two codemcp-id metadata tags")
+            self.assertEqual(
+                codemcp_id_count, 2, "Should be exactly two codemcp-id metadata tags"
+            )
 
 
 if __name__ == "__main__":

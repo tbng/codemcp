@@ -10,7 +10,10 @@ __all__ = [
 
 
 async def run_command(
-    project_dir: str, command: str, arguments: Optional[List[str]] = None, chat_id: str = None
+    project_dir: str,
+    command: str,
+    arguments: Optional[List[str]] = None,
+    chat_id: str = None,
 ) -> str:
     """Run a command that is configured in codemcp.toml.
 
