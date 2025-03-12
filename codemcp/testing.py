@@ -117,6 +117,29 @@ class MCPEndToEndTestCase(TestCase, unittest.IsolatedAsyncioTestCase):
             return result
         return str(result)
 
+    async def get_chat_id(self, session):
+        """Initialize project and get chat_id.
+        
+        Args:
+            session: The client session to use
+            
+        Returns:
+            str: The chat_id 
+        """
+        # First initialize project to get chat_id
+        init_result = await session.call_tool(
+            "codemcp",
+            {"subtool": "InitProject", "path": self.temp_dir.name},
+        )
+        init_result_text = self.extract_text_from_result(init_result)
+        
+        # Extract chat_id from the init result
+        import re
+        chat_id_match = re.search(r"chat has been assigned a unique ID: ([^\n]+)", init_result_text)
+        chat_id = chat_id_match.group(1) if chat_id_match else "test-chat-id"
+        
+        return chat_id
+
     @asynccontextmanager
     async def _unwrap_exception_groups(self):
         """Context manager that unwraps ExceptionGroups with single exceptions.
