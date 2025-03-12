@@ -191,7 +191,6 @@ test = ["./run_test.sh"]
                     handle.write.assert_called_once_with("43")
 
     def test_chat_id_generation_no_counter(self):
-    def test_chat_id_generation_no_counter(self):
         """Test chat ID generation when no counter file exists."""
         # Create a side_effect for os.path.exists that returns False only for the counter file
         def exists_side_effect(path):
