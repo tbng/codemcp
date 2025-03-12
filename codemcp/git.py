@@ -11,6 +11,7 @@ __all__ = [
     "is_git_repository",
     "commit_pending_changes",
     "commit_changes",
+    "get_repository_root",
 ]
 
 
