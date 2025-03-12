@@ -102,6 +102,83 @@ format = ["./run_format.sh"]
             # Verify the result contains expected elements, ensuring binary data was handled properly
             self.assertIn("format", result_text)
 
+    async def test_allow_empty_commit_flag(self):
+        """Test that allow_empty=True flag is properly honored in git.commit_changes."""
+        import subprocess
+        from codemcp.git import commit_changes
+
+        # Set up a git repository in the temp dir
+        subprocess.run(["git", "init"], cwd=self.temp_dir.name, check=True)
+        subprocess.run(
+            ["git", "config", "user.email", "test@example.com"],
+            cwd=self.temp_dir.name,
+            check=True,
+        )
+        subprocess.run(
+            ["git", "config", "user.name", "Test User"],
+            cwd=self.temp_dir.name,
+            check=True,
+        )
+
+        # Make an initial commit so we have a HEAD reference
+        test_file = os.path.join(self.temp_dir.name, "test_file.txt")
+        with open(test_file, "w") as f:
+            f.write("Initial content")
+
+        subprocess.run(["git", "add", "."], cwd=self.temp_dir.name, check=True)
+        subprocess.run(
+            ["git", "commit", "-m", "Initial commit"],
+            cwd=self.temp_dir.name,
+            check=True,
+        )
+
+        # Now try to make an empty commit with allow_empty=False (should fail to commit)
+        success, message = await commit_changes(
+            path=self.temp_dir.name,
+            description="This should not commit",
+            chat_id="test-chat-id",
+            allow_empty=False,
+        )
+
+        # Should return success=True but shouldn't actually make a new commit
+        self.assertTrue(success)
+        self.assertIn("No changes to commit", message)
+
+        # Get the current commit count to verify no new commit was made
+        result = subprocess.run(
+            ["git", "rev-list", "--count", "HEAD"],
+            cwd=self.temp_dir.name,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        commit_count_before = int(result.stdout.strip())
+
+        # Now try with allow_empty=True (should succeed in making an empty commit)
+        success, message = await commit_changes(
+            path=self.temp_dir.name,
+            description="Empty commit test",
+            chat_id="test-chat-id",
+            allow_empty=True,
+        )
+
+        # Should return success=True and have made a new commit
+        self.assertTrue(success)
+        self.assertIn("Changes committed successfully", message)
+
+        # Verify a new commit was actually created
+        result = subprocess.run(
+            ["git", "rev-list", "--count", "HEAD"],
+            cwd=self.temp_dir.name,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        commit_count_after = int(result.stdout.strip())
+
+        # Ensure we have one more commit now
+        self.assertEqual(commit_count_before + 1, commit_count_after)
+
 
 if __name__ == "__main__":
     unittest.main()

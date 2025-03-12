@@ -515,7 +515,7 @@ async def commit_changes(
             )
 
             # If diff-index returns 0, there are no changes to commit
-            if diff_result.returncode == 0:
+            if diff_result.returncode == 0 and not allow_empty:
                 return (
                     True,
                     "No changes to commit (changes already committed or no changes detected)",
