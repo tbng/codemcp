@@ -26,7 +26,7 @@ async def run_command(
         check: If True, raise CalledProcessError if the command returns non-zero exit code
         capture_output: If True, capture stdout and stderr
         text: If True, decode stdout and stderr as text
-        timeout: Timeout in seconds
+        wait_time: Timeout in seconds
         shell: If True, run command in a shell
 
     Returns:
