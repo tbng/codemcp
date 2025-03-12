@@ -137,9 +137,10 @@ class MCPEndToEndTestCase(TestCase, unittest.IsolatedAsyncioTestCase):
         import re
 
         chat_id_match = re.search(
-            r"chat has been assigned a unique ID: ([^\n]+)", init_result_text
+            r"chat ID: ([^\n]+)", init_result_text
         )
-        chat_id = chat_id_match.group(1) if chat_id_match else "test-chat-id"
+        chat_id = chat_id_match.group(1)
+        assert chat_id is not None
 
         return chat_id
 
