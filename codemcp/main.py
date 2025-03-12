@@ -51,8 +51,8 @@ async def codemcp(
     """
     # Define expected parameters for each subtool
     expected_params = {
-        "ReadFile": {"path", "offset", "limit"},
-        "WriteFile": {"path", "content", "description"},
+        "ReadFile": {"path", "offset", "limit", "chat_id"},
+        "WriteFile": {"path", "content", "description", "chat_id"},
         "EditFile": {
             "path",
             "old_string",
@@ -60,11 +60,12 @@ async def codemcp(
             "description",
             "old_str",
             "new_str",
+            "chat_id",
         },
-        "LS": {"path"},
-        "InitProject": {"path"},
-        "RunCommand": {"path", "command", "arguments"},
-        "Grep": {"pattern", "path", "include"},
+        "LS": {"path", "chat_id"},
+        "InitProject": {"path"},  # chat_id is not expected for InitProject as it's generated there
+        "RunCommand": {"path", "command", "arguments", "chat_id"},
+        "Grep": {"pattern", "path", "include", "chat_id"},
     }
 
     # Check if subtool exists
