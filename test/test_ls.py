@@ -31,10 +31,22 @@ class LSTest(MCPEndToEndTestCase):
             f.write("Content of subfile")
 
         async with self.create_client_session() as session:
-            # Call the LS tool
+            # First initialize project to get chat_id
+            init_result = await session.call_tool(
+                "codemcp",
+                {"subtool": "InitProject", "path": self.temp_dir.name},
+            )
+            init_result_text = self.extract_text_from_result(init_result)
+            
+            # Extract chat_id from the init result
+            import re
+            chat_id_match = re.search(r"chat has been assigned a unique ID: ([^\n]+)", init_result_text)
+            chat_id = chat_id_match.group(1) if chat_id_match else "test-chat-id"
+            
+            # Call the LS tool with chat_id
             result = await session.call_tool(
                 "codemcp",
-                {"subtool": "LS", "path": test_dir},
+                {"subtool": "LS", "path": test_dir, "chat_id": chat_id},
             )
 
             # Normalize the result
