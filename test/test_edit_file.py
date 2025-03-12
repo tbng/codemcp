@@ -310,6 +310,18 @@ nothing to commit, working tree clean
         )
 
         async with self.create_client_session() as session:
+            # First initialize project to get chat_id
+            init_result = await session.call_tool(
+                "codemcp",
+                {"subtool": "InitProject", "path": self.temp_dir.name},
+            )
+            init_result_text = self.extract_text_from_result(init_result)
+            
+            # Extract chat_id from the init result
+            import re
+            chat_id_match = re.search(r"chat has been assigned a unique ID: ([^\n]+)", init_result_text)
+            chat_id = chat_id_match.group(1) if chat_id_match else "test-chat-id"
+            
             # Try to write to the removed file
             result = await session.call_tool(
                 "codemcp",
@@ -318,6 +330,7 @@ nothing to commit, working tree clean
                     "path": tracked_file_path,
                     "content": "Attempt to write to git-removed file",
                     "description": "Attempt to modify git-removed file",
+                    "chat_id": chat_id,
                 },
             )
 
