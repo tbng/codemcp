@@ -76,17 +76,7 @@ To see some sample transcripts using this tool, check out:
 - [Fix failing tests](https://claude.ai/share/2b7161ef-5683-4261-ad45-fabc3708f950)
 - [Do a refactor](https://claude.ai/share/f005b43c-a657-43e5-ad9f-4714a5cd746f)
 
-We recommend having the repository that codemcp is operating be a distinct
-branch from the default branch.  Suppose that codemcp is operating on
-`develop` and the default branch is `main`, here are some useful commands:
-
-- View a diff of LLM edits: `git diff main`
-- Reject LLM changes: `git reset --keep main`
-- Accept LLM changes: `git fetch . develop:main`
-  - If you want to squash the commits, run `git rebase -i` and squash before
-    you run the fetch
-  - If you want to preserve the intermediate commits, checkout `main` and then
-    run `git merge develop --no-ff`
+codemcp will generate a commit per chat and amend it as it is working on your feature.
 
 ## Philosophy
 
@@ -120,11 +110,16 @@ test = ["./run_test.sh"]
 
 The `project_prompt` will be loaded when you initialize the project in chats.
 
-The `commands` section allows you to configure commands for specific tools:
-- `format`: used to format code according to project standards.  Formatting is
-  done at the very end of a task.
-- `test`: used to run tests.  The test script should accept an argument which
-  will be passed as is to the underlying test framework.
+The `commands` section allows you to configure commands for specific tools.  The
+names are told to the LLM, who will decide when it wants to run them.  You can add
+instructions how to use tools in the `project_prompt`; we also support a more verbose
+syntax where you can give specific instructions on a tool-by-tool basis:
+
+```
+[commands.test]
+command = ["./run_test.sh"]
+doc = "Accepts a pytest-style test selector as an argument to run a specific test."
+```
 
 ## Troubleshooting
 
