@@ -39,6 +39,10 @@ target-version = "py312"
 line-length = 88
 indent-width = 4
 
+# Enabled linters
+[tool.ruff.lint]
+select = ["ASYNC"]
+
 [tool.ruff.format]
 # Formatter settings
 quote-style = "double"
