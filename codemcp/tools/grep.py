@@ -139,6 +139,7 @@ async def grep_files(
     pattern: str,
     path: str | None = None,
     include: str | None = None,
+    chat_id: str | None = None,
     signal=None,
 ) -> dict[str, Any]:
     """Search for a pattern in files within a directory.
@@ -147,6 +148,7 @@ async def grep_files(
         pattern: The regular expression pattern to search for
         path: The directory to search in (must be in a git repository)
         include: Optional file pattern to filter the search
+        chat_id: The unique ID of the current chat session
         signal: Optional abort signal to terminate the subprocess
 
     Returns:
