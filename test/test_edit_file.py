@@ -39,7 +39,19 @@ class EditFileTest(MCPEndToEndTestCase):
         new_string = "Line 1\nModified Line 2\nLine 3\n"
 
         async with self.create_client_session() as session:
-            # Call the EditFile tool
+            # First initialize project to get chat_id
+            init_result = await session.call_tool(
+                "codemcp",
+                {"subtool": "InitProject", "path": self.temp_dir.name},
+            )
+            init_result_text = self.extract_text_from_result(init_result)
+            
+            # Extract chat_id from the init result
+            import re
+            chat_id_match = re.search(r"chat has been assigned a unique ID: ([^\n]+)", init_result_text)
+            chat_id = chat_id_match.group(1) if chat_id_match else "test-chat-id"
+            
+            # Call the EditFile tool with chat_id
             result = await session.call_tool(
                 "codemcp",
                 {
@@ -48,6 +60,7 @@ class EditFileTest(MCPEndToEndTestCase):
                     "old_string": old_string,
                     "new_string": new_string,
                     "description": "Modify line 2",
+                    "chat_id": chat_id,
                 },
             )
 
