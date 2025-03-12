@@ -615,5 +615,100 @@ class GitAmendTest(MCPEndToEndTestCase):
             self.assertEqual(codemcp_id_count, 1, "Should be only one codemcp-id metadata tag")
 
 
-if __name__ == "__main__":
-    unittest.main()
+    async def test_write_with_different_chatid(self):
+        """Test that WriteFile creates a new commit if HEAD has a different chat ID."""
+        # Create a file to edit
+        test_file_path = os.path.join(self.temp_dir.name, "write_test.txt")
+        initial_content = "Initial content for write test"
+
+        # Create the file
+        with open(test_file_path, "w") as f:
+            f.write(initial_content)
+
+        # Add it to git
+        subprocess.run(
+            ["git", "add", test_file_path],
+            cwd=self.temp_dir.name,
+            env=self.env,
+            check=True,
+        )
+
+        # Create a commit with a specific chat ID
+        first_chat_id = "first-chat-123"
+        subprocess.run(
+            ["git", "commit", "-m", f"First commit\n\ncodemcp-id: {first_chat_id}"],
+            cwd=self.temp_dir.name,
+            env=self.env,
+            check=True,
+        )
+
+        # Get the current commit count
+        initial_commit_count = len(
+            subprocess.check_output(
+                ["git", "log", "--oneline"],
+                cwd=self.temp_dir.name,
+                env=self.env,
+            )
+            .decode()
+            .strip()
+            .split("\n")
+        )
+
+        # Use a different chat ID for the write operation
+        second_chat_id = "second-chat-456"
+
+        async with self.create_client_session() as session:
+            # Write to the file with a different chat ID
+            result = await session.call_tool(
+                "codemcp",
+                {
+                    "subtool": "WriteFile",
+                    "path": test_file_path,
+                    "content": "Modified content for write test",
+                    "description": "Write with different chat ID",
+                    "chat_id": second_chat_id,
+                },
+            )
+
+            # Normalize and check the result
+            normalized_result = self.normalize_path(result)
+            result_text = self.extract_text_from_result(normalized_result)
+            self.assertIn("Successfully wrote to", result_text)
+
+            # Get the commit count after the write
+            commit_count_after_write = len(
+                subprocess.check_output(
+                    ["git", "log", "--oneline"],
+                    cwd=self.temp_dir.name,
+                    env=self.env,
+                )
+                .decode()
+                .strip()
+                .split("\n")
+            )
+
+            # Verify a new commit was created (not amended)
+            self.assertEqual(
+                commit_count_after_write,
+                initial_commit_count + 1,
+                "Write with different chat_id should create a new commit",
+            )
+
+            # Get the commit messages
+            commit_msgs = (
+                subprocess.check_output(
+                    ["git", "log", "-2", "--pretty=%B"],
+                    cwd=self.temp_dir.name,
+                    env=self.env,
+                )
+                .decode()
+                .strip()
+            )
+
+            # Verify both chat IDs are in the commit history
+            self.assertIn(f"codemcp-id: {second_chat_id}", commit_msgs)
+            self.assertIn(f"codemcp-id: {first_chat_id}", commit_msgs)
+            
+            # Make sure there are exactly two codemcp-id tags in the output
+            codemcp_id_count = commit_msgs.count("codemcp-id:")
+            self.assertEqual(codemcp_id_count, 2, "Should be exactly two codemcp-id metadata tags")
