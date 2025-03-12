@@ -200,21 +200,23 @@ test = ["./run_test.sh"]
                 return False
             return True
         
-        # Mock os.path.exists with the side effect
-        with patch('os.path.exists', side_effect=exists_side_effect):
-            # Mock the open function for writing the counter file
-            with patch('builtins.open', mock_open()) as mock_file:
-                # Mock random.choices to return a predictable value
-                with patch('random.choices', return_value=['a', 'b', 'c', 'd', 'e', 'f']):
-                    chat_id = _generate_chat_id(self.dir_path)
-                    
-                    # Check the format of the chat ID
-                    self.assertTrue(chat_id.startswith("1-"), 
-                                    f"Expected chat ID to start with '1-', got {chat_id}")
-                    
-                    # Verify that the counter file was written with initial value 1
-                    handle = mock_file()
-                    handle.write.assert_called_once_with("1")
+        # Make sure is_git_repository returns True
+        with patch('codemcp.tools.init_project.is_git_repository', return_value=True):
+            # Mock os.path.exists with the side effect
+            with patch('os.path.exists', side_effect=exists_side_effect):
+                # Mock the open function for writing the counter file
+                with patch('builtins.open', mock_open()) as mock_file:
+                    # Mock random.choices to return a predictable value
+                    with patch('random.choices', return_value=['a', 'b', 'c', 'd', 'e', 'f']):
+                        chat_id = _generate_chat_id(self.dir_path)
+                        
+                        # Check the format of the chat ID
+                        self.assertTrue(chat_id.startswith("1-"), 
+                                        f"Expected chat ID to start with '1-', got {chat_id}")
+                        
+                        # Verify that the counter file was written with initial value 1
+                        handle = mock_file()
+                        handle.write.assert_called_once_with("1")
 
     def test_chat_id_generation_not_git_repo(self):
         """Test chat ID generation when not in a git repository."""
