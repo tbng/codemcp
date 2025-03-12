@@ -3,9 +3,9 @@
 import os
 import tempfile
 import unittest
-from unittest.mock import patch, mock_open
+from unittest.mock import mock_open, patch
 
-from codemcp.tools.init_project import init_project, _generate_chat_id
+from codemcp.tools.init_project import _generate_chat_id, init_project
 
 
 class InitProjectTestCase(unittest.TestCase):
