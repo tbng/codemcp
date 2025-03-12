@@ -2,6 +2,7 @@
 
 import logging
 import os
+import asyncio
 
 import tomli
 
@@ -32,7 +33,7 @@ def _generate_command_docs(command_docs: dict) -> str:
     return "\n\nCommand documentation:" + "".join(docs)
 
 
-def _generate_chat_id(directory: str) -> str:
+async def _generate_chat_id(directory: str) -> str:
     """Generate a unique chat ID based on a counter stored in the git repository.
 
     Args:
@@ -46,13 +47,13 @@ def _generate_chat_id(directory: str) -> str:
 
     try:
         # Check if we're in a git repository
-        if not is_git_repository(directory):
+        if not await is_git_repository(directory):
             logging.warning(f"Not in a git repository: {directory}")
             # Return a fallback ID if not in a git repository
             return f"0-{human_readable_part}"
 
         # Get the repository root
-        repo_root = get_repository_root(directory)
+        repo_root = await get_repository_root(directory)
 
         # Create .git/codemcp directory if it doesn't exist
         codemcp_dir = os.path.join(repo_root, ".git", "codemcp")
@@ -63,10 +64,15 @@ def _generate_chat_id(directory: str) -> str:
 
         # Read the current counter value or initialize to 0
         counter_value = 0
+        loop = asyncio.get_event_loop()
+        
         if os.path.exists(counter_file):
             try:
-                with open(counter_file, "r") as f:
-                    counter_value = int(f.read().strip())
+                read_counter = await loop.run_in_executor(
+                    None, 
+                    lambda: open(counter_file, "r").read().strip()
+                )
+                counter_value = int(read_counter)
             except (ValueError, IOError) as e:
                 logging.warning(f"Error reading counter file: {e}")
 
@@ -75,8 +81,10 @@ def _generate_chat_id(directory: str) -> str:
 
         # Write the new counter value
         try:
-            with open(counter_file, "w") as f:
-                f.write(str(counter_value))
+            await loop.run_in_executor(
+                None,
+                lambda: open(counter_file, "w").write(str(counter_value))
+            )
         except IOError as e:
             logging.warning(f"Error writing to counter file: {e}")
 
@@ -89,7 +97,7 @@ def _generate_chat_id(directory: str) -> str:
         return f"0-{human_readable_part}"
 
 
-def init_project(directory: str) -> str:
+async def init_project(directory: str) -> str:
     """Initialize a project by reading the codemcp.toml TOML file and returning
     a combined system prompt.
 
@@ -112,7 +120,7 @@ def init_project(directory: str) -> str:
             return f"Error: Path is not a directory: {directory}"
 
         # Generate a unique chat ID
-        chat_id = _generate_chat_id(full_dir_path)
+        chat_id = await _generate_chat_id(full_dir_path)
 
         # Build path to codemcp.toml file
         rules_file_path = os.path.join(full_dir_path, "codemcp.toml")
@@ -125,8 +133,12 @@ def init_project(directory: str) -> str:
         # Check if codemcp.toml file exists
         if os.path.exists(rules_file_path):
             try:
-                with open(rules_file_path, "rb") as f:
-                    rules_config = tomli.load(f)
+                loop = asyncio.get_event_loop()
+                rules_data = await loop.run_in_executor(
+                    None,
+                    lambda: open(rules_file_path, "rb").read()
+                )
+                rules_config = tomli.loads(rules_data)
 
                 # Extract project_prompt if it exists
                 if "project_prompt" in rules_config:
