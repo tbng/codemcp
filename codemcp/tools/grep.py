@@ -32,7 +32,7 @@ Example:
 """
 
 
-def git_grep(
+async def git_grep(
     pattern: str,
     path: str | None = None,
     include: str | None = None,
@@ -57,7 +57,7 @@ def git_grep(
     absolute_path = normalize_file_path(path)
 
     # Verify this is a git repository - this check uses the mocked version in tests
-    if not is_git_repository(absolute_path):
+    if not await is_git_repository(absolute_path):
         raise ValueError(f"The provided path is not in a git repository: {path}")
 
     # In non-test environment, verify the path exists and is a directory
@@ -81,9 +81,9 @@ def git_grep(
     logging.debug(f"Executing git grep command: {' '.join(args)}")
 
     try:
-        # Execute git grep command
+        # Execute git grep command asynchronously
         # Use explicit parameters to avoid confusion in mocking
-        result = run_command(
+        result = await run_command(
             cmd=args,
             cwd=absolute_path,
             capture_output=True,
@@ -135,7 +135,7 @@ def render_result_for_assistant(output: dict[str, Any]) -> str:
     return result
 
 
-def grep_files(
+async def grep_files(
     pattern: str,
     path: str | None = None,
     include: str | None = None,
@@ -156,13 +156,24 @@ def grep_files(
     start_time = time.time()
 
     try:
-        # Execute git grep
-        matches = git_grep(pattern, path, include, signal)
+        # Execute git grep asynchronously
+        matches = await git_grep(pattern, path, include, signal)
 
         # Sort matches
         try:
             # First try sorting by modification time
-            stats = [os.stat(match) for match in matches]
+            import asyncio
+            loop = asyncio.get_event_loop()
+            
+            # Get file stats asynchronously
+            stats = []
+            for match in matches:
+                stat = await loop.run_in_executor(
+                    None, 
+                    lambda m=match: os.stat(m) if os.path.exists(m) else None
+                )
+                stats.append(stat)
+                
             matches_with_stats = list(zip(matches, stats, strict=False))
 
             # In tests, sort by filename for deterministic results
@@ -170,7 +181,7 @@ def grep_files(
                 matches_with_stats.sort(key=lambda x: x[0])
             else:
                 # Sort by modification time (newest first), with filename as tiebreaker
-                matches_with_stats.sort(key=lambda x: (-(x[1].st_mtime or 0), x[0]))
+                matches_with_stats.sort(key=lambda x: (-(x[1].st_mtime if x[1] else 0), x[0]))
 
             matches = [match for match, _ in matches_with_stats]
         except Exception as e:
