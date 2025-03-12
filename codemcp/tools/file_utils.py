@@ -15,7 +15,7 @@ __all__ = [
 ]
 
 
-def check_file_path_and_permissions(file_path: str) -> tuple[bool, str | None]:
+async def check_file_path_and_permissions(file_path: str) -> tuple[bool, str | None]:
     """Check if the file path is valid and has the necessary permissions.
 
     Args:
@@ -31,7 +31,7 @@ def check_file_path_and_permissions(file_path: str) -> tuple[bool, str | None]:
         return False, f"Error: File path must be absolute, not relative: {file_path}"
 
     # Check if we have permission to edit this file
-    is_permitted, permission_message = check_edit_permission(file_path)
+    is_permitted, permission_message = await check_edit_permission(file_path)
     if not is_permitted:
         return False, f"Error: {permission_message}"
 
