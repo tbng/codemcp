@@ -53,7 +53,7 @@ def get_command_from_config(project_dir: str, command_name: str) -> Optional[Lis
         return None
 
 
-def check_for_changes(project_dir: str) -> bool:
+async def check_for_changes(project_dir: str) -> bool:
     """Check if an operation made any changes to the code.
 
     Args:
@@ -65,13 +65,13 @@ def check_for_changes(project_dir: str) -> bool:
     try:
         # Get the git repository root for reliable status checking
         try:
-            repo_root = run_command(
+            repo_root = (await run_command(
                 ["git", "rev-parse", "--show-toplevel"],
                 cwd=project_dir,
                 check=True,
                 capture_output=True,
                 text=True,
-            ).stdout.strip()
+            )).stdout.strip()
 
             # Use the repo root as working directory for git commands
             git_cwd = repo_root
@@ -81,7 +81,7 @@ def check_for_changes(project_dir: str) -> bool:
             git_cwd = project_dir
 
         # Check if working directory has uncommitted changes
-        status_result = run_command(
+        status_result = await run_command(
             ["git", "status", "--porcelain"],
             cwd=git_cwd,
             check=True,
@@ -96,7 +96,7 @@ def check_for_changes(project_dir: str) -> bool:
         return False
 
 
-def run_code_command(
+async def run_code_command(
     project_dir: str, command_name: str, command: List[str], commit_message: str
 ) -> str:
     """Run a code command (lint, format, etc.) and handle git operations.
@@ -130,12 +130,12 @@ def run_code_command(
             return f"Error: No {command_key} command configured in codemcp.toml"
 
         # Check if directory is in a git repository
-        is_git_repo = is_git_repository(full_dir_path)
+        is_git_repo = await is_git_repository(full_dir_path)
 
         # If it's a git repo, commit any pending changes before running the command
         if is_git_repo:
             logging.info(f"Committing any pending changes before {command_name}")
-            commit_result = commit_changes(
+            commit_result = await commit_changes(
                 full_dir_path, f"Snapshot before auto-{command_name}"
             )
             if not commit_result[0]:
@@ -143,7 +143,7 @@ def run_code_command(
 
         # Run the command
         try:
-            result = run_command(
+            result = await run_command(
                 command,
                 cwd=full_dir_path,
                 check=True,
@@ -155,10 +155,10 @@ def run_code_command(
 
             # If it's a git repo, commit any changes made by the command
             if is_git_repo:
-                has_changes = check_for_changes(full_dir_path)
+                has_changes = await check_for_changes(full_dir_path)
                 if has_changes:
                     logging.info(f"Changes detected after {command_name}, committing")
-                    success, commit_result_message = commit_changes(
+                    success, commit_result_message = await commit_changes(
                         full_dir_path, commit_message
                     )
 
