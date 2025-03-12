@@ -189,11 +189,6 @@ test = ["./run_test.sh"]
                     # Verify that the counter was incremented and written back
                     handle = mock_file()
                     handle.write.assert_called_once_with("43")
-            )
-
-            # Verify that the counter was incremented and written back
-            handle = mock_file()
-            handle.write.assert_called_once_with("43")
 
     def test_chat_id_generation_no_counter(self):
     def test_chat_id_generation_no_counter(self):
