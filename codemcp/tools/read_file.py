@@ -48,14 +48,10 @@ async def read_file_content(
         if file_size > MAX_OUTPUT_SIZE and not offset and not limit:
             return f"Error: File content ({file_size // 1024}KB) exceeds maximum allowed size ({MAX_OUTPUT_SIZE // 1024}KB). Please use offset and limit parameters to read specific portions of the file."
 
-        # Handle text files - use async file operations
-        # Use a thread pool to handle file I/O asynchronously
-        loop = asyncio.get_event_loop()
-        all_lines = await loop.run_in_executor(
-            None,
-            lambda: open(
-                full_file_path, encoding="utf-8", errors="replace"
-            ).readlines(),
+        # Handle text files - use async file operations with anyio
+        from .async_file_utils import async_readlines
+        all_lines = await async_readlines(
+            full_file_path, encoding="utf-8", errors="replace"
         )
 
         # Get total line count
