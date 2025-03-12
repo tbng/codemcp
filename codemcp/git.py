@@ -626,19 +626,41 @@ async def commit_changes(
                         # Previous line is blank, just add one newline
                         main_message += f"\n{commit_hash}  (Base revision)"
 
+                # Define a consistent padding for alignment - ensure hash and HEAD are aligned
+                hash_len = len(commit_hash)  # Typically 7 characters
+                head_padding = " " * (hash_len - 4)  # 4 is the length of "HEAD"
+
                 # Update any existing HEAD entries to have actual hashes
                 new_lines = []
                 for line in main_message.splitlines():
                     if line.strip().startswith("HEAD"):
-                        new_lines.append(line.replace("HEAD", commit_hash))
+                        # Calculate alignment adjustment since HEAD is shorter than commit hash (typically 7 chars)
+                        # Find HEAD in the line and replace it while preserving alignment
+                        # This will ensure descriptions remain aligned after replacement
+                        head_pos = line.find("HEAD")
+                        head_len = len("HEAD")
+                        hash_len = len(commit_hash)
+
+                        # Calculate the difference in length between HEAD and the hash
+                        len_diff = hash_len - head_len
+
+                        # Replace HEAD with the commit hash and adjust spaces to maintain alignment
+                        prefix = line[:head_pos]
+                        suffix = line[head_pos + head_len :]
+                        # Remove leading spaces from suffix equal to the length difference
+                        if len_diff > 0 and suffix.startswith(" " * len_diff):
+                            suffix = suffix[len_diff:]
+                        new_line = prefix + commit_hash + suffix
+                        new_lines.append(new_line)
                     else:
                         new_lines.append(line)
 
                 # Reconstruct the message with updated lines
                 main_message = "\n".join(new_lines)
 
-                # Now add the new entry with HEAD
-                main_message += f"\nHEAD      {description}"
+                # Now add the new entry with HEAD, ensuring alignment with hash entries
+                # We need precise spacing to match with the formatting in the commit message
+                main_message += f"\nHEAD{head_padding}  {description}"
             else:
                 main_message = description
                 # Add base revision marker for the first commit
