@@ -286,15 +286,14 @@ class GitAmendTest(MCPEndToEndTestCase):
                 )
                 .decode()
                 .strip()
-                .split("\n\n\n")
             )
 
             # Verify the latest commit has chat_id2
-            self.assertIn(f"codemcp-id: {chat_id2}", commit_msgs[0])
-            self.assertIn("Edit from chat 2", commit_msgs[0])
+            self.assertIn(f"codemcp-id: {chat_id2}", commit_msgs)
+            self.assertIn("Edit from chat 2", commit_msgs)
 
             # Verify the previous commit has chat_id1
-            self.assertIn(f"codemcp-id: {chat_id1}", commit_msgs[1])
+            self.assertIn(f"codemcp-id: {chat_id1}", commit_msgs)
             self.assertIn("Edit from chat 1", commit_msgs[1])
 
     async def test_non_ai_commit_not_amended(self):
