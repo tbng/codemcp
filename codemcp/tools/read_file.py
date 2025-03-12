@@ -52,10 +52,12 @@ async def read_file_content(
         # Use a thread pool to handle file I/O asynchronously
         loop = asyncio.get_event_loop()
         all_lines = await loop.run_in_executor(
-            None, 
-            lambda: open(full_file_path, encoding="utf-8", errors="replace").readlines()
+            None,
+            lambda: open(
+                full_file_path, encoding="utf-8", errors="replace"
+            ).readlines(),
         )
-        
+
         # Get total line count
         total_lines = len(all_lines)
 

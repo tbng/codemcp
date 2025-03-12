@@ -41,7 +41,7 @@ async def detect_file_encoding(file_path: str) -> str:
                 return "latin-1"  # A safe fallback
             except FileNotFoundError:
                 return "utf-8"
-        
+
         return await loop.run_in_executor(None, lambda: read_file_utf8())
     except Exception:
         # For non-existent files or any other errors, default to utf-8
@@ -59,7 +59,7 @@ async def detect_line_endings(file_path: str) -> str:
 
     """
     loop = asyncio.get_event_loop()
-    
+
     async def read_and_detect():
         try:
             with open(file_path, "rb") as f:
@@ -69,7 +69,7 @@ async def detect_line_endings(file_path: str) -> str:
             return "\n"
         except Exception:
             return os.linesep
-    
+
     return await loop.run_in_executor(None, lambda: read_and_detect())
 
 
@@ -87,7 +87,9 @@ def detect_repo_line_endings(directory: str) -> str:
     return os.linesep
 
 
-async def write_file_content(file_path: str, content: str, description: str = "") -> str:
+async def write_file_content(
+    file_path: str, content: str, description: str = ""
+) -> str:
     """Write content to a file.
 
     Args:

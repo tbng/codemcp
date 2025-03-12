@@ -105,7 +105,9 @@ async def list_directory(initial_path: str) -> list[str]:
             if os.path.isdir(path):
                 try:
                     # Get directory listing asynchronously
-                    children = await loop.run_in_executor(None, lambda: os.listdir(path))
+                    children = await loop.run_in_executor(
+                        None, lambda: os.listdir(path)
+                    )
                     for child in children:
                         child_path = os.path.join(path, child)
                         if os.path.isdir(child_path):

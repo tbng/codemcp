@@ -40,7 +40,7 @@ async def detect_file_encoding(file_path: str) -> str:
     """
     # Simple implementation - in a real app, would use chardet or similar
     loop = asyncio.get_event_loop()
-    
+
     async def read_and_detect():
         try:
             # Try to read the file with utf-8 encoding
@@ -53,7 +53,7 @@ async def detect_file_encoding(file_path: str) -> str:
         except FileNotFoundError:
             # For non-existent files, default to utf-8
             return "utf-8"
-    
+
     return await loop.run_in_executor(None, lambda: read_and_detect())
 
 
@@ -68,7 +68,7 @@ async def detect_line_endings(file_path: str) -> str:
 
     """
     loop = asyncio.get_event_loop()
-    
+
     async def read_and_detect():
         try:
             with open(file_path, "rb") as f:
@@ -78,7 +78,7 @@ async def detect_line_endings(file_path: str) -> str:
             return "LF"
         except Exception:
             return "LF" if os.linesep == "\n" else "CRLF"
-    
+
     return await loop.run_in_executor(None, lambda: read_and_detect())
 
 
@@ -751,8 +751,7 @@ async def edit_file_content(
         # Read the original file
         loop = asyncio.get_event_loop()
         content = await loop.run_in_executor(
-            None,
-            lambda: open(full_file_path, encoding=encoding).read()
+            None, lambda: open(full_file_path, encoding=encoding).read()
         )
 
         # Check if old_string exists in the file

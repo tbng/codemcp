@@ -38,7 +38,9 @@ def check_file_path_and_permissions(file_path: str) -> tuple[bool, str | None]:
     return True, None
 
 
-async def check_git_tracking_for_existing_file(file_path: str) -> tuple[bool, str | None]:
+async def check_git_tracking_for_existing_file(
+    file_path: str,
+) -> tuple[bool, str | None]:
     """Check if an existing file is tracked by git. Skips check for non-existent files.
 
     Args:
@@ -121,14 +123,13 @@ async def write_text_content(
     # Write the content asynchronously using run_in_executor
     loop = asyncio.get_event_loop()
     await loop.run_in_executor(
-        None,
-        lambda: write_file_sync(file_path, final_content, encoding)
+        None, lambda: write_file_sync(file_path, final_content, encoding)
     )
 
 
 def write_file_sync(file_path: str, content: str, encoding: str = "utf-8") -> None:
     """Synchronous helper function to write file content.
-    
+
     Args:
         file_path: The path to the file
         content: The content to write
