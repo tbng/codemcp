@@ -29,6 +29,7 @@ Note that this tool only works inside git repositories.
 Example:
   grep "function.*hello" /path/to/repo  # Find files containing functions with "hello" in their name
   grep "console\\.log" /path/to/repo --include="*.js"  # Find JS files with console.log statements
+  grep "pattern" /path/to/file.js  # Search for pattern in a specific file
 """
 
 
@@ -42,7 +43,7 @@ async def git_grep(
 
     Args:
         pattern: The regular expression pattern to search for
-        path: The directory to search in (must be in a git repository)
+        path: The directory or file to search in (must be in a git repository)
         include: Optional file pattern to filter the search
         signal: Optional abort signal to terminate the subprocess
 
@@ -60,22 +61,38 @@ async def git_grep(
     if not await is_git_repository(absolute_path):
         raise ValueError(f"The provided path is not in a git repository: {path}")
 
-    # In non-test environment, verify the path exists and is a directory
+    # In non-test environment, verify the path exists
     if not os.environ.get("DESKAID_TESTING"):
-        # Check if path exists and is a directory
+        # Check if path exists
         if not os.path.exists(absolute_path):
-            raise FileNotFoundError(f"Directory does not exist: {path}")
+            raise FileNotFoundError(f"Path does not exist: {path}")
 
-        if not os.path.isdir(absolute_path):
-            raise NotADirectoryError(f"Path is not a directory: {path}")
+        # If it's a file, adjust the command to use the file's directory
+        # and restrict search to the specific file
+        is_file = os.path.isfile(absolute_path)
+        if not os.path.isdir(absolute_path) and not is_file:
+            raise ValueError(f"Path is neither a directory nor a file: {path}")
 
     # Build git grep command
     # -l: list file names only
     # -i: case insensitive matching
     args = ["git", "grep", "-li", pattern]
 
-    # Add file pattern if specified
-    if include:
+    # Check if the path is a file
+    is_file = os.path.isfile(absolute_path) if not os.environ.get("DESKAID_TESTING") else False
+    
+    # If it's a file, get the directory and restrict search to the specific file
+    if is_file:
+        file_dir = os.path.dirname(absolute_path)
+        file_name = os.path.basename(absolute_path)
+        
+        # Add the specific file to search
+        args.extend(["--", file_name])
+        
+        # Update absolute_path to the directory containing the file
+        absolute_path = file_dir
+    # Otherwise, add file pattern if specified
+    elif include:
         args.extend(["--", include])
 
     logging.debug(f"Executing git grep command: {' '.join(args)}")
@@ -142,11 +159,11 @@ async def grep_files(
     chat_id: str | None = None,
     signal=None,
 ) -> dict[str, Any]:
-    """Search for a pattern in files within a directory.
+    """Search for a pattern in files within a directory or in a specific file.
 
     Args:
         pattern: The regular expression pattern to search for
-        path: The directory to search in (must be in a git repository)
+        path: The directory or file to search in (must be in a git repository)
         include: Optional file pattern to filter the search
         chat_id: The unique ID of the current chat session
         signal: Optional abort signal to terminate the subprocess
