@@ -16,6 +16,51 @@ __all__ = [
 ]
 
 
+async def get_head_commit_chat_id(directory: str) -> str | None:
+    """Get the chat ID from the HEAD commit's message.
+    
+    Args:
+        directory: The directory to check
+    
+    Returns:
+        The chat ID if found, None otherwise
+    """
+    try:
+        # Check if HEAD exists
+        result = await run_command(
+            ["git", "rev-parse", "--verify", "HEAD"],
+            cwd=directory,
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        
+        if result.returncode != 0:
+            # No commits yet
+            return None
+            
+        # Get the commit message
+        result = await run_command(
+            ["git", "log", "-1", "--pretty=%B"],
+            cwd=directory,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        
+        commit_message = result.stdout
+        
+        # Extract the chat ID using regex
+        chat_id_match = re.search(r"codemcp-id: ([^\s]+)", commit_message)
+        if chat_id_match:
+            return chat_id_match.group(1)
+            
+        return None
+    except Exception as e:
+        logging.warning(f"Exception when getting HEAD commit chat ID: {e!s}", exc_info=True)
+        return None
+
+
 async def get_repository_root(path: str) -> str:
     """Get the root directory of the Git repository containing the path.
 
