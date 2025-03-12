@@ -712,3 +712,7 @@ class GitAmendTest(MCPEndToEndTestCase):
             # Make sure there are exactly two codemcp-id tags in the output
             codemcp_id_count = commit_msgs.count("codemcp-id:")
             self.assertEqual(codemcp_id_count, 2, "Should be exactly two codemcp-id metadata tags")
+
+
+if __name__ == "__main__":
+    unittest.main()
