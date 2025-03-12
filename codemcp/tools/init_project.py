@@ -296,6 +296,7 @@ Args:
     limit: Line limit for ReadFile subtool
     description: Short description of the change (for WriteFile/EditFile)
     arguments: A list of string arguments for RunCommand subtool
+    chat_id: A unique ID to identify the chat session (required for all tools EXCEPT InitProject)
 
 # Chat ID
 This chat has been assigned a unique ID: {chat_id}
