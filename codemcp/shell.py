@@ -56,7 +56,7 @@ async def run_command(
     try:
         # Wait for the process to complete with optional timeout
         stdout_data, stderr_data = await asyncio.wait_for(
-            process.communicate(), timeout=timeout
+            process.communicate(), timeout=wait_time
         )
     except asyncio.TimeoutError:
         process.kill()
