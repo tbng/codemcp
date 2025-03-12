@@ -213,13 +213,15 @@ async def commit_changes(path: str, description: str) -> tuple[bool, str]:
 
         # Try to get the git repository root for more reliable operations
         try:
-            repo_root = (await run_command(
-                ["git", "rev-parse", "--show-toplevel"],
-                cwd=directory,
-                check=True,
-                capture_output=True,
-                text=True,
-            )).stdout.strip()
+            repo_root = (
+                await run_command(
+                    ["git", "rev-parse", "--show-toplevel"],
+                    cwd=directory,
+                    check=True,
+                    capture_output=True,
+                    text=True,
+                )
+            ).stdout.strip()
 
             # Use the repo root as the working directory for git commands
             git_cwd = repo_root

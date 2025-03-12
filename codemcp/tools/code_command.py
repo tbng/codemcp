@@ -65,13 +65,15 @@ async def check_for_changes(project_dir: str) -> bool:
     try:
         # Get the git repository root for reliable status checking
         try:
-            repo_root = (await run_command(
-                ["git", "rev-parse", "--show-toplevel"],
-                cwd=project_dir,
-                check=True,
-                capture_output=True,
-                text=True,
-            )).stdout.strip()
+            repo_root = (
+                await run_command(
+                    ["git", "rev-parse", "--show-toplevel"],
+                    cwd=project_dir,
+                    check=True,
+                    capture_output=True,
+                    text=True,
+                )
+            ).stdout.strip()
 
             # Use the repo root as working directory for git commands
             git_cwd = repo_root

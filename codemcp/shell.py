@@ -80,17 +80,14 @@ async def run_command(
         elif stderr_data:
             stderr = stderr_data
             logging.debug(f"Command stderr: {len(stderr_data)} bytes")
-    
+
     # Log the return code
     returncode = process.returncode
     logging.debug(f"Command return code: {returncode}")
 
     # Create a CompletedProcess object to maintain compatibility
     result = subprocess.CompletedProcess(
-        args=cmd,
-        returncode=returncode,
-        stdout=stdout,
-        stderr=stderr
+        args=cmd, returncode=returncode, stdout=stdout, stderr=stderr
     )
 
     # Re-raise CalledProcessError if check is True and command failed
