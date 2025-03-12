@@ -68,10 +68,9 @@ async def _generate_chat_id(directory: str) -> str:
 
         if os.path.exists(counter_file):
             try:
-                read_counter = await loop.run_in_executor(
-                    None, lambda: open(counter_file, "r").read().strip()
-                )
-                counter_value = int(read_counter)
+                from .async_file_utils import async_open_text
+                read_counter = await async_open_text(counter_file)
+                counter_value = int(read_counter.strip())
             except (ValueError, IOError) as e:
                 logging.warning(f"Error reading counter file: {e}")
 
