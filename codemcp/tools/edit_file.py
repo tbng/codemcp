@@ -634,7 +634,7 @@ def debug_string_comparison(
     return not content_same
 
 
-def edit_file_content(
+async def edit_file_content(
     file_path: str,
     old_string: str,
     new_string: str,
@@ -680,7 +680,7 @@ def edit_file_content(
 
         if not creating_new_file:
             # Only check commit_pending_changes for existing files
-            is_tracked, track_error = check_git_tracking_for_existing_file(
+            is_tracked, track_error = await check_git_tracking_for_existing_file(
                 full_file_path,
             )
             if not is_tracked:
@@ -707,10 +707,10 @@ def edit_file_content(
         if old_string == "" and not os.path.exists(full_file_path):
             directory = os.path.dirname(full_file_path)
             os.makedirs(directory, exist_ok=True)
-            write_text_content(full_file_path, new_string)
+            await write_text_content(full_file_path, new_string)
 
             # Commit the changes
-            success, message = commit_changes(full_file_path, description)
+            success, message = await commit_changes(full_file_path, description)
             git_message = ""
             if success:
                 git_message = f"\nChanges committed to git: {description}"
@@ -745,12 +745,15 @@ def edit_file_content(
                 return "Error: File has been modified since read, either by the user or by a linter. Read it again before attempting to write it."
 
         # Detect encoding and line endings
-        encoding = detect_file_encoding(full_file_path)
-        line_endings = detect_line_endings(full_file_path)
+        encoding = await detect_file_encoding(full_file_path)
+        line_endings = await detect_line_endings(full_file_path)
 
         # Read the original file
-        with open(full_file_path, encoding=encoding) as f:
-            content = f.read()
+        loop = asyncio.get_event_loop()
+        content = await loop.run_in_executor(
+            None,
+            lambda: open(full_file_path, encoding=encoding).read()
+        )
 
         # Check if old_string exists in the file
         if old_string and old_string not in content:
@@ -808,7 +811,7 @@ def edit_file_content(
         os.makedirs(directory, exist_ok=True)
 
         # Write the modified content back to the file
-        write_text_content(full_file_path, updated_file, encoding, line_endings)
+        await write_text_content(full_file_path, updated_file, encoding, line_endings)
 
         # Update read timestamp
         if read_file_timestamps is not None:
@@ -819,7 +822,7 @@ def edit_file_content(
 
         # Commit the changes
         git_message = ""
-        success, message = commit_changes(full_file_path, description)
+        success, message = await commit_changes(full_file_path, description)
         if success:
             git_message = f"\n\nChanges committed to git: {description}"
         else:
