@@ -85,7 +85,19 @@ class DirectoryCreationTest(MCPEndToEndTestCase):
         content = "Content created in nested directories by EditFile"
 
         async with self.create_client_session() as session:
-            # Call the EditFile tool with empty old_string
+            # First initialize project to get chat_id
+            init_result = await session.call_tool(
+                "codemcp",
+                {"subtool": "InitProject", "path": self.temp_dir.name},
+            )
+            init_result_text = self.extract_text_from_result(init_result)
+            
+            # Extract chat_id from the init result
+            import re
+            chat_id_match = re.search(r"chat has been assigned a unique ID: ([^\n]+)", init_result_text)
+            chat_id = chat_id_match.group(1) if chat_id_match else "test-chat-id"
+            
+            # Call the EditFile tool with empty old_string and chat_id
             result = await session.call_tool(
                 "codemcp",
                 {
@@ -94,6 +106,7 @@ class DirectoryCreationTest(MCPEndToEndTestCase):
                     "old_string": "",
                     "new_string": content,
                     "description": "Create file in nested directories with EditFile",
+                    "chat_id": chat_id,
                 },
             )
 
