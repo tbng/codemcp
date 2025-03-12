@@ -253,12 +253,16 @@ async def commit_pending_changes(file_path: str) -> tuple[bool, str]:
         return False, f"Error committing pending changes: {e!s}"
 
 
-async def commit_changes(path: str, description: str) -> tuple[bool, str]:
+async def commit_changes(path: str, description: str, chat_id: str = None) -> tuple[bool, str]:
     """Commit changes to a file or directory in Git.
+
+    This function will either create a new commit with the chat_id metadata,
+    or amend the HEAD commit if it belongs to the same chat session.
 
     Args:
         path: The path to the file or directory to commit
         description: Commit message describing the change
+        chat_id: The unique ID of the current chat session
 
     Returns:
         A tuple of (success, message)
@@ -349,19 +353,76 @@ async def commit_changes(path: str, description: str) -> tuple[bool, str]:
                     "No changes to commit (changes already committed or no changes detected)",
                 )
 
-        # Commit the change with "wip: " prefix
-        commit_result = await run_command(
-            ["git", "commit", "-m", f"wip: {description}"],
-            cwd=git_cwd,
-            capture_output=True,
-            text=True,
-            check=False,
-        )
+        # Determine whether to amend or create a new commit
+        head_chat_id = await get_head_commit_chat_id(git_cwd) if has_commits else None
+        should_amend = has_commits and head_chat_id == chat_id
+        
+        # Prepare the commit message with metadata
+        commit_message = f"wip: {description}"
+        
+        if should_amend:
+            # Get the current commit message
+            current_commit_message = await get_head_commit_message(git_cwd)
+            
+            if current_commit_message:
+                # Split the commit message to preserve metadata at the bottom
+                message_parts = current_commit_message.split("\n\n")
+                
+                # Extract the main message and metadata
+                main_message = message_parts[0]
+                metadata_parts = []
+                
+                # Collect metadata from the original commit message
+                for part in message_parts[1:]:
+                    if part.startswith("codemcp-id:") or part.startswith("Signed-off-by:"):
+                        metadata_parts.append(part)
+                    else:
+                        # This is part of the message body
+                        main_message += "\n\n" + part
+                
+                # Add the new description to the message body
+                main_message += f"\n- {description}"
+                
+                # Reconstruct the message with metadata at the bottom
+                commit_message = main_message
+                
+                # Add the metadata parts back
+                if metadata_parts:
+                    for metadata in metadata_parts:
+                        if not metadata.startswith("codemcp-id:"):
+                            commit_message += f"\n\n{metadata}"
+            
+            # Ensure the chat ID metadata is included
+            if chat_id and "codemcp-id:" not in commit_message:
+                commit_message += f"\n\ncodemcp-id: {chat_id}"
+                
+            # Amend the previous commit
+            commit_result = await run_command(
+                ["git", "commit", "--amend", "-m", commit_message],
+                cwd=git_cwd,
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+        else:
+            # Add chat ID metadata for new commits
+            if chat_id:
+                commit_message += f"\n\ncodemcp-id: {chat_id}"
+                
+            # Create a new commit
+            commit_result = await run_command(
+                ["git", "commit", "-m", commit_message],
+                cwd=git_cwd,
+                capture_output=True,
+                text=True,
+                check=False,
+            )
 
         if commit_result.returncode != 0:
             return False, f"Failed to commit changes: {commit_result.stderr}"
 
-        return True, "Changes committed successfully"
+        verb = "amended" if should_amend else "committed"
+        return True, f"Changes {verb} successfully"
     except Exception as e:
         logging.warning(
             f"Exception suppressed when committing changes: {e!s}", exc_info=True
