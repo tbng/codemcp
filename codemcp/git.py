@@ -283,15 +283,9 @@ def commit_changes(path: str, description: str) -> tuple[bool, str]:
                     "No changes to commit (changes already committed or no changes detected)",
                 )
 
-        # Commit the change (auto-format/lint commands don't need the "wip:" prefix)
-        # Only add "wip:" prefix if not a special auto-commit
-        if description.startswith("Auto-commit "):
-            commit_message = description
-        else:
-            commit_message = f"wip: {description}"
-            
+        # Commit the change with "wip: " prefix
         commit_result = run_command(
-            ["git", "commit", "-m", commit_message],
+            ["git", "commit", "-m", f"wip: {description}"],
             cwd=git_cwd,
             capture_output=True,
             text=True,
