@@ -152,14 +152,26 @@ class GitAmendTest(MCPEndToEndTestCase):
                 .strip()
             )
 
-            # Verify the commit message contains both edits
+            # Verify the commit message contains both edits and the chat ID
             self.assertIn(f"codemcp-id: {chat_id}", commit_msg2)
             self.assertIn("First edit", commit_msg2)
             self.assertIn("Second edit", commit_msg2)
 
-            # Verify proper formatting with two newlines before bullets
-            expected_format = "wip: First edit\n\n- Second edit"
-            self.assertIn(expected_format, commit_msg2)
+            # Use more general regex patterns that don't depend on exact placement
+            # Just check that both base revision and HEAD markers exist somewhere in the commit message
+            import re
+
+            base_revision_regex = r"[0-9a-f]{7}\s+\(Base revision\)"
+            head_regex = r"HEAD\s+Second edit"
+
+            self.assertTrue(
+                re.search(base_revision_regex, commit_msg2, re.MULTILINE),
+                f"Commit message doesn't contain base revision pattern. Got: {commit_msg2}",
+            )
+            self.assertTrue(
+                re.search(head_regex, commit_msg2, re.MULTILINE),
+                f"Commit message doesn't contain HEAD pattern. Got: {commit_msg2}",
+            )
 
     async def test_new_commit_different_chat_id(self):
         """Test that edits with a different chat_id create a new commit rather than amending."""
@@ -719,6 +731,173 @@ class GitAmendTest(MCPEndToEndTestCase):
             codemcp_id_count = commit_msgs.count("codemcp-id:")
             self.assertEqual(
                 codemcp_id_count, 2, "Should be exactly two codemcp-id metadata tags"
+            )
+
+    async def test_commit_hash_in_message(self):
+        """Test that the commit hash appears in the commit message when amending."""
+        # Create a file to edit multiple times
+        test_file_path = os.path.join(self.temp_dir.name, "hash_test.txt")
+        initial_content = "Hash test content"
+
+        # Create the file
+        with open(test_file_path, "w") as f:
+            f.write(initial_content)
+
+        # Add it to git
+        subprocess.run(
+            ["git", "add", test_file_path],
+            cwd=self.temp_dir.name,
+            env=self.env,
+            check=True,
+        )
+
+        # Commit it
+        subprocess.run(
+            ["git", "commit", "-m", "Add file for hash test"],
+            cwd=self.temp_dir.name,
+            env=self.env,
+            check=True,
+        )
+
+        # Define a chat_id for our test
+        chat_id = "hash-test-123"
+
+        async with self.create_client_session() as session:
+            # First edit with our chat_id
+            result1 = await session.call_tool(
+                "codemcp",
+                {
+                    "subtool": "EditFile",
+                    "path": test_file_path,
+                    "old_string": "Hash test content",
+                    "new_string": "Modified hash test content",
+                    "description": "First hash test edit",
+                    "chat_id": chat_id,
+                },
+            )
+
+            # Normalize and check the result
+            normalized_result1 = self.normalize_path(result1)
+            result_text1 = self.extract_text_from_result(normalized_result1)
+            self.assertIn("Successfully edited", result_text1)
+
+            # Get the commit hash for the first edit
+            first_commit_hash = (
+                subprocess.check_output(
+                    ["git", "rev-parse", "--short", "HEAD"],
+                    cwd=self.temp_dir.name,
+                    env=self.env,
+                )
+                .decode()
+                .strip()
+            )
+
+            # Second edit with the same chat_id
+            result2 = await session.call_tool(
+                "codemcp",
+                {
+                    "subtool": "EditFile",
+                    "path": test_file_path,
+                    "old_string": "Modified hash test content",
+                    "new_string": "Twice modified hash test content",
+                    "description": "Second hash test edit",
+                    "chat_id": chat_id,
+                },
+            )
+
+            # Normalize and check the result
+            normalized_result2 = self.normalize_path(result2)
+            result_text2 = self.extract_text_from_result(normalized_result2)
+
+            # Check in the response text for the commit hash pattern in the result
+            import re
+
+            hash_pattern = r"previous commit was [0-9a-f]{7}"
+            self.assertTrue(
+                re.search(hash_pattern, result_text2),
+                f"Result text doesn't mention previous commit hash. Got: {result_text2}",
+            )
+
+            # Get the last commit message
+            commit_msg = (
+                subprocess.check_output(
+                    ["git", "log", "-1", "--pretty=%B"],
+                    cwd=self.temp_dir.name,
+                    env=self.env,
+                )
+                .decode()
+                .strip()
+            )
+
+            # Verify the commit hash format in the message with base revision and HEAD
+            import re
+
+            base_revision_regex = r"[0-9a-f]{7}\s+\(Base revision\)"
+            head_regex = r"HEAD\s+Second hash test edit"
+
+            self.assertTrue(
+                re.search(base_revision_regex, commit_msg, re.MULTILINE),
+                f"Commit message doesn't contain base revision pattern. Got: {commit_msg}",
+            )
+            self.assertTrue(
+                re.search(head_regex, commit_msg, re.MULTILINE),
+                f"Commit message doesn't contain HEAD pattern. Got: {commit_msg}",
+            )
+
+            # Third edit to check multiple hash entries
+            result3 = await session.call_tool(
+                "codemcp",
+                {
+                    "subtool": "EditFile",
+                    "path": test_file_path,
+                    "old_string": "Twice modified hash test content",
+                    "new_string": "Thrice modified hash test content",
+                    "description": "Third hash test edit",
+                    "chat_id": chat_id,
+                },
+            )
+
+            # Get the second commit hash
+            second_commit_hash = (
+                subprocess.check_output(
+                    ["git", "rev-parse", "--short", "HEAD"],
+                    cwd=self.temp_dir.name,
+                    env=self.env,
+                )
+                .decode()
+                .strip()
+            )
+
+            # Get the updated commit message
+            final_commit_msg = (
+                subprocess.check_output(
+                    ["git", "log", "-1", "--pretty=%B"],
+                    cwd=self.temp_dir.name,
+                    env=self.env,
+                )
+                .decode()
+                .strip()
+            )
+
+            # Verify both commit hashes appear in the correct format
+            import re
+
+            # Check for base revision and head format
+            base_revision_regex = r"[0-9a-f]{7}\s+\(Base revision\)"
+            hash_edit_regex = r"[0-9a-f]{7}\s+Second hash test edit"
+            head_regex = r"HEAD\s+Third hash test edit"
+
+            self.assertTrue(
+                re.search(base_revision_regex, final_commit_msg, re.MULTILINE),
+                f"Commit message doesn't contain base revision pattern. Got: {final_commit_msg}",
+            )
+            self.assertTrue(
+                re.search(hash_edit_regex, final_commit_msg, re.MULTILINE),
+                f"Commit message doesn't contain hash pattern for second edit. Got: {final_commit_msg}",
+            )
+            self.assertTrue(
+                re.search(head_regex, final_commit_msg, re.MULTILINE),
+                f"Commit message doesn't contain HEAD pattern. Got: {final_commit_msg}",
             )
 
 

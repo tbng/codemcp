@@ -16,6 +16,7 @@ __all__ = [
     "get_repository_root",
     "get_head_commit_chat_id",
     "get_head_commit_message",
+    "get_head_commit_hash",
     "parse_git_commit_message",
     "append_metadata_to_message",
 ]
@@ -210,6 +211,52 @@ def append_metadata_to_message(message: str, metadata: Dict[str, str]) -> str:
             result += f"{key}: {updated_metadata[key]}\n"
 
     return result.rstrip()
+
+
+async def get_head_commit_hash(directory: str, short: bool = True) -> str | None:
+    """Get the commit hash from HEAD.
+
+    Args:
+        directory: The directory to check
+        short: Whether to get short hash (default) or full hash
+
+    Returns:
+        The commit hash if available, None otherwise
+    """
+    try:
+        # Check if HEAD exists
+        result = await run_command(
+            ["git", "rev-parse", "--verify", "HEAD"],
+            cwd=directory,
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+
+        if result.returncode != 0:
+            # No commits yet
+            return None
+
+        # Get the commit hash (short or full)
+        cmd = ["git", "rev-parse"]
+        if short:
+            cmd.append("--short")
+        cmd.append("HEAD")
+
+        result = await run_command(
+            cmd,
+            cwd=directory,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+
+        return result.stdout.strip()
+    except Exception as e:
+        logging.warning(
+            f"Exception when getting HEAD commit hash: {e!s}", exc_info=True
+        )
+        return None
 
 
 async def get_head_commit_chat_id(directory: str) -> str | None:
@@ -545,6 +592,9 @@ async def commit_changes(
             commit_message = f"wip: {description}"
 
         if should_amend:
+            # Get the current commit hash before amending
+            commit_hash = await get_head_commit_hash(git_cwd)
+
             # Get the current commit message
             current_commit_message = await get_head_commit_message(git_cwd)
             if not current_commit_message:
@@ -561,17 +611,38 @@ async def commit_changes(
 
             # Add the new description to the message body
             if main_message:
-                # Check if the last line of the main message is a bullet point
+                # Parse the message into lines
                 lines = main_message.splitlines()
-                last_line = lines[-1] if lines else ""
-                if last_line.strip().startswith("-"):
-                    # Previous line is already a bullet, just add a new bullet on the next line
-                    main_message += f"\n- {description}"
-                else:
-                    # Previous line is not a bullet, add two newlines before the bullet
-                    main_message += f"\n\n- {description}"
+
+                # Check if we need to add a base revision marker
+                has_base_revision = any("(Base revision)" in line for line in lines)
+
+                if not has_base_revision:
+                    # First commit with this chat_id, mark it as base revision
+                    if lines and lines[-1].strip():
+                        # Previous line has content, add two newlines
+                        main_message += f"\n\n{commit_hash}  (Base revision)"
+                    else:
+                        # Previous line is blank, just add one newline
+                        main_message += f"\n{commit_hash}  (Base revision)"
+
+                # Update any existing HEAD entries to have actual hashes
+                new_lines = []
+                for line in main_message.splitlines():
+                    if line.strip().startswith("HEAD"):
+                        new_lines.append(line.replace("HEAD", commit_hash))
+                    else:
+                        new_lines.append(line)
+
+                # Reconstruct the message with updated lines
+                main_message = "\n".join(new_lines)
+
+                # Now add the new entry with HEAD
+                main_message += f"\nHEAD      {description}"
             else:
                 main_message = description
+                # Add base revision marker for the first commit
+                main_message += f"\n\n{commit_hash}  (Base revision)"
 
             # Ensure the chat ID metadata is included
             metadata_dict["codemcp-id"] = chat_id
@@ -611,8 +682,19 @@ async def commit_changes(
         if commit_result.returncode != 0:
             return False, f"Failed to commit changes: {commit_result.stderr}"
 
+        # Get the new commit hash
+        await get_head_commit_hash(git_cwd)
+
         verb = "amended" if should_amend else "committed"
-        return True, f"Changes {verb} successfully"
+
+        # If this was an amended commit, include the original hash in the message
+        if should_amend and commit_hash:
+            return (
+                True,
+                f"Changes {verb} successfully (previous commit was {commit_hash})",
+            )
+        else:
+            return True, f"Changes {verb} successfully"
     except Exception as e:
         logging.warning(
             f"Exception suppressed when committing changes: {e!s}", exc_info=True
