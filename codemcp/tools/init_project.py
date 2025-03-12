@@ -154,11 +154,14 @@ async def init_project(
         chat_id = None
         if reuse_head_chat_id:
             from ..git import get_head_commit_chat_id, is_git_repository
+
             # Only do this if we're in a git repository
             if await is_git_repository(full_dir_path):
                 chat_id = await get_head_commit_chat_id(full_dir_path)
                 if not chat_id:
-                    logging.warning("reuse_head_chat_id was True but no chat ID found in HEAD commit, generating new chat ID")
+                    logging.warning(
+                        "reuse_head_chat_id was True but no chat ID found in HEAD commit, generating new chat ID"
+                    )
                     logging.warning(
                         "reuse_head_chat_id was True but no chat ID found in HEAD commit, generating new chat ID"
                     )

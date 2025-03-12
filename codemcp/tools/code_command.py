@@ -7,7 +7,7 @@ from typing import List, Optional
 
 import tomli
 
-from ..common import normalize_file_path
+from ..common import normalize_file_path, truncate_output_content
 from ..git import commit_changes, is_git_repository
 from ..shell import run_command
 
@@ -160,6 +160,9 @@ async def run_code_command(
 
             # Additional logging is already done by run_command
 
+            # Truncate the output if needed, prioritizing the end content
+            truncated_stdout = truncate_output_content(result.stdout, prefer_end=True)
+
             # If it's a git repo, commit any changes made by the command
             if is_git_repo:
                 has_changes = await check_for_changes(full_dir_path)
@@ -170,14 +173,14 @@ async def run_code_command(
                     )
 
                     if success:
-                        return f"Code {command_name} successful and changes committed:\n{result.stdout}"
+                        return f"Code {command_name} successful and changes committed:\n{truncated_stdout}"
                     else:
                         logging.warning(
                             f"Failed to commit {command_name} changes: {commit_result_message}"
                         )
-                        return f"Code {command_name} successful but failed to commit changes:\n{result.stdout}\nCommit error: {commit_result_message}"
+                        return f"Code {command_name} successful but failed to commit changes:\n{truncated_stdout}\nCommit error: {commit_result_message}"
 
-            return f"Code {command_name} successful:\n{result.stdout}"
+            return f"Code {command_name} successful:\n{truncated_stdout}"
         except subprocess.CalledProcessError as e:
             # Map the command_name to keep backward compatibility with existing tests
             command_key = command_name.title()
@@ -186,9 +189,25 @@ async def run_code_command(
             elif command_name == "formatting":
                 command_key = "Format"
 
+            # Truncate stdout and stderr if needed, prioritizing the end content
+            truncated_stdout = truncate_output_content(
+                e.output if e.output else "", prefer_end=True
+            )
+            truncated_stderr = truncate_output_content(
+                e.stderr if e.stderr else "", prefer_end=True
+            )
+
             # Include both stdout and stderr in the error message
-            stdout_info = f"STDOUT:\n{e.output}" if e.output else "STDOUT: <empty>"
-            stderr_info = f"STDERR:\n{e.stderr}" if e.stderr else "STDERR: <empty>"
+            stdout_info = (
+                f"STDOUT:\n{truncated_stdout}"
+                if truncated_stdout
+                else "STDOUT: <empty>"
+            )
+            stderr_info = (
+                f"STDERR:\n{truncated_stderr}"
+                if truncated_stderr
+                else "STDERR: <empty>"
+            )
             error_msg = f"{command_key} command failed with exit code {e.returncode}:\n{stdout_info}\n{stderr_info}"
 
             # Note: run_command already logs the command and stderr at debug level
