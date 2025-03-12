@@ -136,7 +136,6 @@ async def init_project(directory: str) -> str:
                 # tomli.loads expects a string, but we have bytes, so use tomli.load with an io.BytesIO object
                 import io
                 rules_config = tomli.load(io.BytesIO(rules_data))
-                rules_config = tomli.loads(rules_data)
 
                 # Extract project_prompt if it exists
                 if "project_prompt" in rules_config:
