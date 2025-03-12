@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 
+import asyncio
 import logging
 import subprocess
 from typing import Dict, List, Optional
 
 
-def run_command(
+async def run_command(
     cmd: List[str],
     cwd: Optional[str] = None,
     env: Optional[Dict[str, str]] = None,
@@ -16,7 +17,7 @@ def run_command(
     shell: bool = False,
 ) -> subprocess.CompletedProcess:
     """
-    Run a subprocess command with consistent logging.
+    Run a subprocess command with consistent logging asynchronously.
 
     Args:
         cmd: Command to run as a list of strings
@@ -39,43 +40,58 @@ def run_command(
     log_cmd = " ".join(str(c) for c in cmd)
     logging.info(f"Running command: {log_cmd}")
 
-    # Run the subprocess
-    result = subprocess.run(
-        cmd,
+    # Prepare stdout and stderr pipes
+    stdout_pipe = asyncio.subprocess.PIPE if capture_output else None
+    stderr_pipe = asyncio.subprocess.PIPE if capture_output else None
+
+    # Run the subprocess asynchronously
+    process = await asyncio.create_subprocess_exec(
+        *cmd,
         cwd=cwd,
         env=env,
-        check=False,  # We'll handle the check ourselves
-        capture_output=capture_output,
-        text=text,
-        timeout=timeout,
-        shell=shell,
+        stdout=stdout_pipe,
+        stderr=stderr_pipe,
     )
 
-    # Log stdout/stderr at DEBUG level
-    if text:
-        stdout = result.stdout if hasattr(result, "stdout") else ""
-        stderr = result.stderr if hasattr(result, "stderr") else ""
+    try:
+        # Wait for the process to complete with optional timeout
+        stdout_data, stderr_data = await asyncio.wait_for(
+            process.communicate(), timeout=timeout
+        )
+    except asyncio.TimeoutError:
+        process.kill()
+        await process.wait()
+        raise subprocess.TimeoutExpired(cmd, timeout)
 
-        if stdout:
+    # Handle text conversion
+    stdout = ""
+    stderr = ""
+    if capture_output:
+        if text and stdout_data:
+            stdout = stdout_data.decode()
             logging.debug(f"Command stdout: {stdout}")
-        if stderr:
+        elif stdout_data:
+            stdout = stdout_data
+            logging.debug(f"Command stdout: {len(stdout_data)} bytes")
+
+        if text and stderr_data:
+            stderr = stderr_data.decode()
             logging.debug(f"Command stderr: {stderr}")
-    else:
-        # Log binary output length
-        stdout_len = (
-            len(result.stdout) if hasattr(result, "stdout") and result.stdout else 0
-        )
-        stderr_len = (
-            len(result.stderr) if hasattr(result, "stderr") and result.stderr else 0
-        )
-
-        if stdout_len:
-            logging.debug(f"Command stdout: {stdout_len} bytes")
-        if stderr_len:
-            logging.debug(f"Command stderr: {stderr_len} bytes")
-
+        elif stderr_data:
+            stderr = stderr_data
+            logging.debug(f"Command stderr: {len(stderr_data)} bytes")
+    
     # Log the return code
-    logging.debug(f"Command return code: {result.returncode}")
+    returncode = process.returncode
+    logging.debug(f"Command return code: {returncode}")
+
+    # Create a CompletedProcess object to maintain compatibility
+    result = subprocess.CompletedProcess(
+        args=cmd,
+        returncode=returncode,
+        stdout=stdout,
+        stderr=stderr
+    )
 
     # Re-raise CalledProcessError if check is True and command failed
     if check and result.returncode != 0:
