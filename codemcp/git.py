@@ -137,7 +137,7 @@ def commit_pending_changes(file_path: str) -> tuple[bool, str]:
                 )
 
                 run_command(
-                    ["git", "commit", "-m", "Snapshot before codemcp change"],
+                    ["git", "commit", "-m", "wip: Snapshot before codemcp change"],
                     cwd=directory,
                     check=True,
                     capture_output=True,
