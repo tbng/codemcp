@@ -38,6 +38,7 @@ async def detect_file_encoding(file_path: str) -> str:
 
     """
     from .async_file_utils import async_detect_encoding
+
     return await async_detect_encoding(file_path)
 
 
@@ -52,6 +53,7 @@ async def detect_line_endings(file_path: str) -> str:
 
     """
     from .async_file_utils import async_detect_line_endings
+
     return await async_detect_line_endings(file_path)
 
 
@@ -96,6 +98,7 @@ async def apply_edit(
     if os.path.exists(file_path):
         encoding = await detect_file_encoding(file_path)
         from .async_file_utils import async_open_text
+
         content = await async_open_text(file_path, encoding=encoding)
     else:
         content = ""
@@ -724,6 +727,7 @@ async def edit_file_content(
 
         # Read the original file
         from .async_file_utils import async_open_text
+
         content = await async_open_text(full_file_path, encoding=encoding)
 
         # Check if old_string exists in the file

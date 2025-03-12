@@ -69,6 +69,7 @@ async def _generate_chat_id(directory: str) -> str:
         if os.path.exists(counter_file):
             try:
                 from .async_file_utils import async_open_text
+
                 read_counter = await async_open_text(counter_file)
                 counter_value = int(read_counter.strip())
             except (ValueError, IOError) as e:
@@ -80,6 +81,7 @@ async def _generate_chat_id(directory: str) -> str:
         # Write the new counter value
         try:
             from .async_file_utils import async_write_text
+
             await async_write_text(counter_file, str(counter_value))
         except IOError as e:
             logging.warning(f"Error writing to counter file: {e}")
@@ -130,6 +132,7 @@ async def init_project(directory: str) -> str:
         if os.path.exists(rules_file_path):
             try:
                 from .async_file_utils import async_open_binary
+
                 rules_data = await async_open_binary(rules_file_path)
                 rules_config = tomli.loads(rules_data)
 
