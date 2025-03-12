@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
+import asyncio
 import logging
 import os
-import asyncio
 
 from ..access import check_edit_permission
 from ..git import commit_pending_changes

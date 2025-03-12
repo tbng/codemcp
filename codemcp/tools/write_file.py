@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
-import os
 import asyncio
+import os
 
 from ..git import commit_changes
 from .file_utils import (

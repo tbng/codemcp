@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
-import os
 import asyncio
+import os
 
 from ..common import (
     MAX_LINE_LENGTH,
