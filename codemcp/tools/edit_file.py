@@ -724,10 +724,8 @@ async def edit_file_content(
         line_endings = await detect_line_endings(full_file_path)
 
         # Read the original file
-        loop = asyncio.get_event_loop()
-        content = await loop.run_in_executor(
-            None, lambda: open(full_file_path, encoding=encoding).read()
-        )
+        from .async_file_utils import async_open_text
+        content = await async_open_text(full_file_path, encoding=encoding)
 
         # Check if old_string exists in the file
         if old_string and old_string not in content:
