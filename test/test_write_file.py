@@ -100,6 +100,18 @@ nothing to commit, working tree clean
         )
 
         async with self.create_client_session() as session:
+            # First initialize project to get chat_id
+            init_result = await session.call_tool(
+                "codemcp",
+                {"subtool": "InitProject", "path": self.temp_dir.name},
+            )
+            init_result_text = self.extract_text_from_result(init_result)
+            
+            # Extract chat_id from the init result
+            import re
+            chat_id_match = re.search(r"chat has been assigned a unique ID: ([^\n]+)", init_result_text)
+            chat_id = chat_id_match.group(1) if chat_id_match else "test-chat-id"
+            
             # Create a new file
             result = await session.call_tool(
                 "codemcp",
@@ -108,6 +120,7 @@ nothing to commit, working tree clean
                     "path": new_file_path,
                     "content": "This is a brand new file",
                     "description": "Create a new file with WriteFile",
+                    "chat_id": chat_id,
                 },
             )
 
