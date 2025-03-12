@@ -34,9 +34,11 @@ class InitProjectTestCase(unittest.TestCase):
         self.mock_git_base_dir = self.git_base_dir_patch.start()
         self.mock_git_base_dir.return_value = self.dir_path
         self.addCleanup(self.git_base_dir_patch.stop)
-        
+
         # Create patch for git repository root
-        self.git_repo_root_patch = patch("codemcp.tools.init_project.get_repository_root")
+        self.git_repo_root_patch = patch(
+            "codemcp.tools.init_project.get_repository_root"
+        )
         self.mock_git_repo_root = self.git_repo_root_patch.start()
         self.mock_git_repo_root.return_value = self.dir_path
         self.addCleanup(self.git_repo_root_patch.stop)
@@ -169,17 +171,23 @@ test = ["./run_test.sh"]
     def test_chat_id_generation(self):
         """Test that the chat ID generation works as expected."""
         # Mock the open function for reading and writing the counter file
-        with patch('builtins.open', mock_open(read_data="42")) as mock_file:
+        with patch("builtins.open", mock_open(read_data="42")) as mock_file:
             chat_id = _generate_chat_id(self.dir_path)
-            
+
             # Check the format of the chat ID
-            self.assertTrue(chat_id.startswith("43-"), 
-                            f"Expected chat ID to start with '43-', got {chat_id}")
-            
+            self.assertTrue(
+                chat_id.startswith("43-"),
+                f"Expected chat ID to start with '43-', got {chat_id}",
+            )
+
             # Verify that the counter file was read and written
-            mock_file.assert_any_call(os.path.join(self.dir_path, ".git", "codemcp", "counter"), "r")
-            mock_file.assert_any_call(os.path.join(self.dir_path, ".git", "codemcp", "counter"), "w")
-            
+            mock_file.assert_any_call(
+                os.path.join(self.dir_path, ".git", "codemcp", "counter"), "r"
+            )
+            mock_file.assert_any_call(
+                os.path.join(self.dir_path, ".git", "codemcp", "counter"), "w"
+            )
+
             # Verify that the counter was incremented and written back
             handle = mock_file()
             handle.write.assert_called_once_with("43")
@@ -187,15 +195,17 @@ test = ["./run_test.sh"]
     def test_chat_id_generation_no_counter(self):
         """Test chat ID generation when no counter file exists."""
         # Mock os.path.exists to return False for the counter file
-        with patch('os.path.exists', return_value=False):
+        with patch("os.path.exists", return_value=False):
             # Mock the open function for writing the counter file
-            with patch('builtins.open', mock_open()) as mock_file:
+            with patch("builtins.open", mock_open()) as mock_file:
                 chat_id = _generate_chat_id(self.dir_path)
-                
+
                 # Check the format of the chat ID
-                self.assertTrue(chat_id.startswith("1-"), 
-                                f"Expected chat ID to start with '1-', got {chat_id}")
-                
+                self.assertTrue(
+                    chat_id.startswith("1-"),
+                    f"Expected chat ID to start with '1-', got {chat_id}",
+                )
+
                 # Verify that the counter file was written with initial value 1
                 handle = mock_file()
                 handle.write.assert_called_once_with("1")
@@ -204,12 +214,14 @@ test = ["./run_test.sh"]
         """Test chat ID generation when not in a git repository."""
         # Mock is_git_repository to return False
         self.mock_is_git_repo.return_value = False
-        
+
         chat_id = _generate_chat_id(self.dir_path)
-        
+
         # Check the format of the chat ID (should use fallback value 0)
-        self.assertTrue(chat_id.startswith("0-"), 
-                        f"Expected chat ID to start with '0-', got {chat_id}")
+        self.assertTrue(
+            chat_id.startswith("0-"),
+            f"Expected chat ID to start with '0-', got {chat_id}",
+        )
 
 
 if __name__ == "__main__":
