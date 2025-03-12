@@ -108,7 +108,7 @@ async def write_file_content(
     """
     try:
         # Validate file path and permissions
-        is_valid, error_message = check_file_path_and_permissions(file_path)
+        is_valid, error_message = await check_file_path_and_permissions(file_path)
         if not is_valid:
             return error_message
 
