@@ -170,22 +170,25 @@ test = ["./run_test.sh"]
 
     def test_chat_id_generation(self):
         """Test that the chat ID generation works as expected."""
-        # Mock the open function for reading and writing the counter file
-        with patch("builtins.open", mock_open(read_data="42")) as mock_file:
-            chat_id = _generate_chat_id(self.dir_path)
-
-            # Check the format of the chat ID
-            self.assertTrue(
-                chat_id.startswith("43-"),
-                f"Expected chat ID to start with '43-', got {chat_id}",
-            )
-
-            # Verify that the counter file was read and written
-            mock_file.assert_any_call(
-                os.path.join(self.dir_path, ".git", "codemcp", "counter"), "r"
-            )
-            mock_file.assert_any_call(
-                os.path.join(self.dir_path, ".git", "codemcp", "counter"), "w"
+        # First, we need to patch os.path.exists to return True for the counter file
+        with patch('os.path.exists', return_value=True):
+            # Mock the open function for reading and writing the counter file
+            with patch('builtins.open', mock_open(read_data="42")) as mock_file:
+                # Mock random.choices to return a predictable value
+                with patch('random.choices', return_value=['a', 'b', 'c', 'd', 'e', 'f']):
+                    chat_id = _generate_chat_id(self.dir_path)
+                    
+                    # Check the format of the chat ID
+                    self.assertTrue(chat_id.startswith("43-"), 
+                                    f"Expected chat ID to start with '43-', got {chat_id}")
+                    
+                    # Verify that the counter file was read and written
+                    mock_file.assert_any_call(os.path.join(self.dir_path, ".git", "codemcp", "counter"), "r")
+                    mock_file.assert_any_call(os.path.join(self.dir_path, ".git", "codemcp", "counter"), "w")
+                    
+                    # Verify that the counter was incremented and written back
+                    handle = mock_file()
+                    handle.write.assert_called_once_with("43")
             )
 
             # Verify that the counter was incremented and written back
