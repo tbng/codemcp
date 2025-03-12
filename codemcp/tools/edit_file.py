@@ -798,7 +798,7 @@ async def edit_file_content(
                 return f"Error: Found {matches} matches of the string to replace. For safety, this tool only supports replacing exactly one occurrence at a time. Add more lines of context to your edit and try again."
 
         # Apply the edit with advanced matching if needed
-        patch, updated_file = apply_edit(full_file_path, old_string, new_string)
+        patch, updated_file = await apply_edit(full_file_path, old_string, new_string)
 
         # If no changes were made (which should never happen at this point),
         # log a warning but continue
