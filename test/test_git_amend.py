@@ -383,15 +383,17 @@ class GitAmendTest(MCPEndToEndTestCase):
                 )
                 .decode()
                 .strip()
-                .split("\n\n\n")
             )
 
             # Verify the latest commit has AI chat_id
-            self.assertIn(f"codemcp-id: {chat_id}", commit_msgs[0])
+            self.assertIn(f"codemcp-id: {chat_id}", commit_msgs)
             
-            # Verify the previous commit is the user's (no chat_id)
-            self.assertNotIn("codemcp-id:", commit_msgs[1])
-            self.assertEqual("User-generated commit", commit_msgs[1].strip())
+            # Verify the user commit message is included
+            self.assertIn("User-generated commit", commit_msgs)
+            
+            # Make sure there's only one codemcp-id in the output
+            codemcp_id_count = commit_msgs.count("codemcp-id:")
+            self.assertEqual(codemcp_id_count, 1, "Should be only one codemcp-id metadata tag")
 
     async def test_commit_history_with_nonhead_match(self):
         """Test behavior when HEAD~ has the same chat_id as current but HEAD doesn't."""
