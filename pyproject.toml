@@ -44,6 +44,10 @@ indent-width = 4
 [tool.ruff.lint]
 select = ["ASYNC"]
 
+# Exclude test files from ASYNC lints
+[tool.ruff.lint.per-file-ignores]
+"test/**/*.py" = ["ASYNC"]
+
 [tool.ruff.format]
 # Formatter settings
 quote-style = "double"
