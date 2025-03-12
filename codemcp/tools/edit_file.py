@@ -27,7 +27,7 @@ __all__ = [
 ]
 
 
-def detect_file_encoding(file_path: str) -> str:
+async def detect_file_encoding(file_path: str) -> str:
     """Detect the encoding of a file.
 
     Args:
@@ -38,7 +38,22 @@ def detect_file_encoding(file_path: str) -> str:
 
     """
     # Simple implementation - in a real app, would use chardet or similar
-    return "utf-8"
+    loop = asyncio.get_event_loop()
+    
+    async def read_and_detect():
+        try:
+            # Try to read the file with utf-8 encoding
+            with open(file_path, encoding="utf-8") as f:
+                f.read()
+            return "utf-8"
+        except UnicodeDecodeError:
+            # If utf-8 fails, default to binary mode
+            return "latin-1"  # A safe fallback
+        except FileNotFoundError:
+            # For non-existent files, default to utf-8
+            return "utf-8"
+    
+    return await loop.run_in_executor(None, lambda: read_and_detect())
 
 
 def detect_line_endings(file_path: str) -> str:
