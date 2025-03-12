@@ -17,6 +17,8 @@ __all__ = [
     "get_head_commit_message",
 ]
 
+log = logging.getLogger(__name__)
+
 
 async def get_head_commit_message(directory: str) -> str | None:
     """Get the full commit message from HEAD.
@@ -276,6 +278,7 @@ async def commit_changes(
         A tuple of (success, message)
 
     """
+    log.debug("commit_changes(%s, %s, %s)", path, description, chat_id)
     try:
         # First, check if this is a git repository
         if not await is_git_repository(path):
@@ -363,6 +366,7 @@ async def commit_changes(
 
         # Determine whether to amend or create a new commit
         head_chat_id = await get_head_commit_chat_id(git_cwd) if has_commits else None
+        logging.debug("commit_changes: has_commits = %r, head_chat_id = %s", has_commits, head_chat_id)
         should_amend = has_commits and head_chat_id == chat_id
 
         # Prepare the commit message with metadata
@@ -371,6 +375,7 @@ async def commit_changes(
         if should_amend:
             # Get the current commit message
             current_commit_message = await get_head_commit_message(git_cwd)
+            assert "codemcp-id:" in current_commit_message
 
             if current_commit_message:
                 # Split the commit message to preserve metadata at the bottom
