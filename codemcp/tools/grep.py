@@ -79,16 +79,20 @@ async def git_grep(
     args = ["git", "grep", "-li", pattern]
 
     # Check if the path is a file
-    is_file = os.path.isfile(absolute_path) if not os.environ.get("DESKAID_TESTING") else False
-    
+    is_file = (
+        os.path.isfile(absolute_path)
+        if not os.environ.get("DESKAID_TESTING")
+        else False
+    )
+
     # If it's a file, get the directory and restrict search to the specific file
     if is_file:
         file_dir = os.path.dirname(absolute_path)
         file_name = os.path.basename(absolute_path)
-        
+
         # Add the specific file to search
         args.extend(["--", file_name])
-        
+
         # Update absolute_path to the directory containing the file
         absolute_path = file_dir
     # Otherwise, add file pattern if specified

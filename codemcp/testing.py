@@ -136,9 +136,7 @@ class MCPEndToEndTestCase(TestCase, unittest.IsolatedAsyncioTestCase):
         # Extract chat_id from the init result
         import re
 
-        chat_id_match = re.search(
-            r"chat ID: ([^\n]+)", init_result_text
-        )
+        chat_id_match = re.search(r"chat ID: ([^\n]+)", init_result_text)
         chat_id = chat_id_match.group(1)
         assert chat_id is not None
 
