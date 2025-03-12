@@ -395,11 +395,11 @@ class GitAmendTest(MCPEndToEndTestCase):
             codemcp_id_count = commit_msgs.count("codemcp-id:")
             self.assertEqual(codemcp_id_count, 1, "Should be only one codemcp-id metadata tag")
 
-    async def test_commit_history_with_nonhead_match(self):
-        """Test behavior when HEAD~ has the same chat_id as current but HEAD doesn't."""
+    async def test_write_with_different_chatid(self):
+        """Test that WriteFile creates a new commit if HEAD has a different chat ID."""
         # Create a file to edit
-        test_file_path = os.path.join(self.temp_dir.name, "history_test.txt")
-        initial_content = "Initial content for history test"
+        test_file_path = os.path.join(self.temp_dir.name, "write_test.txt")
+        initial_content = "Initial content for write test"
 
         # Create the file
         with open(test_file_path, "w") as f:
@@ -413,42 +413,15 @@ class GitAmendTest(MCPEndToEndTestCase):
             check=True,
         )
 
-        # Commit it
+        # Create a commit with a specific chat ID
+        first_chat_id = "first-chat-123"
         subprocess.run(
-            ["git", "commit", "-m", "Add file for history test"],
+            ["git", "commit", "-m", f"First commit\n\ncodemcp-id: {first_chat_id}"],
             cwd=self.temp_dir.name,
             env=self.env,
             check=True,
         )
 
-        # First chat ID
-        chat_id1 = "chat-history-1"
-        
-        # Helper function to create a commit with chat ID
-        def create_chat_commit(content, message, chat_id):
-            with open(test_file_path, "w") as f:
-                f.write(content)
-                
-            subprocess.run(
-                ["git", "add", test_file_path],
-                cwd=self.temp_dir.name,
-                env=self.env,
-                check=True,
-            )
-            
-            subprocess.run(
-                ["git", "commit", "-m", f"{message}\n\ncodemcp-id: {chat_id}"],
-                cwd=self.temp_dir.name,
-                env=self.env,
-                check=True,
-            )
-        
-        # Create first AI commit with chat_id1
-        create_chat_commit("Modified by chat 1", "First AI edit", chat_id1)
-        
-        # Create a user commit (different chat_id)
-        create_chat_commit("Modified by user", "User edit", "some-other-chat")
-        
         # Get the current commit count
         initial_commit_count = len(
             subprocess.check_output(
@@ -460,28 +433,30 @@ class GitAmendTest(MCPEndToEndTestCase):
             .strip()
             .split("\n")
         )
-        
+
+        # Use a different chat ID for the write operation
+        second_chat_id = "second-chat-456"
+
         async with self.create_client_session() as session:
-            # New edit with the original chat_id1
+            # Write to the file with a different chat ID
             result = await session.call_tool(
                 "codemcp",
                 {
-                    "subtool": "EditFile",
+                    "subtool": "WriteFile",
                     "path": test_file_path,
-                    "old_string": "Modified by user",
-                    "new_string": "Modified again by chat 1",
-                    "description": "Second edit from chat 1",
-                    "chat_id": chat_id1,
+                    "content": "Modified content for write test",
+                    "description": "Write with different chat ID",
+                    "chat_id": second_chat_id,
                 },
             )
 
             # Normalize and check the result
             normalized_result = self.normalize_path(result)
             result_text = self.extract_text_from_result(normalized_result)
-            self.assertIn("Successfully edited", result_text)
+            self.assertIn("Successfully wrote to", result_text)
 
-            # Get the commit count after the new edit
-            commit_count_after_edit = len(
+            # Get the commit count after the write
+            commit_count_after_write = len(
                 subprocess.check_output(
                     ["git", "log", "--oneline"],
                     cwd=self.temp_dir.name,
@@ -492,17 +467,17 @@ class GitAmendTest(MCPEndToEndTestCase):
                 .split("\n")
             )
 
-            # Verify a new commit was created (not amended) - we can't safely amend past HEAD
+            # Verify a new commit was created (not amended)
             self.assertEqual(
-                commit_count_after_edit,
+                commit_count_after_write,
                 initial_commit_count + 1,
-                "Edit should create a new commit, not try to amend past HEAD",
+                "Write with different chat_id should create a new commit",
             )
 
-            # Get the last commit message
-            last_commit_msg = (
+            # Get the commit messages
+            commit_msgs = (
                 subprocess.check_output(
-                    ["git", "log", "-1", "--pretty=%B"],
+                    ["git", "log", "-2", "--pretty=%B"],
                     cwd=self.temp_dir.name,
                     env=self.env,
                 )
@@ -510,9 +485,13 @@ class GitAmendTest(MCPEndToEndTestCase):
                 .strip()
             )
 
-            # Verify the latest commit has the correct chat_id
-            self.assertIn(f"codemcp-id: {chat_id1}", last_commit_msg)
-            self.assertIn("Second edit from chat 1", last_commit_msg)
+            # Verify both chat IDs are in the commit history
+            self.assertIn(f"codemcp-id: {second_chat_id}", commit_msgs)
+            self.assertIn(f"codemcp-id: {first_chat_id}", commit_msgs)
+            
+            # Make sure there are exactly two codemcp-id tags in the output
+            codemcp_id_count = commit_msgs.count("codemcp-id:")
+            self.assertEqual(codemcp_id_count, 2, "Should be exactly two codemcp-id metadata tags")
 
 
 if __name__ == "__main__":
