@@ -48,7 +48,7 @@ async def ls_directory(directory_path: str) -> str:
             return f"Error: Directory is not in a Git repository: {directory_path}"
 
         # Check edit permission (which verifies codemcp.toml exists)
-        is_permitted, permission_message = check_edit_permission(full_directory_path)
+        is_permitted, permission_message = await check_edit_permission(full_directory_path)
         if not is_permitted:
             return f"Error: {permission_message}"
 
