@@ -22,7 +22,7 @@ class ReadFileTest(MCPEndToEndTestCase):
         async with self.create_client_session() as session:
             # Get a valid chat_id
             chat_id = await self.get_chat_id(session)
-            
+
             # Call the ReadFile tool with the chat_id
             result = await session.call_tool(
                 "codemcp",
@@ -48,7 +48,7 @@ class ReadFileTest(MCPEndToEndTestCase):
         async with self.create_client_session() as session:
             # Get a valid chat_id
             chat_id = await self.get_chat_id(session)
-            
+
             # Call the ReadFile tool with offset and limit and the chat_id
             result = await session.call_tool(
                 "codemcp",

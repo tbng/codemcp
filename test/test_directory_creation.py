@@ -29,7 +29,7 @@ class DirectoryCreationTest(MCPEndToEndTestCase):
         async with self.create_client_session() as session:
             # Get a valid chat_id
             chat_id = await self.get_chat_id(session)
-            
+
             # Call the WriteFile tool with chat_id
             result = await session.call_tool(
                 "codemcp",
@@ -78,7 +78,7 @@ class DirectoryCreationTest(MCPEndToEndTestCase):
         async with self.create_client_session() as session:
             # Get a valid chat_id
             chat_id = await self.get_chat_id(session)
-            
+
             # Call the EditFile tool with empty old_string and chat_id
             result = await session.call_tool(
                 "codemcp",

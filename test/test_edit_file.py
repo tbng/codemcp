@@ -45,12 +45,15 @@ class EditFileTest(MCPEndToEndTestCase):
                 {"subtool": "InitProject", "path": self.temp_dir.name},
             )
             init_result_text = self.extract_text_from_result(init_result)
-            
+
             # Extract chat_id from the init result
             import re
-            chat_id_match = re.search(r"chat has been assigned a unique ID: ([^\n]+)", init_result_text)
+
+            chat_id_match = re.search(
+                r"chat has been assigned a unique ID: ([^\n]+)", init_result_text
+            )
             chat_id = chat_id_match.group(1) if chat_id_match else "test-chat-id"
-            
+
             # Call the EditFile tool with chat_id
             result = await session.call_tool(
                 "codemcp",
@@ -137,12 +140,15 @@ nothing to commit, working tree clean
                 {"subtool": "InitProject", "path": self.temp_dir.name},
             )
             init_result_text = self.extract_text_from_result(init_result)
-            
+
             # Extract chat_id from the init result
             import re
-            chat_id_match = re.search(r"chat has been assigned a unique ID: ([^\n]+)", init_result_text)
+
+            chat_id_match = re.search(
+                r"chat has been assigned a unique ID: ([^\n]+)", init_result_text
+            )
             chat_id = chat_id_match.group(1) if chat_id_match else "test-chat-id"
-            
+
             # Try to edit the untracked file
             new_content = "Modified untracked content"
 
@@ -195,12 +201,15 @@ nothing to commit, working tree clean
                 {"subtool": "InitProject", "path": self.temp_dir.name},
             )
             init_result_text = self.extract_text_from_result(init_result)
-            
+
             # Extract chat_id from the init result
             import re
-            chat_id_match = re.search(r"chat has been assigned a unique ID: ([^\n]+)", init_result_text)
+
+            chat_id_match = re.search(
+                r"chat has been assigned a unique ID: ([^\n]+)", init_result_text
+            )
             chat_id = chat_id_match.group(1) if chat_id_match else "test-chat-id"
-            
+
             # Try to create a new file using EditFile with empty old_string
             result = await session.call_tool(
                 "codemcp",
@@ -316,12 +325,15 @@ nothing to commit, working tree clean
                 {"subtool": "InitProject", "path": self.temp_dir.name},
             )
             init_result_text = self.extract_text_from_result(init_result)
-            
+
             # Extract chat_id from the init result
             import re
-            chat_id_match = re.search(r"chat has been assigned a unique ID: ([^\n]+)", init_result_text)
+
+            chat_id_match = re.search(
+                r"chat has been assigned a unique ID: ([^\n]+)", init_result_text
+            )
             chat_id = chat_id_match.group(1) if chat_id_match else "test-chat-id"
-            
+
             # Try to write to the removed file
             result = await session.call_tool(
                 "codemcp",

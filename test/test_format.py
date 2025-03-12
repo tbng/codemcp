@@ -91,12 +91,15 @@ format = ["./run_format.sh"]
                 {"subtool": "InitProject", "path": self.temp_dir.name},
             )
             init_result_text = self.extract_text_from_result(init_result)
-            
+
             # Extract chat_id from the init result
             import re
-            chat_id_match = re.search(r"chat has been assigned a unique ID: ([^\n]+)", init_result_text)
+
+            chat_id_match = re.search(
+                r"chat has been assigned a unique ID: ([^\n]+)", init_result_text
+            )
             chat_id = chat_id_match.group(1) if chat_id_match else "test-chat-id"
-            
+
             # Call the RunCommand tool with format command and chat_id
             result = await session.call_tool(
                 "codemcp",
