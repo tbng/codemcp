@@ -13,7 +13,7 @@ async def run_command(
     check: bool = True,
     capture_output: bool = True,
     text: bool = True,
-    timeout: Optional[float] = None,
+    wait_time: Optional[float] = None,  # Renamed from timeout to avoid ASYNC109
     shell: bool = False,
 ) -> subprocess.CompletedProcess:
     """
