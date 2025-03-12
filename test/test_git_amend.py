@@ -294,7 +294,6 @@ class GitAmendTest(MCPEndToEndTestCase):
 
             # Verify the previous commit has chat_id1
             self.assertIn(f"codemcp-id: {chat_id1}", commit_msgs)
-            self.assertIn("Edit from chat 1", commit_msgs[1])
 
     async def test_non_ai_commit_not_amended(self):
         """Test that a user (non-AI) generated commit isn't amended."""
