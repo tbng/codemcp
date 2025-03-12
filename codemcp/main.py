@@ -36,6 +36,7 @@ async def codemcp(
     arguments: list[str] | str | None = None,
     old_str: str | None = None,  # Added for backward compatibility
     new_str: str | None = None,  # Added for backward compatibility
+    chat_id: str | None = None,  # Added for chat identification
 ) -> str:
     """If and only if the user explicitly asks you to initialize codemcp with
     path, you should invoke this tool with arguments `InitProject
@@ -45,6 +46,7 @@ async def codemcp(
     Arguments:
       subtool: The subtool to run (InitProject, ...)
       path: The path to the file or directory to operate on
+      chat_id: A unique ID to identify the chat session (provided by InitProject)
       ... (there are other arguments which are documented later)
     """
     # Define expected parameters for each subtool
