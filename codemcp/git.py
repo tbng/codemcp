@@ -262,7 +262,11 @@ async def commit_pending_changes(file_path: str) -> tuple[bool, str]:
 
 
 async def commit_changes(
-    path: str, description: str, chat_id: str = None
+    path: str,
+    description: str,
+    chat_id: str = None,
+    allow_empty: bool = False,
+    custom_message: str = None,
 ) -> tuple[bool, str]:
     """Commit changes to a file or directory in Git.
 
@@ -273,6 +277,8 @@ async def commit_changes(
         path: The path to the file or directory to commit
         description: Commit message describing the change
         chat_id: The unique ID of the current chat session
+        allow_empty: Whether to allow empty commits (no changes)
+        custom_message: Optional custom commit message (overrides description)
 
     Returns:
         A tuple of (success, message)
@@ -374,7 +380,14 @@ async def commit_changes(
         should_amend = has_commits and head_chat_id == chat_id
 
         # Prepare the commit message with metadata
-        commit_message = f"wip: {description}"
+        if custom_message:
+            # Use the custom message directly
+            commit_message = custom_message
+            # Make sure it has the chat_id metadata
+            if chat_id and "codemcp-id:" not in commit_message:
+                commit_message += f"\n\ncodemcp-id: {chat_id}"
+        else:
+            commit_message = f"wip: {description}"
 
         if should_amend:
             # Get the current commit message
@@ -424,13 +437,17 @@ async def commit_changes(
                 check=False,
             )
         else:
-            # Add chat ID metadata for new commits
-            if chat_id:
+            # Add chat ID metadata for new commits if not already present
+            if chat_id and "codemcp-id:" not in commit_message:
                 commit_message += f"\n\ncodemcp-id: {chat_id}"
 
             # Create a new commit
+            commit_cmd = ["git", "commit", "-m", commit_message]
+            if allow_empty:
+                commit_cmd.append("--allow-empty")
+
             commit_result = await run_command(
-                ["git", "commit", "-m", commit_message],
+                commit_cmd,
                 cwd=git_cwd,
                 capture_output=True,
                 text=True,

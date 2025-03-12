@@ -95,12 +95,17 @@ async def _generate_chat_id(directory: str) -> str:
         return f"0-{human_readable_part}"
 
 
-async def init_project(directory: str) -> str:
+async def init_project(
+    directory: str, user_prompt: str = None, subject_line: str = None
+) -> str:
     """Initialize a project by reading the codemcp.toml TOML file and returning
-    a combined system prompt.
+    a combined system prompt. Creates an empty commit with the user's prompt as the body
+    and a subject line in Git conventional commit format.
 
     Args:
         directory: The directory path containing the codemcp.toml file
+        user_prompt: The user's original prompt verbatim (optional)
+        subject_line: A short subject line in Git conventional commit format (optional)
 
     Returns:
         A string containing the system prompt plus any project_prompt from the config
@@ -119,6 +124,28 @@ async def init_project(directory: str) -> str:
 
         # Generate a unique chat ID
         chat_id = await _generate_chat_id(full_dir_path)
+
+        # Create an empty commit with user prompt and subject line if provided
+        if user_prompt is not None and subject_line is not None:
+            from ..git import commit_changes, is_git_repository
+
+            # Only do this if we're in a git repository
+            if await is_git_repository(full_dir_path):
+                # Format the commit message according to the specified format
+                commit_body = user_prompt
+                commit_msg = f"{subject_line}\n\n{commit_body}\n\ncodemcp-id: {chat_id}"
+
+                # Create an empty commit with the formatted message
+                success, message = await commit_changes(
+                    full_dir_path,
+                    description=subject_line,
+                    chat_id=chat_id,
+                    allow_empty=True,
+                    custom_message=commit_msg,
+                )
+
+                if not success:
+                    logging.warning(f"Failed to create empty commit: {message}")
 
         # Build path to codemcp.toml file
         rules_file_path = os.path.join(full_dir_path, "codemcp.toml")

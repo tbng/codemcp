@@ -37,6 +37,8 @@ async def codemcp(
     old_str: str | None = None,  # Added for backward compatibility
     new_str: str | None = None,  # Added for backward compatibility
     chat_id: str | None = None,  # Added for chat identification
+    user_prompt: str | None = None,  # Added for InitProject commit message
+    subject_line: str | None = None,  # Added for InitProject commit message
 ) -> str:
     """If and only if the user explicitly asks you to initialize codemcp with
     path, you should invoke this tool with arguments `InitProject
@@ -47,6 +49,8 @@ async def codemcp(
       subtool: The subtool to run (InitProject, ...)
       path: The path to the file or directory to operate on
       chat_id: A unique ID to identify the chat session (provided by InitProject and required for all tools EXCEPT InitProject)
+      user_prompt: The user's original prompt verbatim (for InitProject)
+      subject_line: A short subject line in Git conventional commit format (for InitProject)
       ... (there are other arguments which are documented later)
     """
     # Define expected parameters for each subtool
@@ -64,7 +68,9 @@ async def codemcp(
         },
         "LS": {"path", "chat_id"},
         "InitProject": {
-            "path"
+            "path",
+            "user_prompt",
+            "subject_line",
         },  # chat_id is not expected for InitProject as it's generated there
         "RunCommand": {"path", "command", "arguments", "chat_id"},
         "Grep": {"pattern", "path", "include", "chat_id"},
@@ -98,6 +104,9 @@ async def codemcp(
             "new_str": new_str,
             # Chat ID for session identification
             "chat_id": chat_id,
+            # InitProject commit message parameters
+            "user_prompt": user_prompt,
+            "subject_line": subject_line,
         }.items()
         if value is not None
     }
@@ -154,7 +163,7 @@ async def codemcp(
         if path is None:
             return "Error: path is required for InitProject subtool"
 
-        return await init_project(path)
+        return await init_project(path, user_prompt, subject_line)
 
     if subtool == "RunCommand":
         # When is something a command as opposed to a subtool?  They are
