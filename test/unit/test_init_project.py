@@ -166,10 +166,16 @@ test = ["./run_test.sh"]
         self.assertIn("This is a global prompt without command docs.", result)
         self.assertNotIn("Command documentation:", result)
 
-    @patch("codemcp.tools.init_project.open", new_callable=mock_open, read_data="42")
-    def test_generate_chat_id_with_existing_counter(self, mock_file):
+    @patch("random.choices", return_value=["a", "b", "c", "d", "e", "f"])
+    @patch("os.path.exists", return_value=True)
+    @patch("builtins.open", new_callable=mock_open, read_data="42")
+    def test_generate_chat_id_with_existing_counter(self, mock_file, mock_exists, mock_random):
         """Test that _generate_chat_id correctly reads an existing counter."""
-        # Set up the mock to return "42" when reading the counter file
+        # Set up the mocks
+        # We need to patch os.path.exists to return True for the counter file check
+        # We need to patch builtins.open to return "42" for the counter file read
+        # We need to patch random.choices to return consistent values
+        
         chat_id = _generate_chat_id(self.dir_path)
         
         # Check that the chat ID starts with the incremented counter
@@ -180,6 +186,7 @@ test = ["./run_test.sh"]
         self.assertEqual(len(parts), 3, "Chat ID should have 3 parts")
         self.assertEqual(parts[0], "43", "Counter should be '43'")
         self.assertEqual(parts[1], "initproject", "Second part should be 'initproject'")
+        self.assertEqual(parts[2], "abcdef", "Random part should be 'abcdef'")
         
     @patch("codemcp.tools.init_project.is_git_repository", return_value=False)
     def test_generate_chat_id_not_in_git_repo(self, mock_is_git_repo):
