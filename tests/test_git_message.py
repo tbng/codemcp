@@ -54,11 +54,14 @@ Signed-off-by: User <user@example.com>
 Co-authored-by: Other <other@example.com>"""
         main_message, metadata = parse_git_commit_message(message)
         self.assertEqual(main_message, "feat: Add feature\n\nDescription")
-        self.assertEqual(metadata, {
-            "codemcp-id": "abc-123",
-            "Signed-off-by": "User <user@example.com>",
-            "Co-authored-by": "Other <other@example.com>"
-        })
+        self.assertEqual(
+            metadata,
+            {
+                "codemcp-id": "abc-123",
+                "Signed-off-by": "User <user@example.com>",
+                "Co-authored-by": "Other <other@example.com>",
+            },
+        )
 
     def test_parse_message_with_non_standard_metadata(self):
         """Test parsing a message with non-standard metadata."""
@@ -71,11 +74,10 @@ Refs: #123
 Reviewed-by: Someone"""
         main_message, metadata = parse_git_commit_message(message)
         self.assertEqual(main_message, "feat: Add feature\n\nDescription")
-        self.assertEqual(metadata, {
-            "codemcp-id": "abc-123",
-            "Refs": "#123",
-            "Reviewed-by": "Someone"
-        })
+        self.assertEqual(
+            metadata,
+            {"codemcp-id": "abc-123", "Refs": "#123", "Reviewed-by": "Someone"},
+        )
 
     def test_parse_message_with_embedded_colons(self):
         """Test parsing a message with colons in the main message."""
@@ -85,14 +87,19 @@ Description: with more: colons
 
 codemcp-id: abc-123"""
         main_message, metadata = parse_git_commit_message(message)
-        self.assertEqual(main_message, "feat: Add feature with a: colon\n\nDescription: with more: colons")
+        self.assertEqual(
+            main_message,
+            "feat: Add feature with a: colon\n\nDescription: with more: colons",
+        )
         self.assertEqual(metadata, {"codemcp-id": "abc-123"})
 
     def test_append_new_metadata(self):
         """Test appending new metadata to a message without existing metadata."""
         message = "feat: Add feature\n\nDescription"
         new_message = append_metadata_to_message(message, {"codemcp-id": "abc-123"})
-        self.assertEqual(new_message, "feat: Add feature\n\nDescription\n\ncodemcp-id: abc-123")
+        self.assertEqual(
+            new_message, "feat: Add feature\n\nDescription\n\ncodemcp-id: abc-123"
+        )
 
     def test_append_to_existing_metadata(self):
         """Test appending metadata to a message with existing metadata."""
@@ -102,12 +109,15 @@ Description
 
 Signed-off-by: User <user@example.com>"""
         new_message = append_metadata_to_message(message, {"codemcp-id": "abc-123"})
-        self.assertEqual(new_message, """feat: Add feature
+        self.assertEqual(
+            new_message,
+            """feat: Add feature
 
 Description
 
 Signed-off-by: User <user@example.com>
-codemcp-id: abc-123""")
+codemcp-id: abc-123""",
+        )
 
     def test_update_existing_metadata(self):
         """Test updating existing metadata in a message."""
@@ -118,12 +128,15 @@ Description
 codemcp-id: old-id
 Signed-off-by: User <user@example.com>"""
         new_message = append_metadata_to_message(message, {"codemcp-id": "new-id"})
-        self.assertEqual(new_message, """feat: Add feature
+        self.assertEqual(
+            new_message,
+            """feat: Add feature
 
 Description
 
 Signed-off-by: User <user@example.com>
-codemcp-id: new-id""")
+codemcp-id: new-id""",
+        )
 
     def test_metadata_with_multiline_values(self):
         """Test handling metadata with multiline values."""
@@ -137,10 +150,10 @@ Trailer-key: Line 1
 Another-key: value"""
         main_message, metadata = parse_git_commit_message(message)
         self.assertEqual(main_message, "feat: Add feature\n\nDescription")
-        self.assertEqual(metadata, {
-            "Trailer-key": "Line 1\n Line 2\n Line 3",
-            "Another-key": "value"
-        })
+        self.assertEqual(
+            metadata,
+            {"Trailer-key": "Line 1\n Line 2\n Line 3", "Another-key": "value"},
+        )
 
     def test_metadata_section_with_blank_lines(self):
         """Test handling metadata section with blank lines."""
