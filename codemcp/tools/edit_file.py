@@ -104,7 +104,7 @@ def find_similar_file(file_path: str) -> str | None:
     return None
 
 
-def apply_edit(
+async def apply_edit(
     file_path: str,
     old_string: str,
     new_string: str,
@@ -121,7 +121,8 @@ def apply_edit(
 
     """
     if os.path.exists(file_path):
-        with open(file_path, encoding=detect_file_encoding(file_path)) as f:
+        encoding = await detect_file_encoding(file_path)
+        with open(file_path, encoding=encoding) as f:
             content = f.read()
     else:
         content = ""
