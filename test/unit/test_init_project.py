@@ -196,22 +196,29 @@ test = ["./run_test.sh"]
             handle.write.assert_called_once_with("43")
 
     def test_chat_id_generation_no_counter(self):
+    def test_chat_id_generation_no_counter(self):
         """Test chat ID generation when no counter file exists."""
-        # Mock os.path.exists to return False for the counter file
-        with patch("os.path.exists", return_value=False):
+        # Create a side_effect for os.path.exists that returns False only for the counter file
+        def exists_side_effect(path):
+            if path.endswith('counter'):
+                return False
+            return True
+        
+        # Mock os.path.exists with the side effect
+        with patch('os.path.exists', side_effect=exists_side_effect):
             # Mock the open function for writing the counter file
-            with patch("builtins.open", mock_open()) as mock_file:
-                chat_id = _generate_chat_id(self.dir_path)
-
-                # Check the format of the chat ID
-                self.assertTrue(
-                    chat_id.startswith("1-"),
-                    f"Expected chat ID to start with '1-', got {chat_id}",
-                )
-
-                # Verify that the counter file was written with initial value 1
-                handle = mock_file()
-                handle.write.assert_called_once_with("1")
+            with patch('builtins.open', mock_open()) as mock_file:
+                # Mock random.choices to return a predictable value
+                with patch('random.choices', return_value=['a', 'b', 'c', 'd', 'e', 'f']):
+                    chat_id = _generate_chat_id(self.dir_path)
+                    
+                    # Check the format of the chat ID
+                    self.assertTrue(chat_id.startswith("1-"), 
+                                    f"Expected chat ID to start with '1-', got {chat_id}")
+                    
+                    # Verify that the counter file was written with initial value 1
+                    handle = mock_file()
+                    handle.write.assert_called_once_with("1")
 
     def test_chat_id_generation_not_git_repo(self):
         """Test chat ID generation when not in a git repository."""
