@@ -120,7 +120,10 @@ async def _generate_chat_id(directory: str, description: str = None) -> str:
 
 
 async def init_project(
-    directory: str, user_prompt: str = None, subject_line: str = None
+    directory: str,
+    user_prompt: str = None,
+    subject_line: str = None,
+    reuse_head_chat_id: bool = False,
 ) -> str:
     """Initialize a project by reading the codemcp.toml TOML file and returning
     a combined system prompt. Creates an empty commit with the user's prompt as the body
@@ -130,6 +133,7 @@ async def init_project(
         directory: The directory path containing the codemcp.toml file
         user_prompt: The user's original prompt verbatim (optional)
         subject_line: A short subject line in Git conventional commit format (optional)
+        reuse_head_chat_id: Whether to reuse the chat ID from the HEAD commit (optional)
 
     Returns:
         A string containing the system prompt plus any project_prompt from the config
@@ -146,8 +150,22 @@ async def init_project(
         if not os.path.isdir(full_dir_path):
             return f"Error: Path is not a directory: {directory}"
 
-        # Generate a unique chat ID using subject_line if available
-        chat_id = await _generate_chat_id(full_dir_path, subject_line)
+        # If reuse_head_chat_id is True, try to get the chat ID from the HEAD commit
+        chat_id = None
+        if reuse_head_chat_id:
+            from ..git import get_head_commit_chat_id, is_git_repository
+            # Only do this if we're in a git repository
+            if await is_git_repository(full_dir_path):
+                chat_id = await get_head_commit_chat_id(full_dir_path)
+                if not chat_id:
+                    logging.warning("reuse_head_chat_id was True but no chat ID found in HEAD commit, generating new chat ID")
+                    logging.warning(
+                        "reuse_head_chat_id was True but no chat ID found in HEAD commit, generating new chat ID"
+                    )
+
+        # If not reusing or no chat ID was found in HEAD, generate a new one
+        if not chat_id:
+            chat_id = await _generate_chat_id(full_dir_path, subject_line)
 
         # Create an empty commit with user prompt and subject line if provided
         if user_prompt is not None and subject_line is not None:

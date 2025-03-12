@@ -39,11 +39,16 @@ async def codemcp(
     chat_id: str | None = None,  # Added for chat identification
     user_prompt: str | None = None,  # Added for InitProject commit message
     subject_line: str | None = None,  # Added for InitProject commit message
+    reuse_head_chat_id: bool
+    | None = None,  # Whether to reuse the chat ID from the HEAD commit
 ) -> str:
     """If and only if the user explicitly asks you to initialize codemcp with
     path, you should invoke this tool with arguments `InitProject
     path`.  This will return instructions which you should
     IMMEDIATELY follow before continuing.
+
+    If the user indicates they want to "amend" or "continue working" on a PR,
+    you should set reuse_head_chat_id=True to continue using the same chat ID.
 
     Arguments:
       subtool: The subtool to run (InitProject, ...)
@@ -51,6 +56,7 @@ async def codemcp(
       chat_id: A unique ID to identify the chat session (provided by InitProject and required for all tools EXCEPT InitProject)
       user_prompt: The user's original prompt verbatim (for InitProject), starting AFTER instructions to initialize codemcp (e.g., you should exclude "Initialize codemcp for PATH")
       subject_line: A short subject line in Git conventional commit format (for InitProject)
+      reuse_head_chat_id: If True, reuse the chat ID from the HEAD commit instead of generating a new one (for InitProject)
       ... (there are other arguments which are documented later)
     """
     # Define expected parameters for each subtool
@@ -71,6 +77,7 @@ async def codemcp(
             "path",
             "user_prompt",
             "subject_line",
+            "reuse_head_chat_id",
         },  # chat_id is not expected for InitProject as it's generated there
         "RunCommand": {"path", "command", "arguments", "chat_id"},
         "Grep": {"pattern", "path", "include", "chat_id"},
@@ -107,6 +114,8 @@ async def codemcp(
             # InitProject commit message parameters
             "user_prompt": user_prompt,
             "subject_line": subject_line,
+            # Whether to reuse the chat ID from the HEAD commit
+            "reuse_head_chat_id": reuse_head_chat_id,
         }.items()
         if value is not None
     }
@@ -163,7 +172,7 @@ async def codemcp(
         if path is None:
             return "Error: path is required for InitProject subtool"
 
-        return await init_project(path, user_prompt, subject_line)
+        return await init_project(path, user_prompt, subject_line, reuse_head_chat_id)
 
     if subtool == "RunCommand":
         # When is something a command as opposed to a subtool?  They are

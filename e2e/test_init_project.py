@@ -11,6 +11,84 @@ from codemcp.testing import MCPEndToEndTestCase
 class InitProjectTest(MCPEndToEndTestCase):
     """Test the InitProject subtool functionality."""
 
+    async def test_reuse_head_chat_id(self):
+        """Test that reuse_head_chat_id=True reuses the chat ID from the HEAD commit."""
+        # Set up a git repository in the temp dir
+        import subprocess
+        from codemcp.git import get_head_commit_chat_id
+
+        # Create a simple codemcp.toml file
+        toml_path = os.path.join(self.temp_dir.name, "codemcp.toml")
+        with open(toml_path, "w") as f:
+            f.write("""
+project_prompt = "Test reuse chat ID"
+[commands]
+test = ["./run_test.sh"]
+""")
+
+        # Set up a git repository
+        subprocess.run(["git", "init"], cwd=self.temp_dir.name, check=True)
+        subprocess.run(
+            ["git", "config", "user.email", "test@example.com"],
+            cwd=self.temp_dir.name,
+            check=True,
+        )
+        subprocess.run(
+            ["git", "config", "user.name", "Test User"],
+            cwd=self.temp_dir.name,
+            check=True,
+        )
+
+        # First InitProject call to create a commit with a chat ID
+        async with self.create_client_session() as session:
+            result1 = await session.call_tool(
+                "codemcp",
+                {
+                    "subtool": "InitProject",
+                    "path": self.temp_dir.name,
+                    "user_prompt": "First initialization",
+                    "subject_line": "feat: first commit",
+                },
+            )
+
+            # Extract the chat ID from the result
+            normalized_result1 = self.normalize_path(result1)
+            result_text1 = self.extract_text_from_result(normalized_result1)
+            import re
+
+            chat_id_match = re.search(r"chat ID: ([\w-]+)", result_text1)
+            self.assertIsNotNone(chat_id_match, "Chat ID not found in result")
+            original_chat_id = chat_id_match.group(1)
+
+            # Verify the chat ID is also in the commit
+            head_chat_id = await get_head_commit_chat_id(self.temp_dir.name)
+            self.assertEqual(
+                original_chat_id, head_chat_id, "Chat ID not found in HEAD commit"
+            )
+
+        # Second InitProject call with reuse_head_chat_id=True
+        async with self.create_client_session() as session:
+            result2 = await session.call_tool(
+                "codemcp",
+                {
+                    "subtool": "InitProject",
+                    "path": self.temp_dir.name,
+                    "user_prompt": "Continue working on the same feature",
+                    "subject_line": "feat: continue working",
+                    "reuse_head_chat_id": True,
+                },
+            )
+
+            # Extract the chat ID from the result
+            normalized_result2 = self.normalize_path(result2)
+            result_text2 = self.extract_text_from_result(normalized_result2)
+            chat_id_match = re.search(r"chat ID: ([\w-]+)", result_text2)
+            self.assertIsNotNone(chat_id_match, "Chat ID not found in result")
+            reused_chat_id = chat_id_match.group(1)
+
+            # Verify the chat ID is the same as the original
+            self.assertEqual(original_chat_id, reused_chat_id, "Chat ID not reused")
+
     async def test_init_project_basic(self):
         """Test basic InitProject functionality with simple TOML file."""
         # The basic codemcp.toml file is already created in the base test setup
