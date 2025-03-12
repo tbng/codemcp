@@ -157,6 +157,10 @@ class GitAmendTest(MCPEndToEndTestCase):
             self.assertIn("First edit", commit_msg2)
             self.assertIn("Second edit", commit_msg2)
 
+            # Verify proper formatting with two newlines before bullets
+            expected_format = "wip: First edit\n\n- Second edit"
+            self.assertIn(expected_format, commit_msg2)
+
     async def test_new_commit_different_chat_id(self):
         """Test that edits with a different chat_id create a new commit rather than amending."""
         # Create a file to edit

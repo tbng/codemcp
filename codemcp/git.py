@@ -561,7 +561,15 @@ async def commit_changes(
 
             # Add the new description to the message body
             if main_message:
-                main_message += f"\n- {description}"
+                # Check if the last line of the main message is a bullet point
+                lines = main_message.splitlines()
+                last_line = lines[-1] if lines else ""
+                if last_line.strip().startswith("-"):
+                    # Previous line is already a bullet, just add a new bullet on the next line
+                    main_message += f"\n- {description}"
+                else:
+                    # Previous line is not a bullet, add two newlines before the bullet
+                    main_message += f"\n\n- {description}"
             else:
                 main_message = description
 
