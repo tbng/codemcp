@@ -38,7 +38,19 @@ class WriteFileTest(MCPEndToEndTestCase):
         )
 
         async with self.create_client_session() as session:
-            # Call the WriteFile tool
+            # First initialize project to get chat_id
+            init_result = await session.call_tool(
+                "codemcp",
+                {"subtool": "InitProject", "path": self.temp_dir.name},
+            )
+            init_result_text = self.extract_text_from_result(init_result)
+            
+            # Extract chat_id from the init result
+            import re
+            chat_id_match = re.search(r"chat has been assigned a unique ID: ([^\n]+)", init_result_text)
+            chat_id = chat_id_match.group(1) if chat_id_match else "test-chat-id"
+            
+            # Call the WriteFile tool with chat_id
             result = await session.call_tool(
                 "codemcp",
                 {
@@ -46,6 +58,7 @@ class WriteFileTest(MCPEndToEndTestCase):
                     "path": test_file_path,
                     "content": content,
                     "description": "Create new file",
+                    "chat_id": chat_id,
                 },
             )
 
