@@ -30,7 +30,7 @@ async def detect_file_encoding(file_path: str) -> str:
     """
     # Simple implementation - in a real-world scenario, you might use chardet or similar
     loop = asyncio.get_event_loop()
-    
+
     def read_file_utf8():
         try:
             with open(file_path, encoding="utf-8") as f:
@@ -40,7 +40,7 @@ async def detect_file_encoding(file_path: str) -> str:
             return "latin-1"  # A safe fallback
         except FileNotFoundError:
             return "utf-8"
-    
+
     return await loop.run_in_executor(None, read_file_utf8)
 
 
