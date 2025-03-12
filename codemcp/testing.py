@@ -50,7 +50,7 @@ class MCPEndToEndTestCase(TestCase, unittest.IsolatedAsyncioTestCase):
     def init_git_repo(self):
         """Initialize a git repository for testing."""
         subprocess.run(
-            ["git", "init"],
+            ["git", "init", "-b", "main"],
             cwd=self.temp_dir.name,
             env=self.env,
             check=True,
