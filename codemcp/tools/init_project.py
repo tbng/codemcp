@@ -300,7 +300,8 @@ Args:
 
 # Chat ID
 This chat has been assigned a unique ID: {chat_id}
-When you use any tool, you should always include this unique ID as the first argument.
+When you use any tool, you should always include this unique ID as the chat_id parameter.
+This is mandatory for all tools EXCEPT InitProject (which generates the chat_id).
 """
 
         # Combine system prompt, global prompt
