@@ -171,7 +171,7 @@ async def codemcp(
             return "Error: path is required for Grep subtool"
 
         try:
-            result = grep_files(pattern, path, include)
+            result = await grep_files(pattern, path, include)
             return result.get(
                 "resultForAssistant",
                 f"Found {result.get('numFiles', 0)} file(s)",
