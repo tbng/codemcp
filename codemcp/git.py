@@ -16,14 +16,14 @@ __all__ = [
 ]
 
 
-async def get_head_commit_chat_id(directory: str) -> str | None:
-    """Get the chat ID from the HEAD commit's message.
+async def get_head_commit_message(directory: str) -> str | None:
+    """Get the full commit message from HEAD.
     
     Args:
         directory: The directory to check
     
     Returns:
-        The chat ID if found, None otherwise
+        The commit message if available, None otherwise
     """
     try:
         # Check if HEAD exists
@@ -48,8 +48,26 @@ async def get_head_commit_chat_id(directory: str) -> str | None:
             text=True,
         )
         
-        commit_message = result.stdout
-        
+        return result.stdout.strip()
+    except Exception as e:
+        logging.warning(f"Exception when getting HEAD commit message: {e!s}", exc_info=True)
+        return None
+
+
+async def get_head_commit_chat_id(directory: str) -> str | None:
+    """Get the chat ID from the HEAD commit's message.
+    
+    Args:
+        directory: The directory to check
+    
+    Returns:
+        The chat ID if found, None otherwise
+    """
+    try:
+        commit_message = await get_head_commit_message(directory)
+        if not commit_message:
+            return None
+            
         # Extract the chat ID using regex
         chat_id_match = re.search(r"codemcp-id: ([^\s]+)", commit_message)
         if chat_id_match:
