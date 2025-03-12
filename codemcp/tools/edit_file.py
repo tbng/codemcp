@@ -617,6 +617,7 @@ async def edit_file_content(
     new_string: str,
     read_file_timestamps: dict[str, float] | None = None,
     description: str = "",
+    chat_id: str = None,
 ) -> str:
     """Edit a file by replacing old_string with new_string.
 
@@ -631,6 +632,7 @@ async def edit_file_content(
         new_string: The new text to replace old_string with
         read_file_timestamps: Dictionary mapping file paths to timestamps when they were last read
         description: Short description of the change
+        chat_id: The unique ID of the current chat session
 
     Returns:
         A success message or an error message
