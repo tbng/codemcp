@@ -751,7 +751,8 @@ async def edit_file_content(
         # Read the original file
         loop = asyncio.get_event_loop()
         content = await loop.run_in_executor(
-            None, lambda: open(full_file_path, encoding=encoding).read()
+            None, 
+            lambda: open(full_file_path, encoding=encoding).read()
         )
 
         # Check if old_string exists in the file
