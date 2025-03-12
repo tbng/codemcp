@@ -671,7 +671,7 @@ async def edit_file_content(
         )
 
         # Check file path and permissions
-        is_valid, error_message = check_file_path_and_permissions(full_file_path)
+        is_valid, error_message = await check_file_path_and_permissions(full_file_path)
         if not is_valid:
             return error_message
 
