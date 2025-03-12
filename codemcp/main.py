@@ -137,7 +137,7 @@ async def codemcp(
         # Accept either new_string or new_str (prefer new_string if both are provided)
         new_content = new_string or new_str or ""
         return await edit_file_content(
-            path, old_content, new_content, None, description
+            path, old_content, new_content, None, description, chat_id
         )
 
     if subtool == "LS":
