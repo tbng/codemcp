@@ -3,7 +3,6 @@
 """Tests for the Git amend functionality."""
 
 import os
-import re
 import subprocess
 import unittest
 
