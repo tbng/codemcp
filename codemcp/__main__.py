@@ -4,7 +4,7 @@
 # by filename
 from codemcp import run, mcp
 
-__all__ = ['mcp']
+__all__ = ["mcp"]
 
 if __name__ == "__main__":
     run()

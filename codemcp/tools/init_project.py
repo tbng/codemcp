@@ -132,9 +132,11 @@ async def init_project(directory: str) -> str:
         if os.path.exists(rules_file_path):
             try:
                 from .async_file_utils import async_open_binary
+
                 rules_data = await async_open_binary(rules_file_path)
                 # tomli.loads expects a string, but we have bytes, so use tomli.load with an io.BytesIO object
                 import io
+
                 rules_config = tomli.load(io.BytesIO(rules_data))
 
                 # Extract project_prompt if it exists

@@ -66,7 +66,7 @@ class MCPEndToEndTestCase(TestCase, unittest.IsolatedAsyncioTestCase):
         # Create a codemcp.toml file in the repo root (required for permission checks)
         codemcp_toml_path = os.path.join(self.temp_dir.name, "codemcp.toml")
         with open(codemcp_toml_path, "w") as f:
-            f.write('')
+            f.write("")
 
         subprocess.run(
             ["git", "add", "README.md", "codemcp.toml"],

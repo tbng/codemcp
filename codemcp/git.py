@@ -20,10 +20,10 @@ __all__ = [
 
 async def get_head_commit_message(directory: str) -> str | None:
     """Get the full commit message from HEAD.
-    
+
     Args:
         directory: The directory to check
-    
+
     Returns:
         The commit message if available, None otherwise
     """
@@ -36,11 +36,11 @@ async def get_head_commit_message(directory: str) -> str | None:
             capture_output=True,
             text=True,
         )
-        
+
         if result.returncode != 0:
             # No commits yet
             return None
-            
+
         # Get the commit message
         result = await run_command(
             ["git", "log", "-1", "--pretty=%B"],
@@ -49,19 +49,21 @@ async def get_head_commit_message(directory: str) -> str | None:
             capture_output=True,
             text=True,
         )
-        
+
         return result.stdout.strip()
     except Exception as e:
-        logging.warning(f"Exception when getting HEAD commit message: {e!s}", exc_info=True)
+        logging.warning(
+            f"Exception when getting HEAD commit message: {e!s}", exc_info=True
+        )
         return None
 
 
 async def get_head_commit_chat_id(directory: str) -> str | None:
     """Get the chat ID from the HEAD commit's message.
-    
+
     Args:
         directory: The directory to check
-    
+
     Returns:
         The chat ID if found, None otherwise
     """
@@ -69,15 +71,17 @@ async def get_head_commit_chat_id(directory: str) -> str | None:
         commit_message = await get_head_commit_message(directory)
         if not commit_message:
             return None
-            
+
         # Extract the chat ID using regex
         chat_id_match = re.search(r"codemcp-id: ([^\s]+)", commit_message)
         if chat_id_match:
             return chat_id_match.group(1)
-            
+
         return None
     except Exception as e:
-        logging.warning(f"Exception when getting HEAD commit chat ID: {e!s}", exc_info=True)
+        logging.warning(
+            f"Exception when getting HEAD commit chat ID: {e!s}", exc_info=True
+        )
         return None
 
 
@@ -255,7 +259,9 @@ async def commit_pending_changes(file_path: str) -> tuple[bool, str]:
         return False, f"Error committing pending changes: {e!s}"
 
 
-async def commit_changes(path: str, description: str, chat_id: str = None) -> tuple[bool, str]:
+async def commit_changes(
+    path: str, description: str, chat_id: str = None
+) -> tuple[bool, str]:
     """Commit changes to a file or directory in Git.
 
     This function will either create a new commit with the chat_id metadata,
@@ -358,46 +364,48 @@ async def commit_changes(path: str, description: str, chat_id: str = None) -> tu
         # Determine whether to amend or create a new commit
         head_chat_id = await get_head_commit_chat_id(git_cwd) if has_commits else None
         should_amend = has_commits and head_chat_id == chat_id
-        
+
         # Prepare the commit message with metadata
         commit_message = f"wip: {description}"
-        
+
         if should_amend:
             # Get the current commit message
             current_commit_message = await get_head_commit_message(git_cwd)
-            
+
             if current_commit_message:
                 # Split the commit message to preserve metadata at the bottom
                 message_parts = current_commit_message.split("\n\n")
-                
+
                 # Extract the main message and metadata
                 main_message = message_parts[0]
                 metadata_parts = []
-                
+
                 # Collect metadata from the original commit message
                 for part in message_parts[1:]:
-                    if part.startswith("codemcp-id:") or part.startswith("Signed-off-by:"):
+                    if part.startswith("codemcp-id:") or part.startswith(
+                        "Signed-off-by:"
+                    ):
                         metadata_parts.append(part)
                     else:
                         # This is part of the message body
                         main_message += "\n\n" + part
-                
+
                 # Add the new description to the message body
                 main_message += f"\n- {description}"
-                
+
                 # Reconstruct the message with metadata at the bottom
                 commit_message = main_message
-                
+
                 # Add the metadata parts back
                 if metadata_parts:
                     for metadata in metadata_parts:
                         if not metadata.startswith("codemcp-id:"):
                             commit_message += f"\n\n{metadata}"
-            
+
             # Ensure the chat ID metadata is included
             if chat_id and "codemcp-id:" not in commit_message:
                 commit_message += f"\n\ncodemcp-id: {chat_id}"
-                
+
             # Amend the previous commit
             commit_result = await run_command(
                 ["git", "commit", "--amend", "-m", commit_message],
@@ -410,7 +418,7 @@ async def commit_changes(path: str, description: str, chat_id: str = None) -> tu
             # Add chat ID metadata for new commits
             if chat_id:
                 commit_message += f"\n\ncodemcp-id: {chat_id}"
-                
+
             # Create a new commit
             commit_result = await run_command(
                 ["git", "commit", "-m", commit_message],
