@@ -79,9 +79,8 @@ async def _generate_chat_id(directory: str) -> str:
 
         # Write the new counter value
         try:
-            await loop.run_in_executor(
-                None, lambda: open(counter_file, "w").write(str(counter_value))
-            )
+            from .async_file_utils import async_write_text
+            await async_write_text(counter_file, str(counter_value))
         except IOError as e:
             logging.warning(f"Error writing to counter file: {e}")
 
