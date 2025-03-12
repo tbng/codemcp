@@ -123,6 +123,7 @@ test = ["./run_test.sh"]
                     "path": self.temp_dir.name,
                     "command": "test",
                     "arguments": ["test_directory/test_another.py"],
+                    "chat_id": chat_id,
                 },
             )
 
