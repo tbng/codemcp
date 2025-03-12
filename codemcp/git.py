@@ -249,9 +249,9 @@ def commit_changes(path: str, description: str) -> tuple[bool, str]:
                     "No changes to commit (changes already committed or no changes detected)",
                 )
 
-        # Commit the change
+        # Commit the change with "wip: " prefix
         commit_result = run_command(
-            ["git", "commit", "-m", description],
+            ["git", "commit", "-m", f"wip: {description}"],
             cwd=git_cwd,
             capture_output=True,
             text=True,
