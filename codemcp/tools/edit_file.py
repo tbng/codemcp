@@ -96,8 +96,8 @@ async def apply_edit(
     """
     if os.path.exists(file_path):
         encoding = await detect_file_encoding(file_path)
-        with open(file_path, encoding=encoding) as f:
-            content = f.read()
+        from .async_file_utils import async_open_text
+        content = await async_open_text(file_path, encoding=encoding)
     else:
         content = ""
 
