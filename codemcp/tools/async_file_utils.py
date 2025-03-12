@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 
 import os
-from typing import List, Optional, Union, Any
+from typing import List
 
 import anyio
+
 
 async def async_open_text(
     file_path: str, 

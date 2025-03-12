@@ -64,7 +64,7 @@ async def _generate_chat_id(directory: str) -> str:
 
         # Read the current counter value or initialize to 0
         counter_value = 0
-        loop = asyncio.get_event_loop()
+        asyncio.get_event_loop()
 
         if os.path.exists(counter_file):
             try:
