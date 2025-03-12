@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import os
+import asyncio
 
 from ..git import commit_changes
 from .file_utils import (
@@ -17,7 +18,7 @@ __all__ = [
 ]
 
 
-def detect_file_encoding(file_path: str) -> str:
+async def detect_file_encoding(file_path: str) -> str:
     """Detect the encoding of a file.
 
     Args:
@@ -28,20 +29,26 @@ def detect_file_encoding(file_path: str) -> str:
 
     """
     # Simple implementation - in a real-world scenario, you might use chardet or similar
+    loop = asyncio.get_event_loop()
     try:
-        # Try to read the file with utf-8 encoding
-        with open(file_path, encoding="utf-8") as f:
-            f.read()
-        return "utf-8"
-    except UnicodeDecodeError:
-        # If utf-8 fails, default to binary mode
-        return "latin-1"  # A safe fallback
-    except FileNotFoundError:
-        # For non-existent files, default to utf-8
+        # Try to read the file with utf-8 encoding asynchronously
+        async def read_file_utf8():
+            try:
+                with open(file_path, encoding="utf-8") as f:
+                    f.read()
+                return "utf-8"
+            except UnicodeDecodeError:
+                return "latin-1"  # A safe fallback
+            except FileNotFoundError:
+                return "utf-8"
+        
+        return await loop.run_in_executor(None, lambda: read_file_utf8())
+    except Exception:
+        # For non-existent files or any other errors, default to utf-8
         return "utf-8"
 
 
-def detect_line_endings(file_path: str) -> str:
+async def detect_line_endings(file_path: str) -> str:
     """Detect the line endings of a file.
 
     Args:
@@ -51,14 +58,19 @@ def detect_line_endings(file_path: str) -> str:
         The detected line endings ('\n' or '\r\n')
 
     """
-    try:
-        with open(file_path, "rb") as f:
-            content = f.read()
-        if b"\r\n" in content:
-            return "\r\n"
-        return "\n"
-    except Exception:
-        return os.linesep
+    loop = asyncio.get_event_loop()
+    
+    async def read_and_detect():
+        try:
+            with open(file_path, "rb") as f:
+                content = f.read()
+            if b"\r\n" in content:
+                return "\r\n"
+            return "\n"
+        except Exception:
+            return os.linesep
+    
+    return await loop.run_in_executor(None, lambda: read_and_detect())
 
 
 def detect_repo_line_endings(directory: str) -> str:
@@ -75,7 +87,7 @@ def detect_repo_line_endings(directory: str) -> str:
     return os.linesep
 
 
-def write_file_content(file_path: str, content: str, description: str = "") -> str:
+async def write_file_content(file_path: str, content: str, description: str = "") -> str:
     """Write content to a file.
 
     Args:
@@ -99,16 +111,16 @@ def write_file_content(file_path: str, content: str, description: str = "") -> s
             return error_message
 
         # Check git tracking for existing files
-        is_tracked, track_error = check_git_tracking_for_existing_file(file_path)
+        is_tracked, track_error = await check_git_tracking_for_existing_file(file_path)
         if not is_tracked:
             return f"Error: {track_error}"
 
         # Determine encoding and line endings
         old_file_exists = os.path.exists(file_path)
-        encoding = detect_file_encoding(file_path) if old_file_exists else "utf-8"
+        encoding = await detect_file_encoding(file_path) if old_file_exists else "utf-8"
 
         if old_file_exists:
-            line_endings = detect_line_endings(file_path)
+            line_endings = await detect_line_endings(file_path)
         else:
             line_endings = detect_repo_line_endings(os.path.dirname(file_path))
             # Ensure directory exists for new files
@@ -116,11 +128,11 @@ def write_file_content(file_path: str, content: str, description: str = "") -> s
             os.makedirs(directory, exist_ok=True)
 
         # Write the content with proper encoding and line endings
-        write_text_content(file_path, content, encoding, line_endings)
+        await write_text_content(file_path, content, encoding, line_endings)
 
         # Commit the changes
         git_message = ""
-        success, message = commit_changes(file_path, description)
+        success, message = await commit_changes(file_path, description)
         if success:
             git_message = f"\nChanges committed to git: {description}"
         else:
