@@ -49,7 +49,7 @@ async def codemcp(
       subtool: The subtool to run (InitProject, ...)
       path: The path to the file or directory to operate on
       chat_id: A unique ID to identify the chat session (provided by InitProject and required for all tools EXCEPT InitProject)
-      user_prompt: The user's original prompt verbatim (for InitProject)
+      user_prompt: The user's original prompt verbatim (for InitProject), starting AFTER instructions to initialize codemcp (e.g., you should exclude "Initialize codemcp for PATH")
       subject_line: A short subject line in Git conventional commit format (for InitProject)
       ... (there are other arguments which are documented later)
     """
