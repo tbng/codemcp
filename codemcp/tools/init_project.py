@@ -129,10 +129,8 @@ async def init_project(directory: str) -> str:
         # Check if codemcp.toml file exists
         if os.path.exists(rules_file_path):
             try:
-                loop = asyncio.get_event_loop()
-                rules_data = await loop.run_in_executor(
-                    None, lambda: open(rules_file_path, "rb").read()
-                )
+                from .async_file_utils import async_open_binary
+                rules_data = await async_open_binary(rules_file_path)
                 rules_config = tomli.loads(rules_data)
 
                 # Extract project_prompt if it exists
