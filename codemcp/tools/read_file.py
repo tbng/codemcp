@@ -18,6 +18,7 @@ async def read_file_content(
     file_path: str,
     offset: int | None = None,
     limit: int | None = None,
+    chat_id: str | None = None,
 ) -> str:
     """Read a file's content with optional offset and limit.
 
@@ -25,6 +26,7 @@ async def read_file_content(
         file_path: The absolute path to the file to read
         offset: The line number to start reading from (1-indexed)
         limit: The number of lines to read
+        chat_id: The unique ID of the current chat session
 
     Returns:
         The file content as a string, or an error message
