@@ -52,19 +52,8 @@ async def detect_line_endings(file_path: str) -> str:
         'CRLF' or 'LF'
 
     """
-    loop = asyncio.get_event_loop()
-
-    def read_and_detect():
-        try:
-            with open(file_path, "rb") as f:
-                content = f.read()
-            if b"\r\n" in content:
-                return "CRLF"
-            return "LF"
-        except Exception:
-            return "LF" if os.linesep == "\n" else "CRLF"
-
-    return await loop.run_in_executor(None, read_and_detect)
+    from .async_file_utils import async_detect_line_endings
+    return await async_detect_line_endings(file_path)
 
 
 def find_similar_file(file_path: str) -> str | None:
