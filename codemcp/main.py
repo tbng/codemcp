@@ -106,13 +106,17 @@ async def codemcp(
     unexpected_params = set(provided_params.keys()) - expected_params[subtool]
     if unexpected_params:
         return f"Error: Unexpected parameters for {subtool} subtool: {', '.join(unexpected_params)}"
+    
+    # Check for required chat_id for all tools except InitProject
+    if subtool != "InitProject" and chat_id is None:
+        return f"Error: chat_id is required for {subtool} subtool"
 
     # Now handle each subtool with its expected parameters
     if subtool == "ReadFile":
         if path is None:
             return "Error: path is required for ReadFile subtool"
 
-        return await read_file_content(path, offset, limit)
+        return await read_file_content(path, offset, limit, chat_id)
 
     if subtool == "WriteFile":
         if path is None:
