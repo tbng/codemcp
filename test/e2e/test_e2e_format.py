@@ -153,7 +153,7 @@ nothing to commit, working tree clean
                 .strip()
             )
 
-            self.assertEqual(commit_msg, "Auto-commit format changes")
+            self.assertEqual(commit_msg, "wip: Auto-commit format changes")
 
 
 if __name__ == "__main__":
