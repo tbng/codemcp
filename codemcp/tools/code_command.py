@@ -162,7 +162,7 @@ async def run_code_command(
                 if has_changes:
                     logging.info(f"Changes detected after {command_name}, committing")
                     success, commit_result_message = await commit_changes(
-                        full_dir_path, commit_message  # TODO: pass in chat_id
+                        full_dir_path, commit_message, chat_id
                     )
 
                     if success:
