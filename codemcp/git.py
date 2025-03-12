@@ -13,6 +13,8 @@ __all__ = [
     "commit_pending_changes",
     "commit_changes",
     "get_repository_root",
+    "get_head_commit_chat_id",
+    "get_head_commit_message",
 ]
 
 
