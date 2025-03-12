@@ -10,7 +10,7 @@ __all__ = [
 
 
 async def run_command(
-    project_dir: str, command: str, arguments: Optional[List[str]] = None
+    project_dir: str, command: str, arguments: Optional[List[str]] = None, chat_id: str = None
 ) -> str:
     """Run a command that is configured in codemcp.toml.
 
@@ -18,6 +18,7 @@ async def run_command(
         project_dir: The directory path containing the codemcp.toml file
         command: The type of command to run (e.g., "format", "lint", "test")
         arguments: Optional list of arguments to pass to the command
+        chat_id: The unique ID of the current chat session
 
     Returns:
         A string containing the result of the command operation
@@ -30,5 +31,5 @@ async def run_command(
         command_list.extend(arguments)
 
     return await run_code_command(
-        project_dir, command, command_list, f"Auto-commit {command} changes"
+        project_dir, command, command_list, f"Auto-commit {command} changes", chat_id
     )
