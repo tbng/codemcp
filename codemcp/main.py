@@ -167,7 +167,7 @@ async def codemcp(
         if command is None:
             return "Error: command is required for RunCommand subtool"
 
-        return await run_command(path, command, arguments)
+        return await run_command(path, command, arguments, chat_id)
 
     if subtool == "Grep":
         if pattern is None:
