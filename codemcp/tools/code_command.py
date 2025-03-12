@@ -139,7 +139,7 @@ async def run_code_command(
         if is_git_repo:
             logging.info(f"Committing any pending changes before {command_name}")
             commit_result = await commit_changes(
-                full_dir_path, f"Snapshot before auto-{command_name}"
+                full_dir_path, f"Snapshot before auto-{command_name}", chat_id
             )
             if not commit_result[0]:
                 logging.warning(f"Failed to commit pending changes: {commit_result[1]}")
