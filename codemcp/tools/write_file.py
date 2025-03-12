@@ -84,7 +84,7 @@ def detect_repo_line_endings(directory: str) -> str:
 
 
 async def write_file_content(
-    file_path: str, content: str, description: str = ""
+    file_path: str, content: str, description: str = "", chat_id: str = None
 ) -> str:
     """Write content to a file.
 
@@ -92,6 +92,7 @@ async def write_file_content(
         file_path: The absolute path to the file to write
         content: The content to write to the file
         description: Short description of the change
+        chat_id: The unique ID of the current chat session
 
     Returns:
         A success message or an error message
@@ -130,7 +131,7 @@ async def write_file_content(
 
         # Commit the changes
         git_message = ""
-        success, message = await commit_changes(file_path, description)
+        success, message = await commit_changes(file_path, description, chat_id)
         if success:
             git_message = f"\nChanges committed to git: {description}"
         else:

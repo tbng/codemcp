@@ -617,6 +617,7 @@ async def edit_file_content(
     new_string: str,
     read_file_timestamps: dict[str, float] | None = None,
     description: str = "",
+    chat_id: str = None,
 ) -> str:
     """Edit a file by replacing old_string with new_string.
 
@@ -631,6 +632,7 @@ async def edit_file_content(
         new_string: The new text to replace old_string with
         read_file_timestamps: Dictionary mapping file paths to timestamps when they were last read
         description: Short description of the change
+        chat_id: The unique ID of the current chat session
 
     Returns:
         A success message or an error message
@@ -687,7 +689,9 @@ async def edit_file_content(
             await write_text_content(full_file_path, new_string)
 
             # Commit the changes
-            success, message = await commit_changes(full_file_path, description)
+            success, message = await commit_changes(
+                full_file_path, description, chat_id
+            )
             git_message = ""
             if success:
                 git_message = f"\nChanges committed to git: {description}"
@@ -797,7 +801,7 @@ async def edit_file_content(
 
         # Commit the changes
         git_message = ""
-        success, message = await commit_changes(full_file_path, description)
+        success, message = await commit_changes(full_file_path, description, chat_id)
         if success:
             git_message = f"\n\nChanges committed to git: {description}"
         else:

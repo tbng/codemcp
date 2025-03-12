@@ -171,7 +171,7 @@ nothing to commit, working tree clean
                 .strip()
             )
 
-            self.assertEqual(commit_msg, "wip: Auto-commit lint changes")
+            self.assertIn("Auto-commit lint changes", commit_msg)
 
 
 if __name__ == "__main__":

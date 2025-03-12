@@ -121,7 +121,7 @@ async def codemcp(
             return "Error: description is required for WriteFile subtool"
 
         content_str = content or ""
-        return await write_file_content(path, content_str, description)
+        return await write_file_content(path, content_str, description, chat_id)
 
     if subtool == "EditFile":
         if path is None:
@@ -137,7 +137,7 @@ async def codemcp(
         # Accept either new_string or new_str (prefer new_string if both are provided)
         new_content = new_string or new_str or ""
         return await edit_file_content(
-            path, old_content, new_content, None, description
+            path, old_content, new_content, None, description, chat_id
         )
 
     if subtool == "LS":

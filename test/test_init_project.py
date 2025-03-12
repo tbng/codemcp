@@ -79,7 +79,7 @@ doc = "Run tests with optional arguments"
         # Create a TOML file with non-ASCII characters and binary data
         binary_toml_path = os.path.join(self.temp_dir.name, "codemcp.toml")
         with open(binary_toml_path, "wb") as f:
-            f.write(b"""project_prompt = "Testing binary data handling \xC2\xA9\xE2\x84\xA2\xF0\x9F\x98\x8A"
+            f.write(b"""project_prompt = "Testing binary data handling \xc2\xa9\xe2\x84\xa2\xf0\x9f\x98\x8a"
 
 [commands]
 format = ["./run_format.sh"]
