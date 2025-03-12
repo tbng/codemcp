@@ -68,8 +68,8 @@ async def detect_line_endings(file_path: str) -> str:
 
     """
     loop = asyncio.get_event_loop()
-
-    async def read_and_detect():
+    
+    def read_and_detect():
         try:
             with open(file_path, "rb") as f:
                 content = f.read()
@@ -78,8 +78,8 @@ async def detect_line_endings(file_path: str) -> str:
             return "LF"
         except Exception:
             return "LF" if os.linesep == "\n" else "CRLF"
-
-    return await loop.run_in_executor(None, lambda: read_and_detect())
+    
+    return await loop.run_in_executor(None, read_and_detect)
 
 
 def find_similar_file(file_path: str) -> str | None:
