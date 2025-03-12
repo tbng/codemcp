@@ -9,7 +9,7 @@ __all__ = [
 ]
 
 
-def run_command(
+async def run_command(
     project_dir: str, command: str, arguments: Optional[List[str]] = None
 ) -> str:
     """Run a command that is configured in codemcp.toml.
@@ -29,6 +29,6 @@ def run_command(
         command_list = command_list.copy()
         command_list.extend(arguments)
 
-    return run_code_command(
+    return await run_code_command(
         project_dir, command, command_list, f"Auto-commit {command} changes"
     )

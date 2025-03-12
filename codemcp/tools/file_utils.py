@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import asyncio
 import logging
 import os
 
@@ -14,7 +15,7 @@ __all__ = [
 ]
 
 
-def check_file_path_and_permissions(file_path: str) -> tuple[bool, str | None]:
+async def check_file_path_and_permissions(file_path: str) -> tuple[bool, str | None]:
     """Check if the file path is valid and has the necessary permissions.
 
     Args:
@@ -30,14 +31,16 @@ def check_file_path_and_permissions(file_path: str) -> tuple[bool, str | None]:
         return False, f"Error: File path must be absolute, not relative: {file_path}"
 
     # Check if we have permission to edit this file
-    is_permitted, permission_message = check_edit_permission(file_path)
+    is_permitted, permission_message = await check_edit_permission(file_path)
     if not is_permitted:
         return False, f"Error: {permission_message}"
 
     return True, None
 
 
-def check_git_tracking_for_existing_file(file_path: str) -> tuple[bool, str | None]:
+async def check_git_tracking_for_existing_file(
+    file_path: str,
+) -> tuple[bool, str | None]:
     """Check if an existing file is tracked by git. Skips check for non-existent files.
 
     Args:
@@ -53,7 +56,7 @@ def check_git_tracking_for_existing_file(file_path: str) -> tuple[bool, str | No
 
     if file_exists:
         # Only check commit_pending_changes for existing files
-        commit_success, commit_message = commit_pending_changes(file_path)
+        commit_success, commit_message = await commit_pending_changes(file_path)
         if not commit_success:
             logging.debug(f"Failed to commit pending changes: {commit_message}")
             # Check if the file is not tracked by git
@@ -77,7 +80,7 @@ def ensure_directory_exists(file_path: str) -> None:
         os.makedirs(directory, exist_ok=True)
 
 
-def write_text_content(
+async def write_text_content(
     file_path: str,
     content: str,
     encoding: str = "utf-8",
@@ -117,6 +120,20 @@ def write_text_content(
     # Ensure directory exists
     ensure_directory_exists(file_path)
 
-    # Write the content
+    # Write the content asynchronously using run_in_executor
+    loop = asyncio.get_event_loop()
+    await loop.run_in_executor(
+        None, lambda: write_file_sync(file_path, final_content, encoding)
+    )
+
+
+def write_file_sync(file_path: str, content: str, encoding: str = "utf-8") -> None:
+    """Synchronous helper function to write file content.
+
+    Args:
+        file_path: The path to the file
+        content: The content to write
+        encoding: The encoding to use
+    """
     with open(file_path, "w", encoding=encoding) as f:
-        f.write(final_content)
+        f.write(content)

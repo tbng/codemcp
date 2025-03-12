@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import asyncio
 import logging
 import os
 import subprocess
@@ -14,7 +15,7 @@ __all__ = [
 ]
 
 
-def get_git_base_dir(file_path: str) -> str | None:
+async def get_git_base_dir(file_path: str) -> str | None:
     """Get the base directory of the git repository containing the file.
 
     Args:
@@ -67,7 +68,7 @@ def get_git_base_dir(file_path: str) -> str | None:
                 logging.debug(f"Found existing parent directory: {directory}")
 
         # Run git command to get the top-level directory of the repository
-        result = run_command(
+        result = await run_command(
             ["git", "rev-parse", "--show-toplevel"],
             cwd=directory,
             capture_output=True,
@@ -123,7 +124,7 @@ def get_git_base_dir(file_path: str) -> str | None:
         return None
 
 
-def check_edit_permission(file_path: str) -> tuple[bool, str]:
+async def check_edit_permission(file_path: str) -> tuple[bool, str]:
     """Check if editing the file is permitted based on the presence of codemcp.toml
     in the git repository's root directory.
 
@@ -135,7 +136,7 @@ def check_edit_permission(file_path: str) -> tuple[bool, str]:
 
     """
     # Get the git base directory
-    git_base_dir = get_git_base_dir(file_path)
+    git_base_dir = await get_git_base_dir(file_path)
 
     # If not in a git repository, deny access
     if not git_base_dir:
@@ -152,7 +153,8 @@ def check_edit_permission(file_path: str) -> tuple[bool, str]:
 
     # Optionally, verify the content of the codemcp.toml file
     try:
-        toml.load(config_path)
+        loop = asyncio.get_event_loop()
+        await loop.run_in_executor(None, lambda: toml.load(config_path))
         # You can add more sophisticated permission checks here based on the config
         # For example, check for allowed_directories, deny_patterns, etc.
         return True, "Permission granted."

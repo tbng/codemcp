@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import asyncio
 import logging
 import os
 
@@ -21,7 +22,7 @@ MAX_FILES = 1000
 TRUNCATED_MESSAGE = f"There are more than {MAX_FILES} files in the directory. Use more specific paths to explore nested directories. The first {MAX_FILES} files and directories are included below:\n\n"
 
 
-def ls_directory(directory_path: str) -> str:
+async def ls_directory(directory_path: str) -> str:
     """List the contents of a directory.
 
     Args:
@@ -43,16 +44,18 @@ def ls_directory(directory_path: str) -> str:
             return f"Error: Path is not a directory: {directory_path}"
 
         # Safety check: Verify the directory is within a git repository with codemcp.toml
-        if not is_git_repository(full_directory_path):
+        if not await is_git_repository(full_directory_path):
             return f"Error: Directory is not in a Git repository: {directory_path}"
 
         # Check edit permission (which verifies codemcp.toml exists)
-        is_permitted, permission_message = check_edit_permission(full_directory_path)
+        is_permitted, permission_message = await check_edit_permission(
+            full_directory_path
+        )
         if not is_permitted:
             return f"Error: {permission_message}"
 
-        # Get the directory contents
-        results = list_directory(full_directory_path)
+        # Get the directory contents asynchronously
+        results = await list_directory(full_directory_path)
 
         # Sort the results
         results.sort()
@@ -60,8 +63,6 @@ def ls_directory(directory_path: str) -> str:
         # Create a file tree and print it
         tree = create_file_tree(results)
         tree_output = print_tree(tree, cwd=full_directory_path)
-
-        # Add safety warning for the assistant
 
         # Return the result with truncation message if needed
         if len(results) < MAX_FILES:
@@ -74,7 +75,7 @@ def ls_directory(directory_path: str) -> str:
         return f"Error listing directory: {e!s}"
 
 
-def list_directory(initial_path: str) -> list[str]:
+async def list_directory(initial_path: str) -> list[str]:
     """List all files and directories recursively.
 
     Args:
@@ -85,38 +86,46 @@ def list_directory(initial_path: str) -> list[str]:
 
     """
     results = []
+    loop = asyncio.get_event_loop()
 
-    queue = [initial_path]
-    while queue and len(results) <= MAX_FILES:
-        path = queue.pop(0)
+    # Use a function to perform the directory listing asynchronously
+    async def list_dir_async():
+        queue = [initial_path]
+        while queue and len(results) <= MAX_FILES:
+            path = queue.pop(0)
 
-        if skip(path) and path != initial_path:
-            continue
-
-        if path != initial_path:
-            # Add directories with trailing slash
-            rel_path = os.path.relpath(path, initial_path)
-            if os.path.isdir(path):
-                rel_path = f"{rel_path}{os.sep}"
-            results.append(rel_path)
-
-        if os.path.isdir(path):
-            try:
-                children = os.listdir(path)
-                for child in children:
-                    child_path = os.path.join(path, child)
-                    if os.path.isdir(child_path):
-                        queue.append(child_path)
-                    elif not skip(child_path):
-                        rel_path = os.path.relpath(child_path, initial_path)
-                        results.append(rel_path)
-                        if len(results) > MAX_FILES:
-                            return results
-            except (PermissionError, OSError):
-                # Skip directories we can't access
+            if skip(path) and path != initial_path:
                 continue
 
-    return results
+            if path != initial_path:
+                # Add directories with trailing slash
+                rel_path = os.path.relpath(path, initial_path)
+                if os.path.isdir(path):
+                    rel_path = f"{rel_path}{os.sep}"
+                results.append(rel_path)
+
+            if os.path.isdir(path):
+                try:
+                    # Get directory listing asynchronously
+                    children = await loop.run_in_executor(
+                        None, lambda: os.listdir(path)
+                    )
+                    for child in children:
+                        child_path = os.path.join(path, child)
+                        if os.path.isdir(child_path):
+                            queue.append(child_path)
+                        elif not skip(child_path):
+                            rel_path = os.path.relpath(child_path, initial_path)
+                            results.append(rel_path)
+                            if len(results) > MAX_FILES:
+                                return results
+                except (PermissionError, OSError):
+                    # Skip directories we can't access
+                    continue
+
+        return results
+
+    return await list_dir_async()
 
 
 def skip(path: str) -> bool:

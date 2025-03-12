@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import asyncio
 import difflib
 import hashlib
 import logging
@@ -27,7 +28,7 @@ __all__ = [
 ]
 
 
-def detect_file_encoding(file_path: str) -> str:
+async def detect_file_encoding(file_path: str) -> str:
     """Detect the encoding of a file.
 
     Args:
@@ -38,10 +39,25 @@ def detect_file_encoding(file_path: str) -> str:
 
     """
     # Simple implementation - in a real app, would use chardet or similar
-    return "utf-8"
+    loop = asyncio.get_event_loop()
+
+    def read_and_detect():
+        try:
+            # Try to read the file with utf-8 encoding
+            with open(file_path, encoding="utf-8") as f:
+                f.read()
+            return "utf-8"
+        except UnicodeDecodeError:
+            # If utf-8 fails, default to binary mode
+            return "latin-1"  # A safe fallback
+        except FileNotFoundError:
+            # For non-existent files, default to utf-8
+            return "utf-8"
+
+    return await loop.run_in_executor(None, read_and_detect)
 
 
-def detect_line_endings(file_path: str) -> str:
+async def detect_line_endings(file_path: str) -> str:
     """Detect the line endings of a file.
 
     Args:
@@ -51,11 +67,19 @@ def detect_line_endings(file_path: str) -> str:
         'CRLF' or 'LF'
 
     """
-    with open(file_path, "rb") as f:
-        content = f.read()
-        if b"\r\n" in content:
-            return "CRLF"
-        return "LF"
+    loop = asyncio.get_event_loop()
+
+    def read_and_detect():
+        try:
+            with open(file_path, "rb") as f:
+                content = f.read()
+            if b"\r\n" in content:
+                return "CRLF"
+            return "LF"
+        except Exception:
+            return "LF" if os.linesep == "\n" else "CRLF"
+
+    return await loop.run_in_executor(None, read_and_detect)
 
 
 def find_similar_file(file_path: str) -> str | None:
@@ -80,7 +104,7 @@ def find_similar_file(file_path: str) -> str | None:
     return None
 
 
-def apply_edit(
+async def apply_edit(
     file_path: str,
     old_string: str,
     new_string: str,
@@ -97,7 +121,8 @@ def apply_edit(
 
     """
     if os.path.exists(file_path):
-        with open(file_path, encoding=detect_file_encoding(file_path)) as f:
+        encoding = await detect_file_encoding(file_path)
+        with open(file_path, encoding=encoding) as f:
             content = f.read()
     else:
         content = ""
@@ -610,7 +635,7 @@ def debug_string_comparison(
     return not content_same
 
 
-def edit_file_content(
+async def edit_file_content(
     file_path: str,
     old_string: str,
     new_string: str,
@@ -647,7 +672,7 @@ def edit_file_content(
         )
 
         # Check file path and permissions
-        is_valid, error_message = check_file_path_and_permissions(full_file_path)
+        is_valid, error_message = await check_file_path_and_permissions(full_file_path)
         if not is_valid:
             return error_message
 
@@ -656,7 +681,7 @@ def edit_file_content(
 
         if not creating_new_file:
             # Only check commit_pending_changes for existing files
-            is_tracked, track_error = check_git_tracking_for_existing_file(
+            is_tracked, track_error = await check_git_tracking_for_existing_file(
                 full_file_path,
             )
             if not is_tracked:
@@ -683,10 +708,10 @@ def edit_file_content(
         if old_string == "" and not os.path.exists(full_file_path):
             directory = os.path.dirname(full_file_path)
             os.makedirs(directory, exist_ok=True)
-            write_text_content(full_file_path, new_string)
+            await write_text_content(full_file_path, new_string)
 
             # Commit the changes
-            success, message = commit_changes(full_file_path, description)
+            success, message = await commit_changes(full_file_path, description)
             git_message = ""
             if success:
                 git_message = f"\nChanges committed to git: {description}"
@@ -721,12 +746,14 @@ def edit_file_content(
                 return "Error: File has been modified since read, either by the user or by a linter. Read it again before attempting to write it."
 
         # Detect encoding and line endings
-        encoding = detect_file_encoding(full_file_path)
-        line_endings = detect_line_endings(full_file_path)
+        encoding = await detect_file_encoding(full_file_path)
+        line_endings = await detect_line_endings(full_file_path)
 
         # Read the original file
-        with open(full_file_path, encoding=encoding) as f:
-            content = f.read()
+        loop = asyncio.get_event_loop()
+        content = await loop.run_in_executor(
+            None, lambda: open(full_file_path, encoding=encoding).read()
+        )
 
         # Check if old_string exists in the file
         if old_string and old_string not in content:
@@ -770,7 +797,7 @@ def edit_file_content(
                 return f"Error: Found {matches} matches of the string to replace. For safety, this tool only supports replacing exactly one occurrence at a time. Add more lines of context to your edit and try again."
 
         # Apply the edit with advanced matching if needed
-        patch, updated_file = apply_edit(full_file_path, old_string, new_string)
+        patch, updated_file = await apply_edit(full_file_path, old_string, new_string)
 
         # If no changes were made (which should never happen at this point),
         # log a warning but continue
@@ -784,7 +811,7 @@ def edit_file_content(
         os.makedirs(directory, exist_ok=True)
 
         # Write the modified content back to the file
-        write_text_content(full_file_path, updated_file, encoding, line_endings)
+        await write_text_content(full_file_path, updated_file, encoding, line_endings)
 
         # Update read timestamp
         if read_file_timestamps is not None:
@@ -795,7 +822,7 @@ def edit_file_content(
 
         # Commit the changes
         git_message = ""
-        success, message = commit_changes(full_file_path, description)
+        success, message = await commit_changes(full_file_path, description)
         if success:
             git_message = f"\n\nChanges committed to git: {description}"
         else:
