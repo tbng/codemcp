@@ -62,7 +62,7 @@ Next, in Claude Desktop, we recommend creating a Project and putting this in
 the Project Instructions:
 
 ```
-Before doing anything, first init project $PROJECT_DIR.
+Initialize codemcp with $PROJECT_DIR
 ```
 
 Where `$PROJECT_DIR` is the path to the project you want to work on.
