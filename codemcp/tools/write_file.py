@@ -56,7 +56,7 @@ async def detect_line_endings(file_path: str) -> str:
     """
     loop = asyncio.get_event_loop()
 
-    async def read_and_detect():
+    def read_and_detect():
         try:
             with open(file_path, "rb") as f:
                 content = f.read()
@@ -66,7 +66,7 @@ async def detect_line_endings(file_path: str) -> str:
         except Exception:
             return os.linesep
 
-    return await loop.run_in_executor(None, lambda: read_and_detect())
+    return await loop.run_in_executor(None, read_and_detect)
 
 
 def detect_repo_line_endings(directory: str) -> str:
