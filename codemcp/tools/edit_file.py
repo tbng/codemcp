@@ -799,7 +799,7 @@ async def edit_file_content(
 
         # Commit the changes
         git_message = ""
-        success, message = await commit_changes(full_file_path, description)
+        success, message = await commit_changes(full_file_path, description, chat_id)
         if success:
             git_message = f"\n\nChanges committed to git: {description}"
         else:
