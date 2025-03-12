@@ -8,7 +8,7 @@ import string
 import tomli
 
 from ..common import MAX_LINE_LENGTH, MAX_LINES_TO_READ, normalize_file_path
-from ..git import is_git_repository, get_repository_root
+from ..git import get_repository_root, is_git_repository
 
 __all__ = [
     "init_project",
