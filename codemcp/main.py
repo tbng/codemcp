@@ -148,7 +148,7 @@ async def codemcp(
         if path is None:
             return "Error: path is required for LS subtool"
 
-        return await ls_directory(path)
+        return await ls_directory(path, chat_id)
 
     if subtool == "InitProject":
         if path is None:
