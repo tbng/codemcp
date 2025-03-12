@@ -2,6 +2,7 @@
 
 import logging
 import os
+import re
 import subprocess
 
 from .common import normalize_file_path
