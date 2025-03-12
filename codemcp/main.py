@@ -112,7 +112,7 @@ async def codemcp(
         if path is None:
             return "Error: path is required for ReadFile subtool"
 
-        return read_file_content(path, offset, limit)
+        return await read_file_content(path, offset, limit)
 
     if subtool == "WriteFile":
         if path is None:
@@ -121,7 +121,7 @@ async def codemcp(
             return "Error: description is required for WriteFile subtool"
 
         content_str = content or ""
-        return write_file_content(path, content_str, description)
+        return await write_file_content(path, content_str, description)
 
     if subtool == "EditFile":
         if path is None:
@@ -136,19 +136,19 @@ async def codemcp(
         old_content = old_string or old_str or ""
         # Accept either new_string or new_str (prefer new_string if both are provided)
         new_content = new_string or new_str or ""
-        return edit_file_content(path, old_content, new_content, None, description)
+        return await edit_file_content(path, old_content, new_content, None, description)
 
     if subtool == "LS":
         if path is None:
             return "Error: path is required for LS subtool"
 
-        return ls_directory(path)
+        return await ls_directory(path)
 
     if subtool == "InitProject":
         if path is None:
             return "Error: path is required for InitProject subtool"
 
-        return init_project(path)
+        return await init_project(path)
 
     if subtool == "RunCommand":
         # When is something a command as opposed to a subtool?  They are
