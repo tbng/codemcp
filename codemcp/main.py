@@ -63,7 +63,9 @@ async def codemcp(
             "chat_id",
         },
         "LS": {"path", "chat_id"},
-        "InitProject": {"path"},  # chat_id is not expected for InitProject as it's generated there
+        "InitProject": {
+            "path"
+        },  # chat_id is not expected for InitProject as it's generated there
         "RunCommand": {"path", "command", "arguments", "chat_id"},
         "Grep": {"pattern", "path", "include", "chat_id"},
     }

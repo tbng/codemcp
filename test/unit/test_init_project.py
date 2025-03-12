@@ -34,9 +34,11 @@ class InitProjectTestCase(unittest.TestCase):
         self.mock_git_base_dir = self.git_base_dir_patch.start()
         self.mock_git_base_dir.return_value = self.dir_path
         self.addCleanup(self.git_base_dir_patch.stop)
-        
+
         # Create patch for git repository root
-        self.git_repo_root_patch = patch("codemcp.tools.init_project.get_repository_root")
+        self.git_repo_root_patch = patch(
+            "codemcp.tools.init_project.get_repository_root"
+        )
         self.mock_git_repo_root = self.git_repo_root_patch.start()
         self.mock_git_repo_root.return_value = self.dir_path
         self.addCleanup(self.git_repo_root_patch.stop)
@@ -170,9 +172,19 @@ test = ["./run_test.sh"]
     @patch("os.makedirs")
     @patch("os.path.exists", return_value=True)
     @patch("builtins.open", new_callable=mock_open, read_data="42")
-    @patch("codemcp.tools.init_project.get_repository_root", return_value="/mock/repo/root")
+    @patch(
+        "codemcp.tools.init_project.get_repository_root", return_value="/mock/repo/root"
+    )
     @patch("codemcp.tools.init_project.is_git_repository", return_value=True)
-    def test_generate_chat_id_with_existing_counter(self, mock_is_git_repo, mock_repo_root, mock_file, mock_exists, mock_makedirs, mock_random):
+    def test_generate_chat_id_with_existing_counter(
+        self,
+        mock_is_git_repo,
+        mock_repo_root,
+        mock_file,
+        mock_exists,
+        mock_makedirs,
+        mock_random,
+    ):
         """Test that _generate_chat_id correctly reads an existing counter."""
         # Set up the mocks
         # We need to patch is_git_repository to return True
@@ -181,28 +193,32 @@ test = ["./run_test.sh"]
         # We need to patch os.makedirs to avoid creating directories
         # We need to patch builtins.open to return "42" for the counter file read
         # We need to patch random.choices to return consistent values
-        
+
         chat_id = _generate_chat_id(self.dir_path)
-        
+
         # Check that the chat ID starts with the incremented counter
-        self.assertTrue(chat_id.startswith("43-"), f"Chat ID {chat_id} should start with '43-'")
-        
+        self.assertTrue(
+            chat_id.startswith("43-"), f"Chat ID {chat_id} should start with '43-'"
+        )
+
         # Check that the ID format contains the expected parts
         parts = chat_id.split("-")
         self.assertEqual(len(parts), 3, "Chat ID should have 3 parts")
         self.assertEqual(parts[0], "43", "Counter should be '43'")
         self.assertEqual(parts[1], "initproject", "Second part should be 'initproject'")
         self.assertEqual(parts[2], "abcdef", "Random part should be 'abcdef'")
-        
+
     @patch("random.choices", return_value=["a", "b", "c", "d", "e", "f"])
     @patch("codemcp.tools.init_project.is_git_repository", return_value=False)
     def test_generate_chat_id_not_in_git_repo(self, mock_is_git_repo, mock_random):
         """Test that _generate_chat_id handles case when not in a git repository."""
         chat_id = _generate_chat_id(self.dir_path)
-        
+
         # Check that the chat ID starts with the fallback counter
-        self.assertTrue(chat_id.startswith("0-"), f"Chat ID {chat_id} should start with '0-'")
-        
+        self.assertTrue(
+            chat_id.startswith("0-"), f"Chat ID {chat_id} should start with '0-'"
+        )
+
         # Check that the ID format contains the expected parts
         parts = chat_id.split("-")
         self.assertEqual(len(parts), 3, "Chat ID should have 3 parts")

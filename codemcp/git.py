@@ -42,7 +42,7 @@ def get_repository_root(path: str) -> str:
             capture_output=True,
             text=True,
         )
-        
+
         return result.stdout.strip()
     except (subprocess.SubprocessError, OSError) as e:
         raise ValueError(f"Path is not in a git repository: {str(e)}")

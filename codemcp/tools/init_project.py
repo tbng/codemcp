@@ -36,33 +36,35 @@ def _generate_command_docs(command_docs: dict) -> str:
 
 def _generate_chat_id(directory: str) -> str:
     """Generate a unique chat ID based on a counter stored in the git repository.
-    
+
     Args:
         directory: The directory path within the git repository
-        
+
     Returns:
         A string containing the unique chat ID, e.g., "23-initproject-unique-id"
     """
     # Generate a human-readable short identifier
-    human_readable_part = "initproject-" + ''.join(random.choices(string.ascii_lowercase, k=6))
-    
+    human_readable_part = "initproject-" + "".join(
+        random.choices(string.ascii_lowercase, k=6)
+    )
+
     try:
         # Check if we're in a git repository
         if not is_git_repository(directory):
             logging.warning(f"Not in a git repository: {directory}")
             # Return a fallback ID if not in a git repository
             return f"0-{human_readable_part}"
-        
+
         # Get the repository root
         repo_root = get_repository_root(directory)
-        
+
         # Create .git/codemcp directory if it doesn't exist
         codemcp_dir = os.path.join(repo_root, ".git", "codemcp")
         os.makedirs(codemcp_dir, exist_ok=True)
-        
+
         # Path to the counter file
         counter_file = os.path.join(codemcp_dir, "counter")
-        
+
         # Read the current counter value or initialize to 0
         counter_value = 0
         if os.path.exists(counter_file):
@@ -71,20 +73,20 @@ def _generate_chat_id(directory: str) -> str:
                     counter_value = int(f.read().strip())
             except (ValueError, IOError) as e:
                 logging.warning(f"Error reading counter file: {e}")
-        
+
         # Increment the counter
         counter_value += 1
-        
+
         # Write the new counter value
         try:
             with open(counter_file, "w") as f:
                 f.write(str(counter_value))
         except IOError as e:
             logging.warning(f"Error writing to counter file: {e}")
-        
+
         # Return the chat ID in the format "number-human-readable-part"
         return f"{counter_value}-{human_readable_part}"
-        
+
     except Exception as e:
         logging.warning(f"Exception generating chat ID: {e!s}", exc_info=True)
         # Return a fallback ID in case of errors
@@ -112,10 +114,10 @@ def init_project(directory: str) -> str:
 
         if not os.path.isdir(full_dir_path):
             return f"Error: Path is not a directory: {directory}"
-        
+
         # Generate a unique chat ID
         chat_id = _generate_chat_id(full_dir_path)
-        
+
         # Build path to codemcp.toml file
         rules_file_path = os.path.join(full_dir_path, "codemcp.toml")
 
