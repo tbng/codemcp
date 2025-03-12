@@ -61,7 +61,7 @@ async def run_command(
     except asyncio.TimeoutError:
         process.kill()
         await process.wait()
-        raise subprocess.TimeoutExpired(cmd, timeout)
+        raise subprocess.TimeoutExpired(cmd, wait_time)
 
     # Handle text conversion
     stdout = ""
