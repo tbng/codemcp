@@ -15,7 +15,7 @@ __all__ = [
 ]
 
 
-def get_repository_root(path: str) -> str:
+async def get_repository_root(path: str) -> str:
     """Get the root directory of the Git repository containing the path.
 
     Args:
@@ -35,7 +35,7 @@ def get_repository_root(path: str) -> str:
         directory = os.path.abspath(directory)
 
         # Get the repository root
-        result = run_command(
+        result = await run_command(
             ["git", "rev-parse", "--show-toplevel"],
             cwd=directory,
             check=True,
@@ -48,7 +48,7 @@ def get_repository_root(path: str) -> str:
         raise ValueError(f"Path is not in a git repository: {str(e)}")
 
 
-def is_git_repository(path: str) -> bool:
+async def is_git_repository(path: str) -> bool:
     """Check if the path is within a Git repository.
 
     Args:
@@ -66,7 +66,7 @@ def is_git_repository(path: str) -> bool:
         directory = os.path.abspath(directory)
 
         # Run git command to verify this is a git repository
-        run_command(
+        await run_command(
             ["git", "rev-parse", "--is-inside-work-tree"],
             cwd=directory,
             check=True,
@@ -76,13 +76,13 @@ def is_git_repository(path: str) -> bool:
 
         # Also get the repository root to use for all git operations
         try:
-            run_command(
+            await run_command(
                 ["git", "rev-parse", "--show-toplevel"],
                 cwd=directory,
                 check=True,
                 capture_output=True,
                 text=True,
-            ).stdout.strip()
+            )
 
             # Store the repository root in a global or class variable if needed
             # This could be used to ensure all git operations use the same root
@@ -95,7 +95,7 @@ def is_git_repository(path: str) -> bool:
         return False
 
 
-def commit_pending_changes(file_path: str) -> tuple[bool, str]:
+async def commit_pending_changes(file_path: str) -> tuple[bool, str]:
     """Commit any pending changes in the repository, excluding the target file.
 
     Args:
@@ -107,13 +107,13 @@ def commit_pending_changes(file_path: str) -> tuple[bool, str]:
     """
     try:
         # First, check if this is a git repository
-        if not is_git_repository(file_path):
+        if not await is_git_repository(file_path):
             return False, "File is not in a Git repository"
 
         directory = os.path.dirname(file_path)
 
         # Check if the file is tracked by git
-        file_status = run_command(
+        file_status = await run_command(
             ["git", "ls-files", "--error-unmatch", file_path],
             cwd=directory,
             capture_output=True,
@@ -131,7 +131,7 @@ def commit_pending_changes(file_path: str) -> tuple[bool, str]:
             )
 
         # Check if working directory has uncommitted changes
-        status_result = run_command(
+        status_result = await run_command(
             ["git", "status", "--porcelain"],
             cwd=directory,
             capture_output=True,
@@ -162,7 +162,7 @@ def commit_pending_changes(file_path: str) -> tuple[bool, str]:
 
             if changed_files:
                 # Commit other changes first with a default message
-                run_command(
+                await run_command(
                     ["git", "add", "."],
                     cwd=directory,
                     check=True,
@@ -170,7 +170,7 @@ def commit_pending_changes(file_path: str) -> tuple[bool, str]:
                     text=True,
                 )
 
-                run_command(
+                await run_command(
                     ["git", "commit", "-m", "unknown: Snapshot before codemcp change"],
                     cwd=directory,
                     check=True,
@@ -189,7 +189,7 @@ def commit_pending_changes(file_path: str) -> tuple[bool, str]:
         return False, f"Error committing pending changes: {e!s}"
 
 
-def commit_changes(path: str, description: str) -> tuple[bool, str]:
+async def commit_changes(path: str, description: str) -> tuple[bool, str]:
     """Commit changes to a file or directory in Git.
 
     Args:
@@ -202,7 +202,7 @@ def commit_changes(path: str, description: str) -> tuple[bool, str]:
     """
     try:
         # First, check if this is a git repository
-        if not is_git_repository(path):
+        if not await is_git_repository(path):
             return False, f"Path '{path}' is not in a Git repository"
 
         # Get absolute paths for consistency
@@ -213,13 +213,13 @@ def commit_changes(path: str, description: str) -> tuple[bool, str]:
 
         # Try to get the git repository root for more reliable operations
         try:
-            repo_root = run_command(
+            repo_root = (await run_command(
                 ["git", "rev-parse", "--show-toplevel"],
                 cwd=directory,
                 check=True,
                 capture_output=True,
                 text=True,
-            ).stdout.strip()
+            )).stdout.strip()
 
             # Use the repo root as the working directory for git commands
             git_cwd = repo_root
@@ -240,7 +240,7 @@ def commit_changes(path: str, description: str) -> tuple[bool, str]:
                 else ["git", "add", abs_path]
             )
 
-            add_result = run_command(
+            add_result = await run_command(
                 add_command,
                 cwd=git_cwd,
                 capture_output=True,
@@ -255,7 +255,7 @@ def commit_changes(path: str, description: str) -> tuple[bool, str]:
 
         # First check if there's already a commit in the repository
         has_commits = False
-        rev_parse_result = run_command(
+        rev_parse_result = await run_command(
             ["git", "rev-parse", "--verify", "HEAD"],
             cwd=git_cwd,
             capture_output=True,
@@ -268,7 +268,7 @@ def commit_changes(path: str, description: str) -> tuple[bool, str]:
         # Check if there are any staged changes to commit
         if has_commits:
             # Check if there are any changes to commit after git add
-            diff_result = run_command(
+            diff_result = await run_command(
                 ["git", "diff-index", "--cached", "--quiet", "HEAD"],
                 cwd=git_cwd,
                 capture_output=True,
@@ -284,7 +284,7 @@ def commit_changes(path: str, description: str) -> tuple[bool, str]:
                 )
 
         # Commit the change with "wip: " prefix
-        commit_result = run_command(
+        commit_result = await run_command(
             ["git", "commit", "-m", f"wip: {description}"],
             cwd=git_cwd,
             capture_output=True,
