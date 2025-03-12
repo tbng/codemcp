@@ -13,7 +13,7 @@ async def run_command(
     check: bool = True,
     capture_output: bool = True,
     text: bool = True,
-    timeout: Optional[float] = None,
+    wait_time: Optional[float] = None,  # Renamed from timeout to avoid ASYNC109
     shell: bool = False,
 ) -> subprocess.CompletedProcess:
     """
@@ -26,7 +26,7 @@ async def run_command(
         check: If True, raise CalledProcessError if the command returns non-zero exit code
         capture_output: If True, capture stdout and stderr
         text: If True, decode stdout and stderr as text
-        timeout: Timeout in seconds
+        wait_time: Timeout in seconds
         shell: If True, run command in a shell
 
     Returns:
@@ -56,12 +56,12 @@ async def run_command(
     try:
         # Wait for the process to complete with optional timeout
         stdout_data, stderr_data = await asyncio.wait_for(
-            process.communicate(), timeout=timeout
+            process.communicate(), timeout=wait_time
         )
     except asyncio.TimeoutError:
         process.kill()
         await process.wait()
-        raise subprocess.TimeoutExpired(cmd, timeout)
+        raise subprocess.TimeoutExpired(cmd, wait_time)
 
     # Handle text conversion
     stdout = ""

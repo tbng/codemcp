@@ -10,6 +10,7 @@ dependencies = [
     "ruff>=0.9.10",
     "toml>=0.10.2",
     "tomli>=2.2.1",
+    "anyio>=3.7.0",
 ]
 
 [dependency-groups]
@@ -38,6 +39,14 @@ build-backend = "hatchling.build"
 target-version = "py312"
 line-length = 88
 indent-width = 4
+
+# Enabled linters
+[tool.ruff.lint]
+select = ["ASYNC"]
+
+# Exclude test files from ASYNC lints
+[tool.ruff.lint.per-file-ignores]
+"test/**/*.py" = ["ASYNC"]
 
 [tool.ruff.format]
 # Formatter settings

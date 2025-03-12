@@ -64,14 +64,14 @@ async def _generate_chat_id(directory: str) -> str:
 
         # Read the current counter value or initialize to 0
         counter_value = 0
-        loop = asyncio.get_event_loop()
+        asyncio.get_event_loop()
 
         if os.path.exists(counter_file):
             try:
-                read_counter = await loop.run_in_executor(
-                    None, lambda: open(counter_file, "r").read().strip()
-                )
-                counter_value = int(read_counter)
+                from .async_file_utils import async_open_text
+
+                read_counter = await async_open_text(counter_file)
+                counter_value = int(read_counter.strip())
             except (ValueError, IOError) as e:
                 logging.warning(f"Error reading counter file: {e}")
 
@@ -80,9 +80,9 @@ async def _generate_chat_id(directory: str) -> str:
 
         # Write the new counter value
         try:
-            await loop.run_in_executor(
-                None, lambda: open(counter_file, "w").write(str(counter_value))
-            )
+            from .async_file_utils import async_write_text
+
+            await async_write_text(counter_file, str(counter_value))
         except IOError as e:
             logging.warning(f"Error writing to counter file: {e}")
 
@@ -131,10 +131,9 @@ async def init_project(directory: str) -> str:
         # Check if codemcp.toml file exists
         if os.path.exists(rules_file_path):
             try:
-                loop = asyncio.get_event_loop()
-                rules_data = await loop.run_in_executor(
-                    None, lambda: open(rules_file_path, "rb").read()
-                )
+                from .async_file_utils import async_open_binary
+
+                rules_data = await async_open_binary(rules_file_path)
                 rules_config = tomli.loads(rules_data)
 
                 # Extract project_prompt if it exists

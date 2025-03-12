@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import asyncio
 import difflib
 import hashlib
 import logging
@@ -38,23 +37,9 @@ async def detect_file_encoding(file_path: str) -> str:
         The encoding of the file, defaults to 'utf-8'
 
     """
-    # Simple implementation - in a real app, would use chardet or similar
-    loop = asyncio.get_event_loop()
+    from .async_file_utils import async_detect_encoding
 
-    def read_and_detect():
-        try:
-            # Try to read the file with utf-8 encoding
-            with open(file_path, encoding="utf-8") as f:
-                f.read()
-            return "utf-8"
-        except UnicodeDecodeError:
-            # If utf-8 fails, default to binary mode
-            return "latin-1"  # A safe fallback
-        except FileNotFoundError:
-            # For non-existent files, default to utf-8
-            return "utf-8"
-
-    return await loop.run_in_executor(None, read_and_detect)
+    return await async_detect_encoding(file_path)
 
 
 async def detect_line_endings(file_path: str) -> str:
@@ -67,19 +52,9 @@ async def detect_line_endings(file_path: str) -> str:
         'CRLF' or 'LF'
 
     """
-    loop = asyncio.get_event_loop()
+    from .async_file_utils import async_detect_line_endings
 
-    def read_and_detect():
-        try:
-            with open(file_path, "rb") as f:
-                content = f.read()
-            if b"\r\n" in content:
-                return "CRLF"
-            return "LF"
-        except Exception:
-            return "LF" if os.linesep == "\n" else "CRLF"
-
-    return await loop.run_in_executor(None, read_and_detect)
+    return await async_detect_line_endings(file_path)
 
 
 def find_similar_file(file_path: str) -> str | None:
@@ -122,8 +97,9 @@ async def apply_edit(
     """
     if os.path.exists(file_path):
         encoding = await detect_file_encoding(file_path)
-        with open(file_path, encoding=encoding) as f:
-            content = f.read()
+        from .async_file_utils import async_open_text
+
+        content = await async_open_text(file_path, encoding=encoding)
     else:
         content = ""
 
@@ -750,10 +726,9 @@ async def edit_file_content(
         line_endings = await detect_line_endings(full_file_path)
 
         # Read the original file
-        loop = asyncio.get_event_loop()
-        content = await loop.run_in_executor(
-            None, lambda: open(full_file_path, encoding=encoding).read()
-        )
+        from .async_file_utils import async_open_text
+
+        content = await async_open_text(full_file_path, encoding=encoding)
 
         # Check if old_string exists in the file
         if old_string and old_string not in content:

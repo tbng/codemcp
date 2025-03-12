@@ -75,6 +75,7 @@ name = "codemcp"
 version = "0.2.1"
 source = { editable = "." }
 dependencies = [
+    { name = "anyio" },
     { name = "mcp", extra = ["cli"] },
     { name = "ruff" },
     { name = "toml" },
@@ -94,6 +95,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "anyio", specifier = ">=3.7.0" },
     { name = "mcp", extras = ["cli"], specifier = ">=1.2.0" },
     { name = "ruff", specifier = ">=0.9.10" },
     { name = "toml", specifier = ">=0.10.2" },
