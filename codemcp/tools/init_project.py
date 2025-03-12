@@ -196,11 +196,11 @@ When making changes to files, first understand the file's code conventions. Mimi
 # codemcp tool
 The codemcp tool supports a number of subtools which you should use to perform coding tasks.
 
-## ReadFile path offset? limit?
+## ReadFile chat_id path offset? limit?
 
 Reads a file from the local filesystem. The path parameter must be an absolute path, not a relative path. By default, it reads up to {MAX_LINES_TO_READ} lines starting from the beginning of the file. You can optionally specify a line offset and limit (especially handy for long files), but it's recommended to read the whole file by not providing these parameters. Any lines longer than {MAX_LINE_LENGTH} characters will be truncated. For image files, the tool will display the image for you.
 
-## WriteFile path content description
+## WriteFile chat_id path content description
 
 Write a file to the local filesystem. Overwrites the existing file if there is one.
 Provide a short description of the change.
@@ -212,7 +212,7 @@ Before using this tool:
 2. Directory Verification (only applicable when creating new files):
    - Use the LS tool to verify the parent directory exists and is the correct location
 
-## EditFile path old_string new_string description
+## EditFile chat_id path old_string new_string description
 
 This is a tool for editing files. For larger edits, use the Write tool to overwrite files.
 Provide a short description of the change.
@@ -264,11 +264,11 @@ If you want to create a new file, use:
 
 Remember: when making multiple file edits in a row to the same file, you should prefer to send all edits in a single message with multiple calls to this tool, rather than multiple messages with a single call each.
 
-## LS path
+## LS chat_id path
 
 Lists files and directories in a given path. The path parameter must be an absolute path, not a relative path. You should generally prefer the Glob and Grep tools, if you know which directories to search.
 
-## Grep pattern path include?
+## Grep chat_id pattern path include?
 
 Searches for files containing a specified pattern (regular expression) using git grep.
 Files with a match are returned, up to a maximum of 100 files.
@@ -278,7 +278,7 @@ Example:
   Grep "function.*hello" /path/to/repo  # Find files containing functions with "hello" in their name
   Grep "console\\.log" /path/to/repo --include="*.js"  # Find JS files with console.log statements
 
-## RunCommand path command arguments?
+## RunCommand chat_id path command arguments?
 
 Runs a command.  This does NOT support arbitrary code execution, ONLY call
 with this set of valid commands: {command_help}
@@ -299,9 +299,8 @@ Args:
     chat_id: A unique ID to identify the chat session (required for all tools EXCEPT InitProject)
 
 # Chat ID
-This chat has been assigned a unique ID: {chat_id}
-When you use any tool, you should always include this unique ID as the chat_id parameter.
-This is mandatory for all tools EXCEPT InitProject (which generates the chat_id).
+This chat has been assigned a chat ID: {chat_id}
+When you use any tool, you MUST always include this chat ID as the chat_id parameter.
 """
 
         # Combine system prompt, global prompt
