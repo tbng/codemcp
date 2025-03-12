@@ -4,6 +4,7 @@ import logging
 import os
 import re
 import subprocess
+from typing import Dict, Tuple
 
 from .common import normalize_file_path
 from .shell import run_command
@@ -15,6 +16,8 @@ __all__ = [
     "get_repository_root",
     "get_head_commit_chat_id",
     "get_head_commit_message",
+    "parse_git_commit_message",
+    "append_metadata_to_message",
 ]
 
 log = logging.getLogger(__name__)
@@ -60,6 +63,155 @@ async def get_head_commit_message(directory: str) -> str | None:
         return None
 
 
+def parse_git_commit_message(message: str) -> Tuple[str, Dict[str, str]]:
+    """Parse a Git commit message into main message and metadata.
+
+    This function handles Git commit message trailer/footer sections according to Git conventions.
+    Metadata (trailers) are key-value pairs at the end of the commit message, separated from
+    the main message by a blank line. Each trailer is on its own line and follows the format
+    "Key: Value".
+
+    Args:
+        message: The full Git commit message
+
+    Returns:
+        A tuple containing (main_message, metadata_dict)
+        - main_message: The main commit message without the trailer metadata
+        - metadata_dict: A dictionary of metadata key-value pairs
+    """
+    if not message:
+        return "", {}
+
+    # Special case for single-line messages with no metadata
+    if "\n" not in message:
+        return message, {}
+
+    # Check if message ends with "Key: Value" pattern that is common in metadata
+    # If not, we can quickly return the whole message
+    lines = message.splitlines()
+    last_line = lines[-1].strip() if lines else ""
+    if not re.match(
+        r"^([A-Za-z0-9][A-Za-z0-9_.-]*(?:-[A-Za-z0-9_.-]+)*):\s*(.*)$", last_line
+    ):
+        return message, {}
+
+    # Split message into blocks by blank lines
+    blocks = []
+    current_block = []
+
+    for line in lines:
+        if not line.strip():
+            if current_block:
+                blocks.append(current_block)
+                current_block = []
+        else:
+            current_block.append(line)
+
+    if current_block:
+        blocks.append(current_block)
+
+    # No blocks means no content
+    if not blocks:
+        return "", {}
+
+    # Check if the last block consists entirely of "Key: Value" format lines
+    last_block = blocks[-1]
+
+    # Detect if the last block is a valid metadata section
+    is_metadata_section = True
+    parsed_metadata = {}
+    current_key = None
+    current_values = []
+
+    for i, line in enumerate(last_block):
+        # Check if line matches Key: Value format with support for hyphenated keys
+        # Git allows various formats like "Signed-off-by:", "Co-authored-by:", etc.
+        kvp_match = re.match(
+            r"^([A-Za-z0-9][A-Za-z0-9_.-]*(?:-[A-Za-z0-9_.-]+)*):\s*(.*)$", line
+        )
+
+        if kvp_match:
+            # Found a new key-value pair
+            if current_key:
+                # Save the previous key-value pair
+                parsed_metadata[current_key] = "\n".join(current_values)
+
+            current_key = kvp_match.group(1)
+            current_values = [kvp_match.group(2)]
+        elif line.startswith(" ") and current_key:
+            # Continuation line (indented)
+            current_values.append(line)
+        else:
+            # Not a valid trailer format
+            is_metadata_section = False
+            break
+
+    # Save the last key-value pair if there was one
+    if current_key and is_metadata_section:
+        parsed_metadata[current_key] = "\n".join(current_values)
+
+    # If the entire last block consists of valid metadata, use it
+    if is_metadata_section and parsed_metadata:
+        # Return main message (all blocks except the last)
+        if len(blocks) > 1:
+            # Reconstruct the main message preserving blank lines
+            main_parts = []
+            for i, block in enumerate(blocks[:-1]):
+                main_parts.append("\n".join(block))
+
+            main_message = "\n\n".join(main_parts)
+            return main_message, parsed_metadata
+        else:
+            # If only metadata block exists, main message is empty
+            return "", parsed_metadata
+
+    # If we get here, there is no valid metadata section
+    # Return the full message as main message
+    return message, {}
+
+
+def append_metadata_to_message(message: str, metadata: Dict[str, str]) -> str:
+    """Append or update metadata to a Git commit message.
+
+    Args:
+        message: The original Git commit message
+        metadata: Dictionary of metadata key-value pairs to append/update
+
+    Returns:
+        The updated commit message with metadata appended or updated
+    """
+    if not metadata:
+        return message
+
+    # Parse the original message to extract existing content and metadata
+    main_message, existing_metadata = parse_git_commit_message(message)
+
+    # Update existing metadata with new values
+    updated_metadata = {**existing_metadata, **metadata}
+
+    # Reconstruct the message with main content and updated metadata
+    result = main_message
+
+    if updated_metadata:
+        # Add a blank line separator if needed
+        if main_message and not main_message.endswith("\n\n"):
+            if not main_message.endswith("\n"):
+                result += "\n"
+            result += "\n"
+
+        # Add each metadata entry in a consistent order
+        # Sort keys but put codemcp-id at the end (conventional for Git trailers)
+        sorted_keys = sorted(updated_metadata.keys())
+        if "codemcp-id" in sorted_keys:
+            sorted_keys.remove("codemcp-id")
+            sorted_keys.append("codemcp-id")
+
+        for key in sorted_keys:
+            result += f"{key}: {updated_metadata[key]}\n"
+
+    return result.rstrip()
+
+
 async def get_head_commit_chat_id(directory: str) -> str | None:
     """Get the chat ID from the HEAD commit's message.
 
@@ -74,12 +226,11 @@ async def get_head_commit_chat_id(directory: str) -> str | None:
         if not commit_message:
             return None
 
-        # Extract the chat ID using regex
-        chat_id_match = re.search(r"codemcp-id: ([^\s]+)", commit_message)
-        if chat_id_match:
-            return chat_id_match.group(1)
+        # Parse the commit message and extract metadata
+        _, metadata = parse_git_commit_message(commit_message)
 
-        return None
+        # Return the chat ID if present in metadata
+        return metadata.get("codemcp-id")
     except Exception as e:
         logging.warning(
             f"Exception when getting HEAD commit chat ID: {e!s}", exc_info=True
@@ -381,52 +532,44 @@ async def commit_changes(
 
         # Prepare the commit message with metadata
         if custom_message:
-            # Use the custom message directly
-            commit_message = custom_message
+            # Parse the custom message to extract main content and metadata
+            main_message, metadata_dict = parse_git_commit_message(custom_message)
+
             # Make sure it has the chat_id metadata
-            if chat_id and "codemcp-id:" not in commit_message:
-                commit_message += f"\n\ncodemcp-id: {chat_id}"
+            if chat_id:
+                metadata_dict["codemcp-id"] = chat_id
+
+            # Reconstruct the message with metadata
+            commit_message = append_metadata_to_message(main_message, metadata_dict)
         else:
             commit_message = f"wip: {description}"
 
         if should_amend:
             # Get the current commit message
             current_commit_message = await get_head_commit_message(git_cwd)
-            assert "codemcp-id:" in current_commit_message
+            if not current_commit_message:
+                current_commit_message = ""
 
-            if current_commit_message:
-                # Split the commit message to preserve metadata at the bottom
-                message_parts = current_commit_message.split("\n\n")
+            # Parse the commit message to extract main content and metadata
+            main_message, metadata_dict = parse_git_commit_message(
+                current_commit_message
+            )
 
-                # Extract the main message and metadata
-                main_message = message_parts[0]
-                metadata_parts = []
+            # Verify the commit has our codemcp-id
+            if chat_id and "codemcp-id" not in metadata_dict:
+                logging.warning("Expected codemcp-id in current commit but not found")
 
-                # Collect metadata from the original commit message
-                for part in message_parts[1:]:
-                    if part.startswith("codemcp-id:") or part.startswith(
-                        "Signed-off-by:"
-                    ):
-                        metadata_parts.append(part)
-                    else:
-                        # This is part of the message body
-                        main_message += "\n\n" + part
-
-                # Add the new description to the message body
+            # Add the new description to the message body
+            if main_message:
                 main_message += f"\n- {description}"
-
-                # Reconstruct the message with metadata at the bottom
-                commit_message = main_message
-
-                # Add the metadata parts back
-                if metadata_parts:
-                    for metadata in metadata_parts:
-                        if not metadata.startswith("codemcp-id:"):
-                            commit_message += f"\n\n{metadata}"
+            else:
+                main_message = description
 
             # Ensure the chat ID metadata is included
-            if chat_id and "codemcp-id:" not in commit_message:
-                commit_message += f"\n\ncodemcp-id: {chat_id}"
+            metadata_dict["codemcp-id"] = chat_id
+
+            # Reconstruct the message with updated metadata
+            commit_message = append_metadata_to_message(main_message, metadata_dict)
 
             # Amend the previous commit
             commit_result = await run_command(
@@ -437,9 +580,12 @@ async def commit_changes(
                 check=False,
             )
         else:
-            # Add chat ID metadata for new commits if not already present
-            if chat_id and "codemcp-id:" not in commit_message:
-                commit_message += f"\n\ncodemcp-id: {chat_id}"
+            # For new commits, ensure chat ID is added to the message
+            if chat_id:
+                # Parse the message and add metadata
+                main_message, metadata_dict = parse_git_commit_message(commit_message)
+                metadata_dict["codemcp-id"] = chat_id
+                commit_message = append_metadata_to_message(main_message, metadata_dict)
 
             # Create a new commit
             commit_cmd = ["git", "commit", "-m", commit_message]
