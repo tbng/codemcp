@@ -94,6 +94,8 @@ async def codemcp(
             # Include backward compatibility parameters
             "old_str": old_str,
             "new_str": new_str,
+            # Chat ID for session identification
+            "chat_id": chat_id,
         }.items()
         if value is not None
     }
