@@ -179,6 +179,54 @@ format = ["./run_format.sh"]
         # Ensure we have one more commit now
         self.assertEqual(commit_count_before + 1, commit_count_after)
 
+    async def test_chat_id_from_subject_line(self):
+        """Test that the chat ID uses the subject line for the human-readable part."""
+        # Create a simple codemcp.toml file
+        toml_path = os.path.join(self.temp_dir.name, "codemcp.toml")
+        with open(toml_path, "w") as f:
+            f.write("""
+project_prompt = "Test project"
+[commands]
+test = ["./run_test.sh"]
+""")
+
+        # Set up a git repository
+        import subprocess
+
+        subprocess.run(["git", "init"], cwd=self.temp_dir.name, check=True)
+        subprocess.run(
+            ["git", "config", "user.email", "test@example.com"],
+            cwd=self.temp_dir.name,
+            check=True,
+        )
+        subprocess.run(
+            ["git", "config", "user.name", "Test User"],
+            cwd=self.temp_dir.name,
+            check=True,
+        )
+
+        async with self.create_client_session() as session:
+            # Call InitProject with a conventional commit style subject line
+            result = await session.call_tool(
+                "codemcp",
+                {
+                    "subtool": "InitProject",
+                    "path": self.temp_dir.name,
+                    "user_prompt": "Test initialize with subject line",
+                    "subject_line": "feat: add new feature with spaces!",
+                },
+            )
+
+            # Verify that the chat ID contains the slugified subject line
+            normalized_result = self.normalize_path(result)
+            result_text = self.extract_text_from_result(normalized_result)
+
+            # The chat ID should be something like "1-feat-add-new-feature-with-spaces"
+            # Check that it's not using "untitled"
+            self.assertNotIn("untitled", result_text)
+            # Check that a slugified version of the subject line is in the chat ID
+            self.assertIn("feat-add-new-feature-with-spaces", result_text)
+
 
 if __name__ == "__main__":
     unittest.main()

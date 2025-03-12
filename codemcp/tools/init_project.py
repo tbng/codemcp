@@ -3,6 +3,7 @@
 import asyncio
 import logging
 import os
+import re
 
 import tomli
 
@@ -12,6 +13,28 @@ from ..git import get_repository_root, is_git_repository
 __all__ = [
     "init_project",
 ]
+
+
+def _slugify(text: str) -> str:
+    """Convert a string to an alphanumeric + hyphen identifier.
+
+    Args:
+        text: The string to convert
+
+    Returns:
+        A string containing only alphanumeric characters and hyphens
+    """
+    # Convert to lowercase
+    text = text.lower()
+    # Replace spaces and non-alphanumeric characters with hyphens
+    text = re.sub(r"[^a-z0-9]+", "-", text)
+    # Remove leading and trailing hyphens
+    text = text.strip("-")
+    # If empty after processing, return a default value
+    if not text:
+        return "untitled"
+    # Limit length to avoid excessively long identifiers
+    return text[:50]
 
 
 def _generate_command_docs(command_docs: dict) -> str:
@@ -33,17 +56,18 @@ def _generate_command_docs(command_docs: dict) -> str:
     return "\n\nCommand documentation:" + "".join(docs)
 
 
-async def _generate_chat_id(directory: str) -> str:
+async def _generate_chat_id(directory: str, description: str = None) -> str:
     """Generate a unique chat ID based on a counter stored in the git repository.
 
     Args:
         directory: The directory path within the git repository
+        description: Optional description to use for the human-readable part of the ID
 
     Returns:
-        A string containing the unique chat ID, e.g., "23-initproject-unique-id"
+        A string containing the unique chat ID, e.g., "23-feat-use-description"
     """
-    # Generate a human-readable short identifier
-    human_readable_part = "untitled"
+    # Generate a human-readable short identifier from the description if provided
+    human_readable_part = _slugify(description) if description else "untitled"
 
     try:
         # Check if we're in a git repository
@@ -122,8 +146,8 @@ async def init_project(
         if not os.path.isdir(full_dir_path):
             return f"Error: Path is not a directory: {directory}"
 
-        # Generate a unique chat ID
-        chat_id = await _generate_chat_id(full_dir_path)
+        # Generate a unique chat ID using subject_line if available
+        chat_id = await _generate_chat_id(full_dir_path, subject_line)
 
         # Create an empty commit with user prompt and subject line if provided
         if user_prompt is not None and subject_line is not None:
