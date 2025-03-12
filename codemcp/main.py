@@ -46,7 +46,7 @@ async def codemcp(
     Arguments:
       subtool: The subtool to run (InitProject, ...)
       path: The path to the file or directory to operate on
-      chat_id: A unique ID to identify the chat session (provided by InitProject)
+      chat_id: A unique ID to identify the chat session (provided by InitProject and required for all tools EXCEPT InitProject)
       ... (there are other arguments which are documented later)
     """
     # Define expected parameters for each subtool
