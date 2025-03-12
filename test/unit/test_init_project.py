@@ -188,8 +188,9 @@ test = ["./run_test.sh"]
         self.assertEqual(parts[1], "initproject", "Second part should be 'initproject'")
         self.assertEqual(parts[2], "abcdef", "Random part should be 'abcdef'")
         
+    @patch("random.choices", return_value=["a", "b", "c", "d", "e", "f"])
     @patch("codemcp.tools.init_project.is_git_repository", return_value=False)
-    def test_generate_chat_id_not_in_git_repo(self, mock_is_git_repo):
+    def test_generate_chat_id_not_in_git_repo(self, mock_is_git_repo, mock_random):
         """Test that _generate_chat_id handles case when not in a git repository."""
         chat_id = _generate_chat_id(self.dir_path)
         
@@ -201,6 +202,7 @@ test = ["./run_test.sh"]
         self.assertEqual(len(parts), 3, "Chat ID should have 3 parts")
         self.assertEqual(parts[0], "0", "Counter should be '0'")
         self.assertEqual(parts[1], "initproject", "Second part should be 'initproject'")
+        self.assertEqual(parts[2], "abcdef", "Random part should be 'abcdef'")
 
 
 if __name__ == "__main__":
