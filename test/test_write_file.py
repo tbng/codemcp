@@ -198,6 +198,18 @@ nothing to commit, working tree clean
         original_mtime = os.path.getmtime(untracked_file_path)
 
         async with self.create_client_session() as session:
+            # First initialize project to get chat_id
+            init_result = await session.call_tool(
+                "codemcp",
+                {"subtool": "InitProject", "path": self.temp_dir.name},
+            )
+            init_result_text = self.extract_text_from_result(init_result)
+            
+            # Extract chat_id from the init result
+            import re
+            chat_id_match = re.search(r"chat has been assigned a unique ID: ([^\n]+)", init_result_text)
+            chat_id = chat_id_match.group(1) if chat_id_match else "test-chat-id"
+            
             # Try to write to the untracked file
             new_content = "This content should not be written to untracked file"
             result = await session.call_tool(
@@ -207,6 +219,7 @@ nothing to commit, working tree clean
                     "path": untracked_file_path,
                     "content": new_content,
                     "description": "Attempt to write to untracked file",
+                    "chat_id": chat_id,
                 },
             )
 
