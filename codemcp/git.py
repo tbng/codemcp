@@ -11,7 +11,41 @@ __all__ = [
     "is_git_repository",
     "commit_pending_changes",
     "commit_changes",
+    "get_repository_root",
 ]
+
+
+def get_repository_root(path: str) -> str:
+    """Get the root directory of the Git repository containing the path.
+
+    Args:
+        path: The file path to get the repository root for
+
+    Returns:
+        The absolute path to the repository root
+
+    Raises:
+        ValueError: If the path is not in a Git repository
+    """
+    try:
+        # Get the directory containing the file or use the path itself if it's a directory
+        directory = os.path.dirname(path) if os.path.isfile(path) else path
+
+        # Get the absolute path to ensure consistency
+        directory = os.path.abspath(directory)
+
+        # Get the repository root
+        result = run_command(
+            ["git", "rev-parse", "--show-toplevel"],
+            cwd=directory,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+
+        return result.stdout.strip()
+    except (subprocess.SubprocessError, OSError) as e:
+        raise ValueError(f"Path is not in a git repository: {str(e)}")
 
 
 def is_git_repository(path: str) -> bool:

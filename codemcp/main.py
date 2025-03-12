@@ -36,6 +36,7 @@ async def codemcp(
     arguments: list[str] | str | None = None,
     old_str: str | None = None,  # Added for backward compatibility
     new_str: str | None = None,  # Added for backward compatibility
+    chat_id: str | None = None,  # Added for chat identification
 ) -> str:
     """If and only if the user explicitly asks you to initialize codemcp with
     path, you should invoke this tool with arguments `InitProject
@@ -45,12 +46,13 @@ async def codemcp(
     Arguments:
       subtool: The subtool to run (InitProject, ...)
       path: The path to the file or directory to operate on
+      chat_id: A unique ID to identify the chat session (provided by InitProject)
       ... (there are other arguments which are documented later)
     """
     # Define expected parameters for each subtool
     expected_params = {
-        "ReadFile": {"path", "offset", "limit"},
-        "WriteFile": {"path", "content", "description"},
+        "ReadFile": {"path", "offset", "limit", "chat_id"},
+        "WriteFile": {"path", "content", "description", "chat_id"},
         "EditFile": {
             "path",
             "old_string",
@@ -58,11 +60,14 @@ async def codemcp(
             "description",
             "old_str",
             "new_str",
+            "chat_id",
         },
-        "LS": {"path"},
-        "InitProject": {"path"},
-        "RunCommand": {"path", "command", "arguments"},
-        "Grep": {"pattern", "path", "include"},
+        "LS": {"path", "chat_id"},
+        "InitProject": {
+            "path"
+        },  # chat_id is not expected for InitProject as it's generated there
+        "RunCommand": {"path", "command", "arguments", "chat_id"},
+        "Grep": {"pattern", "path", "include", "chat_id"},
     }
 
     # Check if subtool exists
@@ -91,6 +96,8 @@ async def codemcp(
             # Include backward compatibility parameters
             "old_str": old_str,
             "new_str": new_str,
+            # Chat ID for session identification
+            "chat_id": chat_id,
         }.items()
         if value is not None
     }
