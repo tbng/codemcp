@@ -195,12 +195,32 @@ async def init_project(
             # Then use update_commit_message_with_description to ensure proper markers
             from ..git_message import update_commit_message_with_description
 
+            # We want to create a message with correct markers but no commit history yet
+            # We'll set description to subject_line so it appears in the markers
             commit_msg = update_commit_message_with_description(
                 current_commit_message=basic_msg,
                 description=subject_line,  # Use subject_line as description for the HEAD entry
                 commit_hash=None,  # No commit hash for the initial commit
                 chat_id=chat_id,
             )
+
+            # Ensure the revisions are within the markers
+            # Add the lines directly into the markers
+            import re
+
+            def ensure_markers_have_content(message):
+                # Look for the pattern ```git-revs followed by empty or whitespace, then ```
+                pattern = r"```git-revs\s*```"
+                if re.search(pattern, message):
+                    # If markers are empty, put HEAD entry inside
+                    with_content = re.sub(
+                        pattern, f"```git-revs\nHEAD  {subject_line}\n```", message
+                    )
+                    return with_content
+                return message
+
+            # Make sure our markers have content
+            commit_msg = ensure_markers_have_content(commit_msg)
 
             # Create a commit reference instead of creating a regular commit
             # This will not advance HEAD but store the commit in refs/codemcp/<chat_id>

@@ -57,11 +57,38 @@ class GitReferenceMarkersTest(MCPEndToEndTestCase):
             "Commit message should contain START_MARKER (```git-revs)",
         )
 
-        # Verify END_MARKER appears after START_MARKER
+        # Split message by git-revs markers
+        parts = commit_message.split("```git-revs")
+        self.assertEqual(len(parts), 2, "Should only have one ```git-revs marker")
+
+        # Get the content between START_MARKER and END_MARKER
+        rev_content = parts[1].split("```")[0].strip()
+
+        # Verify that END_MARKER appears after START_MARKER
         self.assertIn(
             "```",
-            commit_message.split("```git-revs")[1],
-            "Commit message should contain END_MARKER (```) after START_MARKER",
+            parts[1],
+            "First commit message should contain END_MARKER (```) after START_MARKER",
+        )
+
+        # Verify that the rev_content contains HEAD
+        self.assertIn(
+            "HEAD",
+            rev_content,
+            f"The content between markers should contain HEAD, but got: '{rev_content}'",
+        )
+
+        # Make sure revisions are inside the block, not outside
+        after_block = parts[1].split("```")[1].strip()
+        self.assertNotIn(
+            "HEAD",
+            after_block,
+            f"Found HEAD after the closing marker, which is wrong. After block: '{after_block}'",
+        )
+        self.assertNotIn(
+            "(Base revision)",
+            after_block,
+            f"Found Base revision after the closing marker. After block: '{after_block}'",
         )
 
 
