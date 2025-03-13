@@ -395,6 +395,7 @@ test = ["./run_test.sh"]
             commit_changes,
             get_head_commit_chat_id,
             get_head_commit_hash,
+            get_head_commit_message,
         )
 
         # Set up a git repository
@@ -425,6 +426,10 @@ test = ["./run_test.sh"]
         # Get the hash of the initial commit
         initial_hash = await get_head_commit_hash(self.temp_dir.name, short=False)
 
+        # Define the test subject and body for InitProject
+        test_subject = "feat: test reference cherry-pick"
+        test_body = "Test initialize for cherry-pick test"
+
         # Call InitProject which should create a reference without changing HEAD
         async with self.create_client_session() as session:
             result = await session.call_tool(
@@ -432,8 +437,8 @@ test = ["./run_test.sh"]
                 {
                     "subtool": "InitProject",
                     "path": self.temp_dir.name,
-                    "user_prompt": "Test initialize for cherry-pick test",
-                    "subject_line": "feat: test reference cherry-pick",
+                    "user_prompt": test_body,
+                    "subject_line": test_subject,
                 },
             )
 
@@ -476,6 +481,29 @@ test = ["./run_test.sh"]
                 chat_id,
                 head_chat_id,
                 "HEAD commit should have the correct chat ID after cherry-pick",
+            )
+
+            # Verify the commit message contains the original subject and body from InitProject
+            head_commit_msg = await get_head_commit_message(self.temp_dir.name)
+            self.assertIsNotNone(head_commit_msg, "Commit message should not be None")
+
+            # Check that both the subject and body are in the commit message
+            self.assertIn(
+                test_subject,
+                head_commit_msg,
+                "Commit message should contain the original subject line",
+            )
+            self.assertIn(
+                test_body,
+                head_commit_msg,
+                "Commit message should contain the original body",
+            )
+
+            # Check that the new description is also included since this is an amended commit
+            self.assertIn(
+                "Testing cherry-pick",
+                head_commit_msg,
+                "Commit message should contain the new change description",
             )
 
             # Get commit count to verify we have more than just the initial commit

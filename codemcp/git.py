@@ -799,33 +799,67 @@ async def commit_changes(
             ref_exists = ref_result.returncode == 0
 
             if ref_exists:
-                # Cherry-pick the reference commit to create the initial commit in the branch
-                cherry_pick_result = await run_command(
-                    ["git", "cherry-pick", "--allow-empty", ref_name],
+                # Using git plumbing commands instead of cherry-pick to avoid conflicts with local changes
+                logging.info(f"Creating a new commit from reference {ref_name}")
+
+                # Get the current HEAD commit hash
+                head_hash = await get_head_commit_hash(git_cwd, short=False)
+
+                # Get the tree from HEAD
+                tree_result = await run_command(
+                    ["git", "show", "-s", "--format=%T", "HEAD"],
                     cwd=git_cwd,
-                    check=False,
                     capture_output=True,
                     text=True,
+                    check=True,
+                )
+                tree_hash = tree_result.stdout.strip()
+
+                # Get the commit message from the reference
+                ref_message_result = await run_command(
+                    ["git", "log", "-1", "--pretty=%B", ref_name],
+                    cwd=git_cwd,
+                    capture_output=True,
+                    text=True,
+                    check=True,
+                )
+                ref_message = ref_message_result.stdout.strip()
+
+                # Create a new commit with the same tree as HEAD but message from the reference
+                # This effectively creates the commit without changing the working tree
+                new_commit_result = await run_command(
+                    [
+                        "git",
+                        "commit-tree",
+                        tree_hash,
+                        "-p",
+                        head_hash,
+                        "-m",
+                        ref_message,
+                    ],
+                    cwd=git_cwd,
+                    capture_output=True,
+                    text=True,
+                    check=True,
+                )
+                new_commit_hash = new_commit_result.stdout.strip()
+
+                # Update HEAD to point to the new commit
+                await run_command(
+                    ["git", "update-ref", "HEAD", new_commit_hash],
+                    cwd=git_cwd,
+                    capture_output=True,
+                    text=True,
+                    check=True,
                 )
 
-                if cherry_pick_result.returncode != 0:
-                    logging.warning(
-                        f"Failed to cherry-pick reference commit: {cherry_pick_result.stderr}"
-                    )
-                    # Try to abort failed cherry-pick to leave repo in clean state
-                    await run_command(
-                        ["git", "cherry-pick", "--abort"],
-                        cwd=git_cwd,
-                        check=False,
-                        capture_output=True,
-                        text=True,
-                    )
-                else:
-                    logging.info(
-                        f"Successfully cherry-picked reference commit for chat ID {chat_id}"
-                    )
-                    # After cherry-picking, the HEAD commit should have the right chat_id
-                    head_chat_id = await get_head_commit_chat_id(git_cwd)
+                logging.info(
+                    f"Successfully applied reference commit for chat ID {chat_id}"
+                )
+                # After applying, the HEAD commit should have the right chat_id
+                head_chat_id = await get_head_commit_chat_id(git_cwd)
+
+        should_amend = has_commits and head_chat_id == chat_id
 
         should_amend = has_commits and head_chat_id == chat_id
 
