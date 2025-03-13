@@ -136,7 +136,8 @@ async def init_project(
         reuse_head_chat_id: Whether to reuse the chat ID from the HEAD commit (optional)
 
     Returns:
-        A string containing the system prompt plus any project_prompt from the config
+        A string containing the system prompt plus any project_prompt from the config,
+        or an error message if validation fails
 
     """
     try:
@@ -150,21 +151,32 @@ async def init_project(
         if not os.path.isdir(full_dir_path):
             return f"Error: Path is not a directory: {directory}"
 
+        # Check if the directory is a Git repository
+        is_git_repo = await is_git_repository(full_dir_path)
+
+        # Build path to codemcp.toml file
+        rules_file_path = os.path.join(full_dir_path, "codemcp.toml")
+        has_codemcp_toml = os.path.exists(rules_file_path)
+
+        # If validation fails, return appropriate error messages
+        if not is_git_repo and not has_codemcp_toml:
+            return f"Error: The directory is not a valid codemcp project. Please initialize a Git repository with 'git init' and create a codemcp.toml file with 'touch codemcp.toml'."
+        elif not is_git_repo:
+            return f"Error: The directory is not a Git repository. Please initialize it with 'git init'."
+        elif not has_codemcp_toml:
+            return f"Error: The directory does not contain a codemcp.toml file. Please create one with 'touch codemcp.toml'."
+
         # If reuse_head_chat_id is True, try to get the chat ID from the HEAD commit
         chat_id = None
         if reuse_head_chat_id:
-            from ..git import get_head_commit_chat_id, is_git_repository
+            from ..git import get_head_commit_chat_id
 
-            # Only do this if we're in a git repository
-            if await is_git_repository(full_dir_path):
-                chat_id = await get_head_commit_chat_id(full_dir_path)
-                if not chat_id:
-                    logging.warning(
-                        "reuse_head_chat_id was True but no chat ID found in HEAD commit, generating new chat ID"
-                    )
-                    logging.warning(
-                        "reuse_head_chat_id was True but no chat ID found in HEAD commit, generating new chat ID"
-                    )
+            # We already validated that we're in a git repository
+            chat_id = await get_head_commit_chat_id(full_dir_path)
+            if not chat_id:
+                logging.warning(
+                    "reuse_head_chat_id was True but no chat ID found in HEAD commit, generating new chat ID"
+                )
 
         # If not reusing or no chat ID was found in HEAD, generate a new one
         if not chat_id:
@@ -172,64 +184,59 @@ async def init_project(
 
         # Create an empty commit with user prompt and subject line if provided
         if user_prompt is not None and subject_line is not None:
-            from ..git import create_commit_reference, is_git_repository
+            from ..git import create_commit_reference
 
-            # Only do this if we're in a git repository
-            if await is_git_repository(full_dir_path):
-                # Format the commit message according to the specified format
-                commit_body = user_prompt
-                commit_msg = f"{subject_line}\n\n{commit_body}\n\ncodemcp-id: {chat_id}"
+            # We already validated that we're in a git repository
+            # Format the commit message according to the specified format
+            commit_body = user_prompt
+            commit_msg = f"{subject_line}\n\n{commit_body}\n\ncodemcp-id: {chat_id}"
 
-                # Create a commit reference instead of creating a regular commit
-                # This will not advance HEAD but store the commit in refs/codemcp/<chat_id>
-                success, message, commit_hash = await create_commit_reference(
-                    full_dir_path,
-                    description=subject_line,
-                    chat_id=chat_id,
-                    custom_message=commit_msg,
-                )
+            # Create a commit reference instead of creating a regular commit
+            # This will not advance HEAD but store the commit in refs/codemcp/<chat_id>
+            success, message, commit_hash = await create_commit_reference(
+                full_dir_path,
+                description=subject_line,
+                chat_id=chat_id,
+                custom_message=commit_msg,
+            )
 
-                if not success:
-                    logging.warning(f"Failed to create commit reference: {message}")
-
-        # Build path to codemcp.toml file
-        rules_file_path = os.path.join(full_dir_path, "codemcp.toml")
+            if not success:
+                logging.warning(f"Failed to create commit reference: {message}")
 
         project_prompt = ""
         command_help = ""
         command_docs = {}
         rules_config = {}
 
-        # Check if codemcp.toml file exists
-        if os.path.exists(rules_file_path):
-            try:
-                from .async_file_utils import async_open_binary
+        # We've already confirmed that codemcp.toml exists
+        try:
+            from .async_file_utils import async_open_binary
 
-                rules_data = await async_open_binary(rules_file_path)
-                # tomli.loads expects a string, but we have bytes, so use tomli.load with an io.BytesIO object
-                import io
+            rules_data = await async_open_binary(rules_file_path)
+            # tomli.loads expects a string, but we have bytes, so use tomli.load with an io.BytesIO object
+            import io
 
-                rules_config = tomli.load(io.BytesIO(rules_data))
+            rules_config = tomli.load(io.BytesIO(rules_data))
 
-                # Extract project_prompt if it exists
-                if "project_prompt" in rules_config:
-                    project_prompt = rules_config["project_prompt"]
+            # Extract project_prompt if it exists
+            if "project_prompt" in rules_config:
+                project_prompt = rules_config["project_prompt"]
 
-                # Extract commands and their documentation
-                command_list = rules_config.get("commands", {})
-                command_help = ", ".join(command_list.keys())
+            # Extract commands and their documentation
+            command_list = rules_config.get("commands", {})
+            command_help = ", ".join(command_list.keys())
 
-                # Process command documentation
-                for cmd_name, cmd_config in command_list.items():
-                    if isinstance(cmd_config, dict) and "doc" in cmd_config:
-                        command_docs[cmd_name] = cmd_config["doc"]
+            # Process command documentation
+            for cmd_name, cmd_config in command_list.items():
+                if isinstance(cmd_config, dict) and "doc" in cmd_config:
+                    command_docs[cmd_name] = cmd_config["doc"]
 
-            except Exception as e:
-                logging.warning(
-                    f"Exception suppressed when reading codemcp.toml: {e!s}",
-                    exc_info=True,
-                )
-                return f"Error reading codemcp.toml file: {e!s}"
+        except Exception as e:
+            logging.warning(
+                f"Exception suppressed when reading codemcp.toml: {e!s}",
+                exc_info=True,
+            )
+            return f"Error reading codemcp.toml file: {e!s}"
 
         # Default system prompt, cribbed from claude code
         # TODO: Figure out if we want Sonnet to make determinations about what
