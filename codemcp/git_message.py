@@ -14,8 +14,10 @@ log = logging.getLogger(__name__)
 def append_metadata_to_message(message: str, metadata: dict) -> str:
     """Append codemcp-id to a Git commit message.
 
-    This function adds the codemcp-id to the end of a commit message with a double newline
-    separator unless the line above is a metadata line of the form key: value.
+    This function adds the codemcp-id to the end of a commit message with:
+    - A double newline separator for single-line messages (even if they contain a colon)
+    - A double newline separator for regular message content
+    - A single newline separator if the line above is a metadata line of the form key: value
 
     Args:
         message: The original Git commit message
@@ -36,8 +38,14 @@ def append_metadata_to_message(message: str, metadata: dict) -> str:
     # Split the message into lines to analyze the last line
     lines = message.splitlines()
 
-    # Check if the last line looks like a metadata line (key: value)
-    if lines and ":" in lines[-1] and not lines[-1].startswith(" "):
+    # For single-line messages (subject only), always use double newline regardless of colon
+    if len(lines) == 1:
+        if message.endswith("\n"):
+            return f"{message}\ncodemcp-id: {codemcp_id}"
+        else:
+            return f"{message}\n\ncodemcp-id: {codemcp_id}"
+    # For multi-line messages, check if the last line looks like a metadata line (key: value)
+    elif lines and ":" in lines[-1] and not lines[-1].startswith(" "):
         # If the last line looks like metadata, append without double newline
         if message.endswith("\n"):
             return f"{message}codemcp-id: {codemcp_id}"
