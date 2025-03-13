@@ -204,24 +204,6 @@ async def init_project(
                 chat_id=chat_id,
             )
 
-            # Ensure the revisions are within the markers
-            # Add the lines directly into the markers
-            import re
-
-            def ensure_markers_have_content(message):
-                # Look for the pattern ```git-revs followed by empty or whitespace, then ```
-                pattern = r"```git-revs\s*```"
-                if re.search(pattern, message):
-                    # If markers are empty, put HEAD entry inside
-                    with_content = re.sub(
-                        pattern, f"```git-revs\nHEAD  {subject_line}\n```", message
-                    )
-                    return with_content
-                return message
-
-            # Make sure our markers have content
-            commit_msg = ensure_markers_have_content(commit_msg)
-
             # Create a commit reference instead of creating a regular commit
             # This will not advance HEAD but store the commit in refs/codemcp/<chat_id>
             success, message, commit_hash = await create_commit_reference(
