@@ -168,6 +168,28 @@ nothing to commit, working tree clean
                 "New file was created but not added to git",
             )
 
+            # Verify the commit message has the correct markers
+            commit_message = subprocess.run(
+                ["git", "log", "-1", "--pretty=%B"],
+                cwd=self.temp_dir.name,
+                env=self.env,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                check=True,
+            ).stdout.decode()
+
+            # Check that the commit message contains the START_MARKER and END_MARKER tokens
+            self.assertIn(
+                "```git-revs",
+                commit_message,
+                "First commit message should contain START_MARKER (```git-revs)",
+            )
+            self.assertIn(
+                "```",
+                commit_message.split("```git-revs")[1],
+                "First commit message should contain END_MARKER (```) after START_MARKER",
+            )
+
     async def test_write_to_untracked_file(self):
         """Test that writes to untracked files are rejected."""
         # Create an untracked file (not added to git)

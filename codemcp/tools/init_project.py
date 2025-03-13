@@ -189,7 +189,18 @@ async def init_project(
             # We already validated that we're in a git repository
             # Format the commit message according to the specified format
             commit_body = user_prompt
-            commit_msg = f"{subject_line}\n\n{commit_body}\n\ncodemcp-id: {chat_id}"
+            # First create a basic message
+            basic_msg = f"{subject_line}\n\n{commit_body}"
+
+            # Then use update_commit_message_with_description to ensure proper markers
+            from ..git_message import update_commit_message_with_description
+
+            commit_msg = update_commit_message_with_description(
+                current_commit_message=basic_msg,
+                description=subject_line,  # Use subject_line as description for the HEAD entry
+                commit_hash=None,  # No commit hash for the initial commit
+                chat_id=chat_id,
+            )
 
             # Create a commit reference instead of creating a regular commit
             # This will not advance HEAD but store the commit in refs/codemcp/<chat_id>
