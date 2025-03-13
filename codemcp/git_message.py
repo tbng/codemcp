@@ -234,10 +234,28 @@ def update_commit_message_with_description(
                     head_padding = " " * (len(commit_hash) - 4)  # 4 is length of "HEAD"
                     rev_entries.append(f"HEAD{head_padding}  {description}")
                 else:
-                    # No commit hash, just add description without revision list
-                    if main_message and not main_message.endswith("\n"):
-                        main_message += "\n"
-                    main_message += description
+                    # No commit hash, but we should still use the START_MARKER and END_MARKER
+                    # Create a single entry with just the description
+                    rev_entries = [f"HEAD  {description}"]
+                    formatted_rev_list = "\n".join(rev_entries)
+
+                    # Add formatted revision list with markers to the message
+                    if main_message:
+                        # Ensure proper spacing
+                        if main_message.endswith("\n\n"):
+                            main_message += (
+                                f"{START_MARKER}\n{formatted_rev_list}\n{END_MARKER}"
+                            )
+                        elif main_message.endswith("\n"):
+                            main_message += (
+                                f"\n{START_MARKER}\n{formatted_rev_list}\n{END_MARKER}"
+                            )
+                        else:
+                            main_message += f"\n\n{START_MARKER}\n{formatted_rev_list}\n{END_MARKER}"
+                    else:
+                        main_message = (
+                            f"{START_MARKER}\n{formatted_rev_list}\n{END_MARKER}"
+                        )
 
                     # Ensure the chat ID metadata is included if provided
                     if chat_id:
