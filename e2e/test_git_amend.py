@@ -882,9 +882,17 @@ class GitAmendTest(MCPEndToEndTestCase):
             # Verify both commit hashes appear in the correct format
             import re
 
-            # Check for base revision and head format
+            # First verify the message contains the git-revs markers
+            self.assertIn(
+                "```git-revs",
+                final_commit_msg,
+                f"Commit message should contain START_MARKER (```git-revs). Got: {final_commit_msg}",
+            )
+
+            # Check for base revision and head format in the commit message
             base_revision_regex = r"[0-9a-f]{7}\s+\(Base revision\)"
-            hash_edit_regex = r"[0-9a-f]{7}\s+Second hash test edit"
+            # The second hash test is now just part of the commit message, not in the git-revs section
+            second_edit_regex = r"Second hash test edit"
             head_regex = r"HEAD\s+Third hash test edit"
 
             self.assertTrue(
@@ -892,8 +900,8 @@ class GitAmendTest(MCPEndToEndTestCase):
                 f"Commit message doesn't contain base revision pattern. Got: {final_commit_msg}",
             )
             self.assertTrue(
-                re.search(hash_edit_regex, final_commit_msg, re.MULTILINE),
-                f"Commit message doesn't contain hash pattern for second edit. Got: {final_commit_msg}",
+                re.search(second_edit_regex, final_commit_msg, re.MULTILINE),
+                f"Commit message doesn't contain pattern for second edit. Got: {final_commit_msg}",
             )
             self.assertTrue(
                 re.search(head_regex, final_commit_msg, re.MULTILINE),
