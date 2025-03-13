@@ -6,6 +6,7 @@ import os
 from mcp.server.fastmcp import Context, FastMCP
 
 from .tools.edit_file import edit_file_content
+from .tools.glob import MAX_RESULTS, glob_files
 from .tools.grep import grep_files
 from .tools.init_project import init_project
 from .tools.ls import ls_directory
@@ -81,6 +82,7 @@ async def codemcp(
         },  # chat_id is not expected for InitProject as it's generated there
         "RunCommand": {"path", "command", "arguments", "chat_id"},
         "Grep": {"pattern", "path", "include", "chat_id"},
+        "Glob": {"pattern", "path", "limit", "offset", "chat_id"},
     }
 
     # Check if subtool exists
@@ -205,6 +207,31 @@ async def codemcp(
                 f"Exception suppressed in grep subtool: {e!s}", exc_info=True
             )
             return f"Error executing grep: {e!s}"
+
+    if subtool == "Glob":
+        if pattern is None:
+            return "Error: pattern is required for Glob subtool"
+
+        if path is None:
+            return "Error: path is required for Glob subtool"
+
+        try:
+            result = await glob_files(
+                pattern,
+                path,
+                limit=limit if limit is not None else MAX_RESULTS,
+                offset=offset if offset is not None else 0,
+                chat_id=chat_id,
+            )
+            return result.get(
+                "resultForAssistant",
+                f"Found {result.get('numFiles', 0)} file(s)",
+            )
+        except Exception as e:
+            logging.warning(
+                f"Exception suppressed in glob subtool: {e!s}", exc_info=True
+            )
+            return f"Error executing glob: {e!s}"
 
 
 def configure_logging(log_file="codemcp.log"):
