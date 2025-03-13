@@ -2,14 +2,14 @@
 
 import re
 import unittest
-from codemcp.git import parse_git_commit_message, append_metadata_to_message
+from codemcp.git import append_metadata_to_message
 
 
 class TestGitMessageRealWorldCases(unittest.TestCase):
-    """Test Git commit message parsing with real-world examples."""
+    """Test Git commit message handling with real-world examples."""
 
     def test_complex_commit_message_with_signatures(self):
-        """Test parsing a complex commit message with different types of signature trailers."""
+        """Test appending codemcp-id to a complex commit message with different types of signature trailers."""
         message = """feat(git): Improve commit message handling
 
 This commit enhances the Git commit message parsing logic to handle
@@ -29,93 +29,50 @@ Refs: #789
 Reviewed-by: John Smith <john@example.com>
 Tested-by: Continuous Integration <ci@example.com>
 Signed-off-by: Developer <dev@example.com>
-Co-authored-by: Collaborator <collab@example.com>
+Co-authored-by: Collaborator <collab@example.com>"""
+
+        # Test appending new metadata
+        new_message = append_metadata_to_message(message, {"codemcp-id": "abc-123456"})
+
+        # Verify the end of the message has our codemcp-id
+        self.assertTrue(new_message.endswith("codemcp-id: abc-123456"))
+
+        # The codemcp-id should be on a new line after the existing metadata
+        expected_end = """Co-authored-by: Collaborator <collab@example.com>
 codemcp-id: abc-123456"""
+        self.assertTrue(new_message.endswith(expected_end))
 
-        main_message, metadata = parse_git_commit_message(message)
+    def test_complex_commit_message_with_existing_codemcp_id(self):
+        """Test appending another codemcp-id to a complex commit message that already has one."""
+        message = """feat(git): Improve commit message handling
 
-        # Check the main message is preserved without the trailers
-        expected_main = """feat(git): Improve commit message handling
+This commit enhances the Git commit message parsing logic.
 
-This commit enhances the Git commit message parsing logic to handle
-various forms of trailers and metadata more robustly. It follows
-the Git trailer conventions while ensuring backward compatibility.
+Reviewed-by: John Smith <john@example.com>
+codemcp-id: old-id"""
 
-The implementation now correctly handles:
-- Trailers in the conventional format (Key: Value)
-- Multiple trailers with different keys
-- Multiline trailer values (with indentation)
-- Various signature types used in Git projects
+        # Test appending new metadata
+        new_message = append_metadata_to_message(message, {"codemcp-id": "new-id"})
 
-Fixes #123
-Closes: #456
-Refs: #789"""
+        # Verify the end of the message has our new codemcp-id
+        self.assertTrue(new_message.endswith("codemcp-id: new-id"))
 
-        self.assertEqual(main_message, expected_main)
+        # The new codemcp-id should be on a new line after the existing metadata
+        expected_end = """Reviewed-by: John Smith <john@example.com>
+codemcp-id: old-id
+codemcp-id: new-id"""
+        self.assertTrue(new_message.endswith(expected_end))
 
-        # Check all the trailers are extracted correctly
-        expected_metadata = {
-            "Reviewed-by": "John Smith <john@example.com>",
-            "Tested-by": "Continuous Integration <ci@example.com>",
-            "Signed-off-by": "Developer <dev@example.com>",
-            "Co-authored-by": "Collaborator <collab@example.com>",
-            "codemcp-id": "abc-123456",
-        }
-
-        self.assertEqual(metadata, expected_metadata)
-
-        # Test appending new metadata while preserving existing metadata
-        new_message = append_metadata_to_message(
-            message, {"codemcp-id": "new-id", "New-key": "value"}
-        )
-
-        # Extract the metadata from the updated message
-        _, updated_metadata = parse_git_commit_message(new_message)
-
-        # Check that the codemcp-id was updated and the new key was added
-        # while preserving other metadata
-        self.assertEqual(updated_metadata["codemcp-id"], "new-id")
-        self.assertEqual(updated_metadata["New-key"], "value")
-        self.assertEqual(
-            updated_metadata["Signed-off-by"], "Developer <dev@example.com>"
-        )
-        self.assertEqual(len(updated_metadata), 6)  # 5 original + 1 new key
-
-    def test_commit_message_with_edge_case_signatures(self):
-        """Test parsing a commit message with edge case signatures like DCO Sign-off."""
-        message = """refactor: Improve code organization
-
-Split the large function into smaller, more focused functions
-for better readability and testability.
-
-Change-Id: I1a2b3c4d5e6f7g8h9i
-Bug: b/12345
-Exempt-From-Owner-Approval: true
-DCO-1.1-Signed-off-by: Developer <dev@example.com>
-codemcp-id: abc-123456"""
-
-        main_message, metadata = parse_git_commit_message(message)
-
-        # Check all the trailers are extracted correctly
-        expected_metadata = {
-            "Change-Id": "I1a2b3c4d5e6f7g8h9i",
-            "Bug": "b/12345",
-            "Exempt-From-Owner-Approval": "true",
-            "DCO-1.1-Signed-off-by": "Developer <dev@example.com>",
-            "codemcp-id": "abc-123456",
-        }
-
-        self.assertEqual(metadata, expected_metadata)
-
-    def test_complex_commit_message_with_middle_codemcp_id(self):
-        """Test parsing a complex commit message with codemcp-id in the middle followed by other metadata."""
+    def test_codemcp_id_extraction_with_regex(self):
+        """Test that the regex used in get_head_commit_chat_id still works after changes."""
+        # This test verifies the approach used in get_head_commit_chat_id works
         message = """Subject
-    
+
 Foo desc
 Bar bar
-    
+
 codemcp-id: 10-blah
-    
+
 Signed-off-by: foobar
 ghstack-id: blahblahblah"""
 
@@ -127,16 +84,11 @@ ghstack-id: blahblahblah"""
         self.assertTrue(matches)
         self.assertEqual(matches[-1].strip(), "10-blah")
 
-        # Also test the parse_git_commit_message function for completeness
-        main_message, metadata = parse_git_commit_message(message)
-
-        # This is a complex case where our standard parser will have difficulty
-        # due to the blank lines between metadata sections
-        # But our regex approach should still correctly identify codemcp-id
-
-        # Verify metadata contains expected entries
-        self.assertEqual(metadata.get("Signed-off-by"), "foobar")
-        self.assertEqual(metadata.get("ghstack-id"), "blahblahblah")
+        # Add a new codemcp-id and make sure it works as expected
+        new_message = append_metadata_to_message(message, {"codemcp-id": "new-id"})
+        matches = re.findall(r"codemcp-id:\s*([^\n]*)", new_message)
+        self.assertEqual(len(matches), 2)
+        self.assertEqual(matches[-1].strip(), "new-id")
 
 
 if __name__ == "__main__":

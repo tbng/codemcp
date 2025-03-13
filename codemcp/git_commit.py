@@ -7,7 +7,6 @@ import subprocess
 from .common import normalize_file_path
 from .git_message import (
     append_metadata_to_message,
-    parse_git_commit_message,
     update_commit_message_with_description,
 )
 from .git_query import (
@@ -473,15 +472,14 @@ async def commit_changes(
 
         # Prepare the commit message with metadata
         if custom_message:
-            # Parse the custom message to extract main content and metadata
-            main_message, metadata_dict = parse_git_commit_message(custom_message)
+            # Use the custom message and add chat_id if needed
+            commit_message = custom_message
 
             # Make sure it has the chat_id metadata
             if chat_id:
-                metadata_dict["codemcp-id"] = chat_id
-
-            # Reconstruct the message with metadata
-            commit_message = append_metadata_to_message(main_message, metadata_dict)
+                commit_message = append_metadata_to_message(
+                    commit_message, {"codemcp-id": chat_id}
+                )
         else:
             commit_message = f"wip: {description}"
 
@@ -495,19 +493,30 @@ async def commit_changes(
                 current_commit_message = ""
 
             # Verify the commit has our codemcp-id
-            main_message, metadata_dict = parse_git_commit_message(
-                current_commit_message
-            )
-            if chat_id and "codemcp-id" not in metadata_dict:
+            if chat_id and "codemcp-id: " not in current_commit_message:
                 logging.warning("Expected codemcp-id in current commit but not found")
 
-            # Use the new function to update the commit message with the description
-            commit_message = update_commit_message_with_description(
-                current_commit_message=current_commit_message,
-                description=description,
-                commit_hash=commit_hash,
-                chat_id=chat_id,
-            )
+            # Check if message already has base revision
+            has_base_revision = "(Base revision)" in current_commit_message
+
+            # Prepare the commit message for amending
+            if not has_base_revision:
+                # Add base revision marker for the first edit
+                main_message = current_commit_message.replace(
+                    "\ncodemcp-id: " + chat_id, ""
+                )
+                main_message += f"\n\n{commit_hash}  (Base revision)"
+                commit_message = (
+                    main_message + f"\nHEAD     {description}\n\ncodemcp-id: {chat_id}"
+                )
+            else:
+                # Use the update function for subsequent edits
+                commit_message = update_commit_message_with_description(
+                    current_commit_message=current_commit_message,
+                    description=description,
+                    commit_hash=commit_hash,
+                    chat_id=chat_id,
+                )
 
             # Amend the previous commit
             commit_result = await run_command(
@@ -520,10 +529,10 @@ async def commit_changes(
         else:
             # For new commits, ensure chat ID is added to the message
             if chat_id:
-                # Parse the message and add metadata
-                main_message, metadata_dict = parse_git_commit_message(commit_message)
-                metadata_dict["codemcp-id"] = chat_id
-                commit_message = append_metadata_to_message(main_message, metadata_dict)
+                # Add the codemcp-id to the message
+                commit_message = append_metadata_to_message(
+                    commit_message, {"codemcp-id": chat_id}
+                )
 
             # Create a new commit
             commit_cmd = ["git", "commit", "-m", commit_message]
