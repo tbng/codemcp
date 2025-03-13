@@ -5,7 +5,7 @@ import logging
 import os
 
 from ..access import check_edit_permission
-from ..git import commit_pending_changes
+from ..git import commit_changes
 
 __all__ = [
     "check_file_path_and_permissions",
@@ -55,13 +55,35 @@ async def check_git_tracking_for_existing_file(
     file_exists = os.path.exists(file_path)
 
     if file_exists:
-        # Only check commit_pending_changes for existing files
-        commit_success, commit_message = await commit_pending_changes(file_path)
+        # Check if the file is tracked by git - use ls-files directly since we just need to check tracking
+        directory = os.path.dirname(file_path)
+
+        # Check if the file is tracked by git
+        from ..shell import run_command
+
+        file_status = await run_command(
+            ["git", "ls-files", "--error-unmatch", file_path],
+            cwd=directory,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
+        file_is_tracked = file_status.returncode == 0
+
+        # If the file is not tracked, return an error
+        if not file_is_tracked:
+            error_msg = "File is not tracked by git. Please add the file to git tracking first using 'git add <file>'"
+            return False, error_msg
+
+        # If there are other uncommitted changes, commit them
+        commit_success, commit_message = await commit_changes(
+            description="Snapshot before codemcp change",
+            commit_all=True,
+        )
+
         if not commit_success:
             logging.debug(f"Failed to commit pending changes: {commit_message}")
-            # Check if the file is not tracked by git
-            if "not tracked by git" in commit_message:
-                return False, commit_message
         else:
             logging.debug(f"Pending changes status: {commit_message}")
 

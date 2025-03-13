@@ -2,7 +2,7 @@
 
 # This file re-exports functions from git_*.py modules for backward compatibility
 
-from .git_commit import commit_changes, commit_pending_changes, create_commit_reference
+from .git_commit import commit_changes, create_commit_reference
 from .git_message import append_metadata_to_message
 from .git_query import (
     get_head_commit_chat_id,
@@ -24,7 +24,6 @@ __all__ = [
     # From git_message.py
     "append_metadata_to_message",
     # From git_commit.py
-    "commit_pending_changes",
     "commit_changes",
     "create_commit_reference",
 ]
