@@ -156,13 +156,14 @@ def append_metadata_to_message(message: str, metadata: Dict[str, str]) -> str:
     # First, parse the message to remove the codemcp-id from the existing metadata
     main_message, existing_metadata = parse_git_commit_message(message)
 
-    # Remove codemcp-id from existing metadata if it exists
-    if "codemcp-id" in existing_metadata:
-        existing_metadata.pop("codemcp-id")
+    # Create a copy of existing metadata, but prioritize the new metadata for any key conflicts
+    # We specifically handle codemcp-id separately
+    updated_metadata = {k: v for k, v in existing_metadata.items() if k != "codemcp-id"}
 
-    # Update existing metadata with new values (except codemcp-id)
-    non_codemcp_metadata = {k: v for k, v in metadata.items() if k != "codemcp-id"}
-    updated_metadata = {**existing_metadata, **non_codemcp_metadata}
+    # Add the new metadata (except codemcp-id) to the updated metadata
+    for k, v in metadata.items():
+        if k != "codemcp-id":
+            updated_metadata[k] = v
 
     # Start with the main message
     result = main_message
@@ -189,7 +190,7 @@ def append_metadata_to_message(message: str, metadata: Dict[str, str]) -> str:
         # and no trailing newlines, add an extra newline
         if (
             not existing_metadata
-            and not non_codemcp_metadata
+            and not updated_metadata
             and not "\n\n\n" in message
             and main_message == message
         ):
@@ -218,14 +219,18 @@ def format_commit_message_with_git_revs(
     Returns:
         The updated commit message with git-revs block
     """
+    # First, extract any metadata so we can preserve it
+    main_message, metadata = parse_git_commit_message(message)
+
     # Define a consistent padding for alignment - ensure hash and HEAD are aligned
     hash_len = len(commit_hash)  # Typically 7 characters
     head_padding = " " * (hash_len - 4)  # 4 is the length of "HEAD"
 
     # Look for existing git-revs block
     git_revs_pattern = re.compile(r"```git-revs\n(.*?)\n```", re.DOTALL)
-    git_revs_match = git_revs_pattern.search(message)
+    git_revs_match = git_revs_pattern.search(main_message)
 
+    result_message = ""
     if git_revs_match:
         # Extract existing git-revs block
         git_revs_content = git_revs_match.group(1)
@@ -257,8 +262,8 @@ def format_commit_message_with_git_revs(
 
         # Replace the old git-revs block with the new one
         new_git_revs_content = "\n".join(new_git_revs_lines)
-        return git_revs_pattern.sub(
-            f"```git-revs\n{new_git_revs_content}\n```", message
+        result_message = git_revs_pattern.sub(
+            f"```git-revs\n{new_git_revs_content}\n```", main_message
         )
     else:
         # No existing git-revs block, create one
@@ -268,12 +273,9 @@ def format_commit_message_with_git_revs(
         main_lines = []
         commit_lines = []
 
-        # Parse the message to separate main content from metadata
-        main_msg, metadata = parse_git_commit_message(message)
-
         # Check if we have any commit entries in the message
         has_base_revision = False
-        for line in main_msg.splitlines():
+        for line in main_message.splitlines():
             if "(Base revision)" in line or line.strip().startswith("HEAD"):
                 has_base_revision = has_base_revision or "(Base revision)" in line
                 commit_lines.append(line)
@@ -320,8 +322,8 @@ def format_commit_message_with_git_revs(
             # If message was empty, just return the git-revs block
             result_message = git_revs_block
 
-        # Restore any metadata from the original message
-        if metadata:
-            result_message = append_metadata_to_message(result_message, metadata)
+    # Always reapply all original metadata to preserve things like ghstack-source-id
+    if metadata:
+        result_message = append_metadata_to_message(result_message, metadata)
 
-        return result_message
+    return result_message

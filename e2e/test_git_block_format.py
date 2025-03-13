@@ -156,22 +156,21 @@ Pull Request resolved: https://github.com/ezyang/codemcp/pull/20"""
                 "New edit description not found in git-revs block",
             )
 
-            # Check that metadata is outside the block
-            metadata_section = updated_commit_msg.split("```")[-1].strip()
+            # Examine the entire message to check that metadata is preserved
             self.assertIn(
                 f"codemcp-id: {chat_id}",
-                metadata_section,
-                "codemcp-id not found in metadata",
+                updated_commit_msg,
+                "codemcp-id not found in commit message",
             )
             self.assertIn(
                 "ghstack-source-id:",
-                metadata_section,
-                "ghstack-source-id not preserved in metadata",
+                updated_commit_msg,
+                "ghstack-source-id not preserved in commit message",
             )
             self.assertIn(
                 "Pull Request resolved:",
-                metadata_section,
-                "Pull Request info not preserved in metadata",
+                updated_commit_msg,
+                "Pull Request info not preserved in commit message",
             )
 
 

@@ -519,11 +519,13 @@ async def commit_changes(
                     "", commit_hash, description
                 )
 
-            # Ensure the chat ID metadata is included
-            metadata_dict["codemcp-id"] = chat_id
+            # Create a copy of the metadata that includes all original fields
+            # plus our updated codemcp-id
+            updated_metadata = dict(metadata_dict)
+            updated_metadata["codemcp-id"] = chat_id
 
             # Reconstruct the message with updated metadata
-            commit_message = append_metadata_to_message(main_message, metadata_dict)
+            commit_message = append_metadata_to_message(main_message, updated_metadata)
 
             # Amend the previous commit
             commit_result = await run_command(
