@@ -178,6 +178,32 @@ Key1: Value1"""
         self.assertEqual(main_message, expected_main)
         self.assertEqual(metadata, expected_metadata)
 
+    def test_parse_message_with_backtick_revisions(self):
+        """Test parsing a commit message with backtick-enclosed revision history."""
+        message = """feat: Add feature
+
+Description
+
+```
+abcdef0  (Base revision)
+1234567  Previous commit
+HEAD  Current change
+```
+
+codemcp-id: abc-123"""
+        main_message, metadata = parse_git_commit_message(message)
+        expected_main = """feat: Add feature
+
+Description
+
+```
+abcdef0  (Base revision)
+1234567  Previous commit
+HEAD  Current change
+```"""
+        self.assertEqual(main_message, expected_main)
+        self.assertEqual(metadata, {"codemcp-id": "abc-123"})
+
 
 if __name__ == "__main__":
     unittest.main()

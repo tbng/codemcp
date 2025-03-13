@@ -864,59 +864,120 @@ async def commit_changes(
             # Add the new description to the message body
             if main_message:
                 # Parse the message into lines
-                lines = main_message.splitlines()
+                main_message.splitlines()
 
-                # Check if we need to add a base revision marker
-                has_base_revision = any("(Base revision)" in line for line in lines)
+                # Helper functions for working with revision history
+                def parse_revisions(message):
+                    """Parse revision history from the commit message."""
+                    revisions = []
+                    # Look for backtick-enclosed blocks
+                    message_lines = message.splitlines()
+                    in_backticks_block = False
+                    backticks_block_lines = []
 
-                if not has_base_revision:
-                    # First commit with this chat_id, mark it as base revision
-                    if lines and lines[-1].strip():
-                        # Previous line has content, add two newlines
-                        main_message += f"\n\n{commit_hash}  (Base revision)"
+                    for line in message_lines:
+                        if line.strip() == "```":
+                            if in_backticks_block:
+                                # End of backticks block
+                                revisions = [
+                                    line.strip()
+                                    for line in backticks_block_lines
+                                    if line.strip()
+                                ]
+                                in_backticks_block = False
+                            else:
+                                # Start of backticks block
+                                in_backticks_block = True
+                                backticks_block_lines = []
+                        elif in_backticks_block:
+                            backticks_block_lines.append(line)
+
+                    # If no backticks blocks found, look for traditional revision entries
+                    if not revisions:
+                        for line in message_lines:
+                            if (
+                                "(Base revision)" in line
+                                or line.strip().startswith("HEAD")
+                                or line.strip()
+                                and len(line.strip()) >= 7
+                                and line.strip()[0:7].isalnum()
+                            ):
+                                revisions.append(line.strip())
+
+                    return revisions
+
+                def format_revisions(revisions, commit_hash, description):
+                    """Format revisions with the new entry."""
+                    # If there are existing revisions, update HEAD to actual hash
+                    new_revisions = []
+                    for rev in revisions:
+                        if rev.startswith("HEAD"):
+                            # Replace HEAD with the actual hash, maintaining description
+                            parts = rev.split("  ", 1)
+                            if len(parts) > 1:
+                                new_revisions.append(f"{commit_hash}  {parts[1]}")
+                            else:
+                                new_revisions.append(commit_hash)
+                        else:
+                            new_revisions.append(rev)
+
+                    # Add new HEAD entry
+                    new_revisions.append(f"HEAD  {description}")
+
+                    # If no (Base revision) entry exists, add it for the first commit
+                    if not any("(Base revision)" in rev for rev in new_revisions):
+                        # Find the first non-HEAD entry to mark as base
+                        for i, rev in enumerate(new_revisions):
+                            if not rev.startswith("HEAD"):
+                                new_revisions[i] = f"{rev}  (Base revision)"
+                                break
+                        else:
+                            # If no non-HEAD entry found (unlikely), add commit_hash as base
+                            new_revisions.append(f"{commit_hash}  (Base revision)")
+
+                    # Return the formatted backtick block
+                    return "```\n" + "\n".join(new_revisions) + "\n```"
+
+                # Extract and update revisions
+                revisions = parse_revisions(main_message)
+
+                # Remove existing revisions from main message
+                clean_lines = []
+                message_lines = main_message.splitlines()
+                in_backticks_block = False
+
+                for line in message_lines:
+                    if line.strip() == "```":
+                        in_backticks_block = not in_backticks_block
+                        if not in_backticks_block:
+                            pass
+                    elif not in_backticks_block and not any(
+                        rev in line for rev in revisions
+                    ):
+                        clean_lines.append(line)
+
+                # Create clean main message without revisions
+                clean_main = "\n".join(clean_lines).rstrip()
+
+                # Format the revisions block
+                formatted_revisions = format_revisions(
+                    revisions, commit_hash, description
+                )
+
+                # Combine main message with formatted revisions
+                if clean_main:
+                    if clean_main.endswith("\n"):
+                        main_message = clean_main + "\n" + formatted_revisions
                     else:
-                        # Previous line is blank, just add one newline
-                        main_message += f"\n{commit_hash}  (Base revision)"
-
-                # Define a consistent padding for alignment - ensure hash and HEAD are aligned
-                hash_len = len(commit_hash)  # Typically 7 characters
-                head_padding = " " * (hash_len - 4)  # 4 is the length of "HEAD"
-
-                # Update any existing HEAD entries to have actual hashes
-                new_lines = []
-                for line in main_message.splitlines():
-                    if line.strip().startswith("HEAD"):
-                        # Calculate alignment adjustment since HEAD is shorter than commit hash (typically 7 chars)
-                        # Find HEAD in the line and replace it while preserving alignment
-                        # This will ensure descriptions remain aligned after replacement
-                        head_pos = line.find("HEAD")
-                        head_len = len("HEAD")
-                        hash_len = len(commit_hash)
-
-                        # Calculate the difference in length between HEAD and the hash
-                        len_diff = hash_len - head_len
-
-                        # Replace HEAD with the commit hash and adjust spaces to maintain alignment
-                        prefix = line[:head_pos]
-                        suffix = line[head_pos + head_len :]
-                        # Remove leading spaces from suffix equal to the length difference
-                        if len_diff > 0 and suffix.startswith(" " * len_diff):
-                            suffix = suffix[len_diff:]
-                        new_line = prefix + commit_hash + suffix
-                        new_lines.append(new_line)
-                    else:
-                        new_lines.append(line)
-
-                # Reconstruct the message with updated lines
-                main_message = "\n".join(new_lines)
-
-                # Now add the new entry with HEAD, ensuring alignment with hash entries
-                # We need precise spacing to match with the formatting in the commit message
-                main_message += f"\nHEAD{head_padding}  {description}"
+                        main_message = clean_main + "\n\n" + formatted_revisions
+                else:
+                    main_message = formatted_revisions
             else:
                 main_message = description
-                # Add base revision marker for the first commit
-                main_message += f"\n\n{commit_hash}  (Base revision)"
+                # Add base revision marker for the first commit using backticks format
+                main_message += (
+                    f"\n\n```\n{commit_hash}  (Base revision)\nHEAD  {description}\n```"
+                )
 
             # Ensure the chat ID metadata is included
             metadata_dict["codemcp-id"] = chat_id
