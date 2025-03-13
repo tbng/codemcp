@@ -172,7 +172,7 @@ async def init_project(
 
         # Create an empty commit with user prompt and subject line if provided
         if user_prompt is not None and subject_line is not None:
-            from ..git import commit_changes, is_git_repository
+            from ..git import create_commit_reference, is_git_repository
 
             # Only do this if we're in a git repository
             if await is_git_repository(full_dir_path):
@@ -180,17 +180,17 @@ async def init_project(
                 commit_body = user_prompt
                 commit_msg = f"{subject_line}\n\n{commit_body}\n\ncodemcp-id: {chat_id}"
 
-                # Create an empty commit with the formatted message
-                success, message = await commit_changes(
+                # Create a commit reference instead of creating a regular commit
+                # This will not advance HEAD but store the commit in refs/codemcp/<chat_id>
+                success, message, commit_hash = await create_commit_reference(
                     full_dir_path,
                     description=subject_line,
                     chat_id=chat_id,
-                    allow_empty=True,
                     custom_message=commit_msg,
                 )
 
                 if not success:
-                    logging.warning(f"Failed to create empty commit: {message}")
+                    logging.warning(f"Failed to create commit reference: {message}")
 
         # Build path to codemcp.toml file
         rules_file_path = os.path.join(full_dir_path, "codemcp.toml")
