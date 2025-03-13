@@ -19,9 +19,61 @@ __all__ = [
     "get_head_commit_hash",
     "parse_git_commit_message",
     "append_metadata_to_message",
+    "get_codemcp_ref_message",
 ]
 
 log = logging.getLogger(__name__)
+
+
+async def get_codemcp_ref_message(directory: str, chat_id: str) -> str | None:
+    """Get the commit message from a codemcp/<chat_id> ref.
+
+    Args:
+        directory: The directory to check
+        chat_id: The chat ID to look up
+
+    Returns:
+        The commit message if available, None otherwise
+    """
+    try:
+        # Check if the ref exists
+        result = await run_command(
+            ["git", "show-ref", f"codemcp/{chat_id}"],
+            cwd=directory,
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+
+        if result.returncode != 0:
+            # Ref doesn't exist
+            return None
+
+        # Get the commit hash from the ref
+        result = await run_command(
+            ["git", "rev-parse", f"codemcp/{chat_id}"],
+            cwd=directory,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        commit_hash = result.stdout.strip()
+
+        # Get the commit message
+        result = await run_command(
+            ["git", "log", "-1", "--pretty=%B", commit_hash],
+            cwd=directory,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+
+        return result.stdout.strip()
+    except Exception as e:
+        logging.warning(
+            f"Exception when getting codemcp ref message: {e!s}", exc_info=True
+        )
+        return None
 
 
 async def get_head_commit_message(directory: str) -> str | None:
@@ -577,10 +629,40 @@ async def commit_changes(
         )
         should_amend = has_commits and head_chat_id == chat_id
 
+        # Check if we have a stored commit message in codemcp/<chat_id> ref
+        codemcp_ref_message = None
+        if chat_id and head_chat_id != chat_id:
+            codemcp_ref_message = await get_codemcp_ref_message(git_cwd, chat_id)
+            logging.debug(
+                "commit_changes: codemcp_ref_message found = %r",
+                bool(codemcp_ref_message),
+            )
+
         # Prepare the commit message with metadata
         if custom_message:
             # Parse the custom message to extract main content and metadata
             main_message, metadata_dict = parse_git_commit_message(custom_message)
+
+            # Make sure it has the chat_id metadata
+            if chat_id:
+                metadata_dict["codemcp-id"] = chat_id
+
+            # Reconstruct the message with metadata
+            commit_message = append_metadata_to_message(main_message, metadata_dict)
+        elif codemcp_ref_message:
+            # Use the message from codemcp/<chat_id> ref
+            main_message, metadata_dict = parse_git_commit_message(codemcp_ref_message)
+
+            # Add the new description to the message body
+            if main_message:
+                # Check if we need to append the description
+                if not main_message.endswith(description):
+                    if main_message.endswith("\n"):
+                        main_message += description
+                    else:
+                        main_message += f"\n\n{description}"
+            else:
+                main_message = description
 
             # Make sure it has the chat_id metadata
             if chat_id:

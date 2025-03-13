@@ -170,9 +170,10 @@ async def init_project(
         if not chat_id:
             chat_id = await _generate_chat_id(full_dir_path, subject_line)
 
-        # Create an empty commit with user prompt and subject line if provided
+        # Create a commit using plumbing commands and store it in a special ref without advancing HEAD
         if user_prompt is not None and subject_line is not None:
-            from ..git import commit_changes, is_git_repository
+            from ..git import is_git_repository
+            from ..shell import run_command
 
             # Only do this if we're in a git repository
             if await is_git_repository(full_dir_path):
@@ -180,17 +181,62 @@ async def init_project(
                 commit_body = user_prompt
                 commit_msg = f"{subject_line}\n\n{commit_body}\n\ncodemcp-id: {chat_id}"
 
-                # Create an empty commit with the formatted message
-                success, message = await commit_changes(
-                    full_dir_path,
-                    description=subject_line,
-                    chat_id=chat_id,
-                    allow_empty=True,
-                    custom_message=commit_msg,
-                )
+                try:
+                    # Create a tree object from the current index
+                    tree_result = await run_command(
+                        ["git", "write-tree"],
+                        cwd=full_dir_path,
+                        check=True,
+                        capture_output=True,
+                        text=True,
+                    )
+                    tree_hash = tree_result.stdout.strip()
 
-                if not success:
-                    logging.warning(f"Failed to create empty commit: {message}")
+                    # Create a commit object without changing HEAD
+                    commit_cmd = ["git", "commit-tree", tree_hash]
+
+                    # If there's a parent commit, include it
+                    head_exists = await run_command(
+                        ["git", "rev-parse", "--verify", "HEAD"],
+                        cwd=full_dir_path,
+                        check=False,
+                        capture_output=True,
+                        text=True,
+                    )
+
+                    if head_exists.returncode == 0:
+                        head_hash = head_exists.stdout.strip()
+                        commit_cmd.extend(["-p", head_hash])
+
+                    # Add the commit message
+                    commit_cmd.extend(["-m", commit_msg])
+
+                    # Create the commit
+                    commit_result = await run_command(
+                        commit_cmd,
+                        cwd=full_dir_path,
+                        check=True,
+                        capture_output=True,
+                        text=True,
+                    )
+                    commit_hash = commit_result.stdout.strip()
+
+                    # Store the commit in a special ref codemcp/CHAT_ID
+                    await run_command(
+                        ["git", "update-ref", f"codemcp/{chat_id}", commit_hash],
+                        cwd=full_dir_path,
+                        check=True,
+                        capture_output=True,
+                        text=True,
+                    )
+
+                    logging.info(
+                        f"Created commit {commit_hash} and stored in ref codemcp/{chat_id}"
+                    )
+                except Exception as e:
+                    logging.warning(
+                        f"Failed to create commit with plumbing commands: {e!s}"
+                    )
 
         # Build path to codemcp.toml file
         rules_file_path = os.path.join(full_dir_path, "codemcp.toml")
