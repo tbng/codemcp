@@ -2,7 +2,6 @@
 
 import asyncio
 import logging
-import shutil
 import subprocess
 from typing import Dict, List, Optional
 
@@ -37,29 +36,13 @@ async def run_command(
         subprocess.CalledProcessError: If check=True and process returns non-zero exit code
         subprocess.TimeoutExpired: If the process times out
     """
-    # Save original command for logging
-    original_cmd = cmd.copy()
+    # Log the command being run at INFO level
+    log_cmd = " ".join(str(c) for c in cmd)
+    logging.info(f"Running command: {log_cmd}")
 
     # Prepare stdout and stderr pipes
     stdout_pipe = asyncio.subprocess.PIPE if capture_output else None
     stderr_pipe = asyncio.subprocess.PIPE if capture_output else None
-
-    # Resolve the executable path using the system PATH
-    executable_path = cmd[0]
-    if not executable_path.startswith("/") and "/" not in executable_path:
-        # Only resolve if not already an absolute path or contains no path separator
-        resolved_path = shutil.which(executable_path)
-        if resolved_path:
-            cmd = [resolved_path] + cmd[1:]
-
-    # Log the command being run at INFO level
-    orig_log_cmd = " ".join(str(c) for c in original_cmd)
-    log_cmd = " ".join(str(c) for c in cmd)
-
-    if orig_log_cmd != log_cmd:
-        logging.info(f"Running command: {orig_log_cmd} (resolved to: {log_cmd})")
-    else:
-        logging.info(f"Running command: {log_cmd}")
 
     # Run the subprocess asynchronously
     process = await asyncio.create_subprocess_exec(
