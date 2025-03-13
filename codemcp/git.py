@@ -9,6 +9,133 @@ from typing import Dict, Tuple
 from .common import normalize_file_path
 from .shell import run_command
 
+
+def format_commit_message_with_git_revs(message: str, commit_hash: str, description: str) -> str:
+    """Format commit message with git-revs code block for commit history.
+    
+    This function takes a commit message, identifies or creates a git-revs code block,
+    and updates it with the new commit information. It preserves proper alignment
+    and ensures consistent formatting. It also preserves any existing metadata in the commit
+    message that is outside the git-revs block.
+    
+    Args:
+        message: The current commit message
+        commit_hash: The commit hash to record (for previous HEAD)
+        description: The description of the new commit
+        
+    Returns:
+        The updated commit message with git-revs block
+    """
+    """
+    # Define a consistent padding for alignment - ensure hash and HEAD are aligned
+    hash_len = len(commit_hash)  # Typically 7 characters
+    head_padding = " " * (hash_len - 4)  # 4 is the length of "HEAD"
+
+    # Look for existing git-revs block
+    git_revs_pattern = re.compile(r"```git-revs\n(.*?)\n```", re.DOTALL)
+    git_revs_match = git_revs_pattern.search(message)
+
+    if git_revs_match:
+        # Extract existing git-revs block
+        git_revs_content = git_revs_match.group(1)
+
+        # Process the content
+        new_git_revs_lines = []
+        for line in git_revs_content.splitlines():
+            if line.strip().startswith("HEAD"):
+                # Replace HEAD with actual commit hash
+                head_pos = line.find("HEAD")
+                head_len = len("HEAD")
+
+                # Calculate the difference in length between HEAD and the hash
+                len_diff = hash_len - head_len
+
+                # Replace HEAD with the commit hash and adjust alignment
+                prefix = line[:head_pos]
+                suffix = line[head_pos + head_len :]
+                # Remove leading spaces from suffix equal to the length difference
+                if len_diff > 0 and suffix.startswith(" " * len_diff):
+                    suffix = suffix[len_diff:]
+                new_line = prefix + commit_hash + suffix
+                new_git_revs_lines.append(new_line)
+            else:
+                new_git_revs_lines.append(line)
+
+        # Add the new HEAD entry
+        new_git_revs_lines.append(f"HEAD{head_padding}  {description}")
+
+        # Replace the old git-revs block with the new one
+        new_git_revs_content = "\n".join(new_git_revs_lines)
+        return git_revs_pattern.sub(
+            f"```git-revs\n{new_git_revs_content}\n```", message
+        )
+    else:
+        # No existing git-revs block, create one
+        
+        # First remove any existing commit entries from the message
+        # This handles the legacy format where commit entries were directly in the message
+        main_lines = []
+        commit_lines = []
+        
+        # Parse the message to separate main content from metadata
+        main_msg, metadata = parse_git_commit_message(message)
+        
+        # Check if we have any commit entries in the message
+        has_base_revision = False
+        for line in main_msg.splitlines():
+            if "(Base revision)" in line or line.strip().startswith("HEAD"):
+                has_base_revision = has_base_revision or "(Base revision)" in line
+                commit_lines.append(line)
+            else:
+                main_lines.append(line)
+
+        # If no base revision found in existing entries, add it
+        if not has_base_revision:
+            commit_lines.insert(0, f"{commit_hash}  (Base revision)")
+
+        # Update any HEAD entries in the commit lines to actual hashes
+        processed_commit_lines = []
+        for line in commit_lines:
+            if line.strip().startswith("HEAD"):
+                # Replace HEAD with actual commit hash
+                head_pos = line.find("HEAD")
+                head_len = len("HEAD")
+                len_diff = hash_len - head_len
+
+                prefix = line[:head_pos]
+                suffix = line[head_pos + head_len :]
+                if len_diff > 0 and suffix.startswith(" " * len_diff):
+                    suffix = suffix[len_diff:]
+                line = prefix + commit_hash + suffix
+            processed_commit_lines.append(line)
+
+        # Add the new HEAD entry
+        processed_commit_lines.append(f"HEAD{head_padding}  {description}")
+
+        # Create the git-revs block
+        git_revs_block = f"```git-revs\n{'\n'.join(processed_commit_lines)}\n```"
+
+        # Add the git-revs block to the main message
+        # Make sure there's at least one blank line before the block if message is not empty
+        if main_lines:
+            # Check if last line is blank
+            if main_lines[-1].strip():
+                git_revs_block = f"\n\n{git_revs_block}"
+            else:
+                git_revs_block = f"\n{git_revs_block}"
+                
+            result_message = "\n".join(main_lines) + git_revs_block
+        else:
+            # If message was empty, just return the git-revs block
+            result_message = git_revs_block
+            
+        # Restore any metadata from the original message
+        if metadata:
+            result_message = append_metadata_to_message(result_message, metadata)
+            
+        return result_message
+
+
 __all__ = [
     "is_git_repository",
     "commit_pending_changes",
@@ -21,6 +148,7 @@ __all__ = [
     "append_metadata_to_message",
     "create_commit_reference",
     "get_ref_commit_chat_id",
+    "format_commit_message_with_git_revs",
 ]
 
 log = logging.getLogger(__name__)
@@ -73,6 +201,9 @@ def parse_git_commit_message(message: str) -> Tuple[str, Dict[str, str]]:
     Metadata (trailers) are key-value pairs at the end of the commit message, separated from
     the main message by a blank line. Each trailer is on its own line and follows the format
     "Key: Value".
+
+    The function also handles commit messages with git-revs blocks, treating them as part
+    of the main message.
 
     Args:
         message: The full Git commit message
@@ -921,60 +1052,15 @@ async def commit_changes(
 
             # Add the new description to the message body
             if main_message:
-                # Parse the message into lines
-                lines = main_message.splitlines()
-
-                # Check if we need to add a base revision marker
-                has_base_revision = any("(Base revision)" in line for line in lines)
-
-                if not has_base_revision:
-                    # First commit with this chat_id, mark it as base revision
-                    if lines and lines[-1].strip():
-                        # Previous line has content, add two newlines
-                        main_message += f"\n\n{commit_hash}  (Base revision)"
-                    else:
-                        # Previous line is blank, just add one newline
-                        main_message += f"\n{commit_hash}  (Base revision)"
-
-                # Define a consistent padding for alignment - ensure hash and HEAD are aligned
-                hash_len = len(commit_hash)  # Typically 7 characters
-                head_padding = " " * (hash_len - 4)  # 4 is the length of "HEAD"
-
-                # Update any existing HEAD entries to have actual hashes
-                new_lines = []
-                for line in main_message.splitlines():
-                    if line.strip().startswith("HEAD"):
-                        # Calculate alignment adjustment since HEAD is shorter than commit hash (typically 7 chars)
-                        # Find HEAD in the line and replace it while preserving alignment
-                        # This will ensure descriptions remain aligned after replacement
-                        head_pos = line.find("HEAD")
-                        head_len = len("HEAD")
-                        hash_len = len(commit_hash)
-
-                        # Calculate the difference in length between HEAD and the hash
-                        len_diff = hash_len - head_len
-
-                        # Replace HEAD with the commit hash and adjust spaces to maintain alignment
-                        prefix = line[:head_pos]
-                        suffix = line[head_pos + head_len :]
-                        # Remove leading spaces from suffix equal to the length difference
-                        if len_diff > 0 and suffix.startswith(" " * len_diff):
-                            suffix = suffix[len_diff:]
-                        new_line = prefix + commit_hash + suffix
-                        new_lines.append(new_line)
-                    else:
-                        new_lines.append(line)
-
-                # Reconstruct the message with updated lines
-                main_message = "\n".join(new_lines)
-
-                # Now add the new entry with HEAD, ensuring alignment with hash entries
-                # We need precise spacing to match with the formatting in the commit message
-                main_message += f"\nHEAD{head_padding}  {description}"
+                # Call the helper function to update the message with the git-revs block
+                main_message = format_commit_message_with_git_revs(
+                    main_message, commit_hash, description
+                )
             else:
-                main_message = description
-                # Add base revision marker for the first commit
-                main_message += f"\n\n{commit_hash}  (Base revision)"
+                # For the very first commit, create a simple message with git-revs block
+                main_message = format_commit_message_with_git_revs(
+                    "", commit_hash, description
+                )
 
             # Ensure the chat ID metadata is included
             metadata_dict["codemcp-id"] = chat_id
