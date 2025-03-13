@@ -5,7 +5,11 @@ import os
 import subprocess
 
 from .common import normalize_file_path
-from .git_message import append_metadata_to_message, parse_git_commit_message
+from .git_message import (
+    append_metadata_to_message,
+    parse_git_commit_message,
+    update_commit_message_with_description,
+)
 from .git_query import (
     get_head_commit_chat_id,
     get_head_commit_hash,
@@ -207,16 +211,14 @@ async def create_commit_reference(
 
         # Prepare the commit message with metadata
         if custom_message:
-            # Parse the custom message to extract main content and metadata
-            main_message, metadata_dict = parse_git_commit_message(custom_message)
-
-            # Make sure it has the chat_id metadata
-            if chat_id:
-                metadata_dict["codemcp-id"] = chat_id
-
-            # Reconstruct the message with metadata
-            commit_message = append_metadata_to_message(main_message, metadata_dict)
+            # Use our updated function to prepare the message
+            commit_message = update_commit_message_with_description(
+                current_commit_message=custom_message,
+                description="",  # Empty because we're not adding a description
+                chat_id=chat_id,
+            )
         else:
+            # Start with the description and add chat_id
             commit_message = description
             if chat_id:
                 commit_message = append_metadata_to_message(
@@ -492,77 +494,20 @@ async def commit_changes(
             if not current_commit_message:
                 current_commit_message = ""
 
-            # Parse the commit message to extract main content and metadata
+            # Verify the commit has our codemcp-id
             main_message, metadata_dict = parse_git_commit_message(
                 current_commit_message
             )
-
-            # Verify the commit has our codemcp-id
             if chat_id and "codemcp-id" not in metadata_dict:
                 logging.warning("Expected codemcp-id in current commit but not found")
 
-            # Add the new description to the message body
-            if main_message:
-                # Parse the message into lines
-                lines = main_message.splitlines()
-
-                # Check if we need to add a base revision marker
-                has_base_revision = any("(Base revision)" in line for line in lines)
-
-                if not has_base_revision:
-                    # First commit with this chat_id, mark it as base revision
-                    if lines and lines[-1].strip():
-                        # Previous line has content, add two newlines
-                        main_message += f"\n\n{commit_hash}  (Base revision)"
-                    else:
-                        # Previous line is blank, just add one newline
-                        main_message += f"\n{commit_hash}  (Base revision)"
-
-                # Define a consistent padding for alignment - ensure hash and HEAD are aligned
-                hash_len = len(commit_hash)  # Typically 7 characters
-                head_padding = " " * (hash_len - 4)  # 4 is the length of "HEAD"
-
-                # Update any existing HEAD entries to have actual hashes
-                new_lines = []
-                for line in main_message.splitlines():
-                    if line.strip().startswith("HEAD"):
-                        # Calculate alignment adjustment since HEAD is shorter than commit hash (typically 7 chars)
-                        # Find HEAD in the line and replace it while preserving alignment
-                        # This will ensure descriptions remain aligned after replacement
-                        head_pos = line.find("HEAD")
-                        head_len = len("HEAD")
-                        hash_len = len(commit_hash)
-
-                        # Calculate the difference in length between HEAD and the hash
-                        len_diff = hash_len - head_len
-
-                        # Replace HEAD with the commit hash and adjust spaces to maintain alignment
-                        prefix = line[:head_pos]
-                        suffix = line[head_pos + head_len :]
-                        # Remove leading spaces from suffix equal to the length difference
-                        if len_diff > 0 and suffix.startswith(" " * len_diff):
-                            suffix = suffix[len_diff:]
-                        new_line = prefix + commit_hash + suffix
-                        new_lines.append(new_line)
-                    else:
-                        new_lines.append(line)
-
-                # Reconstruct the message with updated lines
-                main_message = "\n".join(new_lines)
-
-                # Now add the new entry with HEAD, ensuring alignment with hash entries
-                # We need precise spacing to match with the formatting in the commit message
-                main_message += f"\nHEAD{head_padding}  {description}"
-            else:
-                main_message = description
-                # Add base revision marker for the first commit
-                main_message += f"\n\n{commit_hash}  (Base revision)"
-
-            # Ensure the chat ID metadata is included
-            metadata_dict["codemcp-id"] = chat_id
-
-            # Reconstruct the message with updated metadata
-            commit_message = append_metadata_to_message(main_message, metadata_dict)
+            # Use the new function to update the commit message with the description
+            commit_message = update_commit_message_with_description(
+                current_commit_message=current_commit_message,
+                description=description,
+                commit_hash=commit_hash,
+                chat_id=chat_id,
+            )
 
             # Amend the previous commit
             commit_result = await run_command(
