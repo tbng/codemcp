@@ -58,9 +58,7 @@ async def codemcp(
       subtool: The subtool to run (InitProject, UserPrompt, ...)
       path: The path to the file or directory to operate on
       chat_id: A unique ID to identify the chat session (provided by InitProject and required for all tools EXCEPT InitProject)
-      user_prompt: The user's original prompt verbatim:
-        - For InitProject: starting AFTER instructions to initialize codemcp (e.g., you should exclude "Initialize codemcp for PATH")
-        - For UserPrompt: the complete verbatim user message for the current round
+      user_prompt: The user's original prompt verbatim, starting AFTER instructions to initialize codemcp (e.g., you should exclude "Initialize codemcp for PATH")
       subject_line: A short subject line in Git conventional commit format (for InitProject)
       reuse_head_chat_id: If True, reuse the chat ID from the HEAD commit instead of generating a new one (for InitProject)
       ... (there are other arguments which are documented later)
