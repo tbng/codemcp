@@ -340,6 +340,13 @@ Remember: when making multiple file edits in a row to the same file, you should 
 
 Lists files and directories in a given path. The path parameter must be an absolute path, not a relative path. You should generally prefer the Glob and Grep tools, if you know which directories to search.
 
+## Glob chat_id pattern path
+
+Fast file pattern matching tool that works with any codebase size
+Supports glob patterns like "**/*.js" or "src/**/*.ts"
+Returns matching file paths sorted by modification time
+Use this tool when you need to find files by name patterns
+
 ## Grep chat_id pattern path include?
 
 Searches for files containing a specified pattern (regular expression) using git grep.
