@@ -343,6 +343,12 @@ If you want to create a new file, use:
 
 Remember: when making multiple file edits in a row to the same file, you should prefer to send all edits in a single message with multiple calls to this tool, rather than multiple messages with a single call each.
 
+## UserPrompt chat_id user_prompt
+
+Records the user's verbatim prompt text for each interaction after the initial one.
+You should call this tool with the user's exact message at the beginning of each response.
+This tool must be called in every response except for the first one where InitProject was used.
+
 ## LS chat_id path
 
 Lists files and directories in a given path. The path parameter must be an absolute path, not a relative path. You should generally prefer the Glob and Grep tools, if you know which directories to search.
@@ -373,7 +379,7 @@ with this set of valid commands: {command_help}
 ## Summary
 
 Args:
-    subtool: The subtool to execute (ReadFile, WriteFile, EditFile, LS, InitProject, RunCommand)
+    subtool: The subtool to execute (ReadFile, WriteFile, EditFile, LS, InitProject, UserPrompt, RunCommand)
     path: The path to the file or directory to operate on
     content: Content for WriteFile subtool
     old_string: String to replace for EditFile subtool
@@ -382,6 +388,7 @@ Args:
     limit: Line limit for ReadFile subtool
     description: Short description of the change (for WriteFile/EditFile)
     arguments: A list of string arguments for RunCommand subtool
+    user_prompt: The user's verbatim text (for UserPrompt subtool)
     chat_id: A unique ID to identify the chat session (required for all tools EXCEPT InitProject)
 
 # Chat ID
