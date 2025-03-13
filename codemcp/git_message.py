@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import logging
-import re
 
 __all__ = [
     "append_metadata_to_message",
@@ -88,10 +87,8 @@ def update_commit_message_with_description(
     START_MARKER = "```git-revs"
     END_MARKER = "```"
 
-    # Extract the commit message without any codemcp-id
-    main_message = re.sub(
-        r"\ncodemcp-id:.*$", "", current_commit_message, flags=re.MULTILINE
-    )
+    # Keep the original message and don't strip codemcp-id
+    main_message = current_commit_message
 
     # Extract the content parts (before, between, and after markers)
     start_marker_pos = main_message.find(START_MARKER)
@@ -287,7 +284,7 @@ def update_commit_message_with_description(
                     main_message = f"{START_MARKER}\n{formatted_rev_list}\n{END_MARKER}"
 
     # Ensure the chat ID metadata is included if provided
-    if chat_id:
+    if chat_id and "codemcp-id: " + chat_id not in main_message:
         return append_metadata_to_message(main_message, {"codemcp-id": chat_id})
     else:
         return main_message
