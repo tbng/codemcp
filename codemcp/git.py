@@ -19,6 +19,8 @@ __all__ = [
     "get_head_commit_hash",
     "parse_git_commit_message",
     "append_metadata_to_message",
+    "create_commit_reference",
+    "get_ref_commit_chat_id",
 ]
 
 log = logging.getLogger(__name__)
@@ -459,6 +461,206 @@ async def commit_pending_changes(file_path: str) -> tuple[bool, str]:
         return False, f"Error committing pending changes: {e!s}"
 
 
+async def create_commit_reference(
+    path: str,
+    description: str,
+    chat_id: str,
+    ref_name: str = None,
+    custom_message: str = None,
+) -> tuple[bool, str, str]:
+    """Create a Git commit without advancing HEAD and store it in a reference.
+
+    This function creates a commit using Git plumbing commands and stores it in
+    a reference (refs/codemcp/<chat_id>) without changing HEAD.
+
+    Args:
+        path: The path to the file or directory to commit
+        description: Commit message describing the change
+        chat_id: The unique ID of the current chat session
+        ref_name: Optional custom reference name (defaults to refs/codemcp/<chat_id>)
+        custom_message: Optional custom commit message (overrides description)
+
+    Returns:
+        A tuple of (success, message, commit_hash)
+    """
+    log.debug(
+        "create_commit_reference(%s, %s, %s, %s)", path, description, chat_id, ref_name
+    )
+    try:
+        # First, check if this is a git repository
+        if not await is_git_repository(path):
+            return False, f"Path '{path}' is not in a Git repository", ""
+
+        # Get absolute paths for consistency
+        abs_path = os.path.abspath(path)
+
+        # Get the directory - if path is a file, use its directory, otherwise use the path itself
+        directory = os.path.dirname(abs_path) if os.path.isfile(abs_path) else abs_path
+
+        # Try to get the git repository root for more reliable operations
+        try:
+            repo_root = (
+                await run_command(
+                    ["git", "rev-parse", "--show-toplevel"],
+                    cwd=directory,
+                    check=True,
+                    capture_output=True,
+                    text=True,
+                )
+            ).stdout.strip()
+
+            # Use the repo root as the working directory for git commands
+            git_cwd = repo_root
+        except (subprocess.SubprocessError, OSError):
+            # Fall back to the directory if we can't get the repo root
+            git_cwd = directory
+
+        # Use the default reference name if none provided
+        if ref_name is None:
+            ref_name = f"refs/codemcp/{chat_id}"
+
+        # Create the tree object for the empty commit
+        # Get the tree from HEAD or create a new empty tree if no HEAD exists
+        tree_hash = ""
+        has_commits = False
+        rev_parse_result = await run_command(
+            ["git", "rev-parse", "--verify", "HEAD"],
+            cwd=git_cwd,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
+        if rev_parse_result.returncode == 0:
+            has_commits = True
+            tree_result = await run_command(
+                ["git", "show", "-s", "--format=%T", "HEAD"],
+                cwd=git_cwd,
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+            tree_hash = tree_result.stdout.strip()
+        else:
+            # Create an empty tree if no HEAD exists
+            empty_tree_result = await run_command(
+                ["git", "mktree"],
+                cwd=git_cwd,
+                input="",
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+            tree_hash = empty_tree_result.stdout.strip()
+
+        # Prepare the commit message with metadata
+        if custom_message:
+            # Parse the custom message to extract main content and metadata
+            main_message, metadata_dict = parse_git_commit_message(custom_message)
+
+            # Make sure it has the chat_id metadata
+            if chat_id:
+                metadata_dict["codemcp-id"] = chat_id
+
+            # Reconstruct the message with metadata
+            commit_message = append_metadata_to_message(main_message, metadata_dict)
+        else:
+            commit_message = description
+            if chat_id:
+                commit_message = append_metadata_to_message(
+                    commit_message, {"codemcp-id": chat_id}
+                )
+
+        # Get parent commit if we have HEAD
+        parent_arg = []
+        if has_commits:
+            head_hash_result = await run_command(
+                ["git", "rev-parse", "HEAD"],
+                cwd=git_cwd,
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+            head_hash = head_hash_result.stdout.strip()
+            parent_arg = ["-p", head_hash]
+
+        # Create the commit object
+        commit_result = await run_command(
+            ["git", "commit-tree", tree_hash, *parent_arg, "-m", commit_message],
+            cwd=git_cwd,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        commit_hash = commit_result.stdout.strip()
+
+        # Update the reference to point to the new commit
+        await run_command(
+            ["git", "update-ref", ref_name, commit_hash],
+            cwd=git_cwd,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+
+        return (
+            True,
+            f"Created commit reference {ref_name} -> {commit_hash}",
+            commit_hash,
+        )
+    except Exception as e:
+        logging.warning(
+            f"Exception when creating commit reference: {e!s}", exc_info=True
+        )
+        return False, f"Error creating commit reference: {e!s}", ""
+
+
+async def get_ref_commit_chat_id(directory: str, ref_name: str) -> str | None:
+    """Get the chat ID from a specific reference's commit message.
+
+    Args:
+        directory: The directory to check
+        ref_name: The reference name to check
+
+    Returns:
+        The chat ID if found, None otherwise
+    """
+    try:
+        # Check if the reference exists
+        result = await run_command(
+            ["git", "show-ref", "--verify", ref_name],
+            cwd=directory,
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+
+        if result.returncode != 0:
+            # Reference doesn't exist
+            return None
+
+        # Get the commit message from the reference
+        message_result = await run_command(
+            ["git", "log", "-1", "--pretty=%B", ref_name],
+            cwd=directory,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        commit_message = message_result.stdout.strip()
+
+        # Parse the commit message and extract metadata
+        _, metadata = parse_git_commit_message(commit_message)
+
+        # Return the chat ID if present in metadata
+        return metadata.get("codemcp-id")
+    except Exception as e:
+        logging.warning(
+            f"Exception when getting reference commit chat ID: {e!s}", exc_info=True
+        )
+        return None
+
+
 async def commit_changes(
     path: str,
     description: str,
@@ -470,6 +672,10 @@ async def commit_changes(
 
     This function will either create a new commit with the chat_id metadata,
     or amend the HEAD commit if it belongs to the same chat session.
+
+    If HEAD doesn't have the right chat_id but there's a commit reference for this
+    chat_id, it will cherry-pick that reference first to create the initial commit
+    and then proceed with the changes.
 
     Args:
         path: The path to the file or directory to commit
@@ -575,6 +781,52 @@ async def commit_changes(
             has_commits,
             head_chat_id,
         )
+
+        # If HEAD exists but doesn't have the right chat_id, check if we have a
+        # commit reference for this chat_id that we need to cherry-pick first
+        if has_commits and chat_id and head_chat_id != chat_id:
+            ref_name = f"refs/codemcp/{chat_id}"
+            ref_exists = False
+
+            # Check if the reference exists
+            ref_result = await run_command(
+                ["git", "show-ref", "--verify", ref_name],
+                cwd=git_cwd,
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+            ref_exists = ref_result.returncode == 0
+
+            if ref_exists:
+                # Cherry-pick the reference commit to create the initial commit in the branch
+                cherry_pick_result = await run_command(
+                    ["git", "cherry-pick", "--allow-empty", ref_name],
+                    cwd=git_cwd,
+                    check=False,
+                    capture_output=True,
+                    text=True,
+                )
+
+                if cherry_pick_result.returncode != 0:
+                    logging.warning(
+                        f"Failed to cherry-pick reference commit: {cherry_pick_result.stderr}"
+                    )
+                    # Try to abort failed cherry-pick to leave repo in clean state
+                    await run_command(
+                        ["git", "cherry-pick", "--abort"],
+                        cwd=git_cwd,
+                        check=False,
+                        capture_output=True,
+                        text=True,
+                    )
+                else:
+                    logging.info(
+                        f"Successfully cherry-picked reference commit for chat ID {chat_id}"
+                    )
+                    # After cherry-picking, the HEAD commit should have the right chat_id
+                    head_chat_id = await get_head_commit_chat_id(git_cwd)
+
         should_amend = has_commits and head_chat_id == chat_id
 
         # Prepare the commit message with metadata
