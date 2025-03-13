@@ -1,24 +1,30 @@
 #!/usr/bin/env python3
 
 import unittest
+from expecttest import TestCase
 from codemcp.git import append_metadata_to_message
 
 
-class TestGitMessageHandling(unittest.TestCase):
+class TestGitMessageHandling(TestCase):
     """Test cases for Git commit message metadata handling."""
 
     def test_append_empty_message(self):
         """Test appending metadata to an empty message."""
         message = ""
         new_message = append_metadata_to_message(message, {"codemcp-id": "abc-123"})
-        self.assertEqual(new_message, "codemcp-id: abc-123")
+        self.assertExpectedInline(new_message, """codemcp-id: abc-123""")
 
     def test_append_new_metadata(self):
         """Test appending new metadata to a message without existing metadata."""
         message = "feat: Add feature\n\nDescription"
         new_message = append_metadata_to_message(message, {"codemcp-id": "abc-123"})
-        self.assertEqual(
-            new_message, "feat: Add feature\n\nDescription\n\ncodemcp-id: abc-123"
+        self.assertExpectedInline(
+            new_message,
+            """feat: Add feature
+
+Description
+
+codemcp-id: abc-123""",
         )
 
     def test_append_to_existing_metadata(self):
@@ -29,7 +35,7 @@ Description
 
 Signed-off-by: User <user@example.com>"""
         new_message = append_metadata_to_message(message, {"codemcp-id": "abc-123"})
-        self.assertEqual(
+        self.assertExpectedInline(
             new_message,
             """feat: Add feature
 
@@ -48,7 +54,7 @@ Description
 Signed-off-by: User <user@example.com>
 """
         new_message = append_metadata_to_message(message, {"codemcp-id": "abc-123"})
-        self.assertEqual(
+        self.assertExpectedInline(
             new_message,
             """feat: Add feature
 
@@ -66,7 +72,7 @@ Description
 
 """
         new_message = append_metadata_to_message(message, {"codemcp-id": "abc-123"})
-        self.assertEqual(
+        self.assertExpectedInline(
             new_message,
             """feat: Add feature
 
@@ -84,7 +90,7 @@ Description
 
 """
         new_message = append_metadata_to_message(message, {"codemcp-id": "abc-123"})
-        self.assertEqual(
+        self.assertExpectedInline(
             new_message,
             """feat: Add feature
 
@@ -103,7 +109,7 @@ Description
 codemcp-id: old-id"""
         new_message = append_metadata_to_message(message, {"codemcp-id": "new-id"})
         # With our new implementation, we just append the new ID at the end
-        self.assertEqual(
+        self.assertExpectedInline(
             new_message,
             """feat: Add feature
 
@@ -118,7 +124,7 @@ codemcp-id: new-id""",
         message = "feat: Add feature"
         new_message = append_metadata_to_message(message, {"other-key": "value"})
         # Without codemcp-id, the message should be unchanged
-        self.assertEqual(new_message, "feat: Add feature")
+        self.assertExpectedInline(new_message, """feat: Add feature""")
 
     def test_single_line_subject_with_colon(self):
         """Test handling a single-line message with a colon in the subject."""
@@ -126,7 +132,12 @@ codemcp-id: new-id""",
         new_message = append_metadata_to_message(message, {"codemcp-id": "abc-123"})
         # A single line with a colon should be treated as subject, not metadata
         # The codemcp-id should be appended with a double newline
-        self.assertEqual(new_message, "feat: Add new feature\n\ncodemcp-id: abc-123")
+        self.assertExpectedInline(
+            new_message,
+            """feat: Add new feature
+
+codemcp-id: abc-123""",
+        )
 
 
 if __name__ == "__main__":
