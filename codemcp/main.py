@@ -51,11 +51,14 @@ async def codemcp(
     If the user indicates they want to "amend" or "continue working" on a PR,
     you should set reuse_head_chat_id=True to continue using the same chat ID.
 
+    In each response after the first one, you must call the UserPrompt tool
+    with the user's verbatim message text.
+
     Arguments:
-      subtool: The subtool to run (InitProject, ...)
+      subtool: The subtool to run (InitProject, UserPrompt, ...)
       path: The path to the file or directory to operate on
       chat_id: A unique ID to identify the chat session (provided by InitProject and required for all tools EXCEPT InitProject)
-      user_prompt: The user's original prompt verbatim (for InitProject), starting AFTER instructions to initialize codemcp (e.g., you should exclude "Initialize codemcp for PATH")
+      user_prompt: The user's original prompt verbatim, starting AFTER instructions to initialize codemcp (e.g., you should exclude "Initialize codemcp for PATH")
       subject_line: A short subject line in Git conventional commit format (for InitProject)
       reuse_head_chat_id: If True, reuse the chat ID from the HEAD commit instead of generating a new one (for InitProject)
       ... (there are other arguments which are documented later)
@@ -80,6 +83,7 @@ async def codemcp(
             "subject_line",
             "reuse_head_chat_id",
         },  # chat_id is not expected for InitProject as it's generated there
+        "UserPrompt": {"user_prompt", "chat_id"},
         "RunCommand": {"path", "command", "arguments", "chat_id"},
         "Grep": {"pattern", "path", "include", "chat_id"},
         "Glob": {"pattern", "path", "limit", "offset", "chat_id"},
@@ -232,6 +236,12 @@ async def codemcp(
                 f"Exception suppressed in glob subtool: {e!s}", exc_info=True
             )
             return f"Error executing glob: {e!s}"
+
+    if subtool == "UserPrompt":
+        if user_prompt is None:
+            return "Error: user_prompt is required for UserPrompt subtool"
+
+        return await user_prompt(user_prompt, chat_id)
 
 
 def configure_logging(log_file="codemcp.log"):
