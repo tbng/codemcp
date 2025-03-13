@@ -115,19 +115,24 @@ async def create_commit_reference(
 
         # Prepare the commit message with metadata
         if custom_message:
-            # Use our updated function to prepare the message
+            # Use update_commit_message_with_description to ensure proper markers
             commit_message = update_commit_message_with_description(
                 current_commit_message=custom_message,
                 description="",  # Empty because we're not adding a description
+                commit_hash=None,
                 chat_id=chat_id,
             )
         else:
             # Start with the description and add chat_id
             commit_message = description
-            if chat_id:
-                commit_message = append_metadata_to_message(
-                    commit_message, {"codemcp-id": chat_id}
-                )
+
+            # Use update_commit_message_with_description to ensure proper markers
+            commit_message = update_commit_message_with_description(
+                current_commit_message=commit_message,
+                description=description,
+                commit_hash=None,
+                chat_id=chat_id,
+            )
 
         # Get parent commit if we have HEAD
         parent_arg = []
@@ -438,7 +443,7 @@ async def commit_changes(
                     commit_message, {"codemcp-id": chat_id}
                 )
         else:
-            commit_message = f"wip: {description}"
+            base_commit_message = f"wip: {description}"
 
         if should_amend:
             # Get the current commit hash before amending
@@ -484,12 +489,13 @@ async def commit_changes(
                 check=False,
             )
         else:
-            # For new commits, ensure chat ID is added to the message
-            if chat_id:
-                # Add the codemcp-id to the message
-                commit_message = append_metadata_to_message(
-                    commit_message, {"codemcp-id": chat_id}
-                )
+            # For new commits, use update_commit_message_with_description to ensure proper markers
+            commit_message = update_commit_message_with_description(
+                current_commit_message=base_commit_message,
+                description=description,
+                commit_hash=None,
+                chat_id=chat_id,
+            )
 
             # Create a new commit
             commit_cmd = ["git", "commit", "-m", commit_message]
