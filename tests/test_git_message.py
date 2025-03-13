@@ -120,6 +120,14 @@ codemcp-id: new-id""",
         # Without codemcp-id, the message should be unchanged
         self.assertEqual(new_message, "feat: Add feature")
 
+    def test_single_line_subject_with_colon(self):
+        """Test handling a single-line message with a colon in the subject."""
+        message = "feat: Add new feature"
+        new_message = append_metadata_to_message(message, {"codemcp-id": "abc-123"})
+        # A single line with a colon should be treated as subject, not metadata
+        # The codemcp-id should be appended with a double newline
+        self.assertEqual(new_message, "feat: Add new feature\n\ncodemcp-id: abc-123")
+
 
 if __name__ == "__main__":
     unittest.main()
