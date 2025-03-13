@@ -113,7 +113,8 @@ The `project_prompt` will be loaded when you initialize the project in chats.
 The `commands` section allows you to configure commands for specific tools.  The
 names are told to the LLM, who will decide when it wants to run them.  You can add
 instructions how to use tools in the `project_prompt`; we also support a more verbose
-syntax where you can give specific instructions on a tool-by-tool basis:
+syntax where you can give specific instructions on a tool-by-tool basis. This gives
+you fine-grained control over how tools are used:
 
 ```
 [commands.test]
