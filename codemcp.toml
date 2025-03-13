@@ -10,7 +10,7 @@ project_prompt = """
 [commands]
 format = ["./run_format.sh"]
 lint = ["./run_lint.sh"]
-ghstack = ["uv", "tool", "run", "ghstack"]
+ghstack = ["./.venv/bin/uv", "tool", "run", "ghstack"]
 [commands.test]
 command = ["./run_test.sh"]
 doc = "Accepts a pytest-style test selector as an argument to run a specific test."
