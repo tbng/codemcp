@@ -15,7 +15,11 @@ class InitProjectTest(MCPEndToEndTestCase):
         """Test that reuse_head_chat_id=True reuses the chat ID from the HEAD commit."""
         # Set up a git repository in the temp dir
         import subprocess
-        from codemcp.git import get_head_commit_chat_id
+        from codemcp.git import (
+            get_head_commit_chat_id,
+            get_ref_commit_chat_id,
+            commit_changes,
+        )
 
         # Create a simple codemcp.toml file
         toml_path = os.path.join(self.temp_dir.name, "codemcp.toml")
@@ -39,7 +43,19 @@ test = ["./run_test.sh"]
             check=True,
         )
 
-        # First InitProject call to create a commit with a chat ID
+        # Create an initial commit to have a HEAD reference
+        test_file = os.path.join(self.temp_dir.name, "test_file.txt")
+        with open(test_file, "w") as f:
+            f.write("Initial content")
+
+        subprocess.run(["git", "add", "."], cwd=self.temp_dir.name, check=True)
+        subprocess.run(
+            ["git", "commit", "-m", "Initial commit"],
+            cwd=self.temp_dir.name,
+            check=True,
+        )
+
+        # First InitProject call to create a reference with a chat ID
         async with self.create_client_session() as session:
             result1 = await session.call_tool(
                 "codemcp",
@@ -60,10 +76,35 @@ test = ["./run_test.sh"]
             self.assertIsNotNone(chat_id_match, "Chat ID not found in result")
             original_chat_id = chat_id_match.group(1)
 
-            # Verify the chat ID is also in the commit
+            # Verify the reference contains the chat ID
+            ref_name = f"refs/codemcp/{original_chat_id}"
+            ref_chat_id = await get_ref_commit_chat_id(self.temp_dir.name, ref_name)
+            self.assertEqual(
+                original_chat_id, ref_chat_id, "Chat ID not found in reference"
+            )
+
+            # The HEAD commit doesn't have the chat ID yet since it's only in the reference
+            head_chat_id = await get_head_commit_chat_id(self.temp_dir.name)
+            self.assertNotEqual(
+                original_chat_id, head_chat_id, "HEAD shouldn't have the chat ID yet"
+            )
+
+            # Make a change and commit it to add the chat ID to HEAD
+            with open(test_file, "a") as f:
+                f.write("\nAdded some content")
+
+            await commit_changes(
+                self.temp_dir.name,
+                description="Adding content",
+                chat_id=original_chat_id,
+            )
+
+            # Now verify the HEAD has the chat ID
             head_chat_id = await get_head_commit_chat_id(self.temp_dir.name)
             self.assertEqual(
-                original_chat_id, head_chat_id, "Chat ID not found in HEAD commit"
+                original_chat_id,
+                head_chat_id,
+                "Chat ID should be in HEAD commit after changes",
             )
 
         # Second InitProject call with reuse_head_chat_id=True
@@ -270,6 +311,7 @@ test = ["./run_test.sh"]
 
         # Set up a git repository
         import subprocess
+        from codemcp.git import get_head_commit_hash, get_ref_commit_chat_id
 
         subprocess.run(["git", "init"], cwd=self.temp_dir.name, check=True)
         subprocess.run(
@@ -282,6 +324,21 @@ test = ["./run_test.sh"]
             cwd=self.temp_dir.name,
             check=True,
         )
+
+        # Create an initial commit to have a HEAD reference
+        test_file = os.path.join(self.temp_dir.name, "test_file.txt")
+        with open(test_file, "w") as f:
+            f.write("Initial content")
+
+        subprocess.run(["git", "add", "."], cwd=self.temp_dir.name, check=True)
+        subprocess.run(
+            ["git", "commit", "-m", "Initial commit"],
+            cwd=self.temp_dir.name,
+            check=True,
+        )
+
+        # Get the hash of the initial commit
+        initial_hash = await get_head_commit_hash(self.temp_dir.name, short=False)
 
         async with self.create_client_session() as session:
             # Call InitProject with a conventional commit style subject line
@@ -304,6 +361,163 @@ test = ["./run_test.sh"]
             self.assertNotIn("untitled", result_text)
             # Check that a slugified version of the subject line is in the chat ID
             self.assertIn("feat-add-new-feature-with-spaces", result_text)
+
+            # Extract the chat ID from the result
+            import re
+
+            chat_id_match = re.search(r"chat ID: ([\w-]+)", result_text)
+            self.assertIsNotNone(chat_id_match, "Chat ID not found in result")
+            chat_id = chat_id_match.group(1)
+
+            # Verify that HEAD hasn't changed - it should still point to the initial commit
+            head_hash_after = await get_head_commit_hash(
+                self.temp_dir.name, short=False
+            )
+            self.assertEqual(
+                initial_hash,
+                head_hash_after,
+                "HEAD should not change after InitProject",
+            )
+
+            # Verify the reference was created with the chat ID
+            ref_name = f"refs/codemcp/{chat_id}"
+            ref_chat_id = await get_ref_commit_chat_id(self.temp_dir.name, ref_name)
+            self.assertEqual(
+                chat_id,
+                ref_chat_id,
+                f"Chat ID {chat_id} should be in reference {ref_name}",
+            )
+
+    async def test_cherry_pick_reference_commit(self):
+        """Test that commit_changes cherry-picks the reference commit when needed."""
+        import subprocess
+        from codemcp.git import (
+            commit_changes,
+            get_head_commit_chat_id,
+            get_head_commit_hash,
+            get_head_commit_message,
+        )
+
+        # Set up a git repository
+        subprocess.run(["git", "init"], cwd=self.temp_dir.name, check=True)
+        subprocess.run(
+            ["git", "config", "user.email", "test@example.com"],
+            cwd=self.temp_dir.name,
+            check=True,
+        )
+        subprocess.run(
+            ["git", "config", "user.name", "Test User"],
+            cwd=self.temp_dir.name,
+            check=True,
+        )
+
+        # Create an initial commit
+        initial_file = os.path.join(self.temp_dir.name, "initial.txt")
+        with open(initial_file, "w") as f:
+            f.write("Initial content")
+
+        subprocess.run(["git", "add", "."], cwd=self.temp_dir.name, check=True)
+        subprocess.run(
+            ["git", "commit", "-m", "Initial commit"],
+            cwd=self.temp_dir.name,
+            check=True,
+        )
+
+        # Get the hash of the initial commit
+        initial_hash = await get_head_commit_hash(self.temp_dir.name, short=False)
+
+        # Define the test subject and body for InitProject
+        test_subject = "feat: test reference cherry-pick"
+        test_body = "Test initialize for cherry-pick test"
+
+        # Call InitProject which should create a reference without changing HEAD
+        async with self.create_client_session() as session:
+            result = await session.call_tool(
+                "codemcp",
+                {
+                    "subtool": "InitProject",
+                    "path": self.temp_dir.name,
+                    "user_prompt": test_body,
+                    "subject_line": test_subject,
+                },
+            )
+
+            # Extract the chat ID from the result
+            normalized_result = self.normalize_path(result)
+            result_text = self.extract_text_from_result(normalized_result)
+            import re
+
+            chat_id_match = re.search(r"chat ID: ([\w-]+)", result_text)
+            self.assertIsNotNone(chat_id_match, "Chat ID not found in result")
+            chat_id = chat_id_match.group(1)
+
+            # Verify HEAD is unchanged
+            head_hash_after_init = await get_head_commit_hash(
+                self.temp_dir.name, short=False
+            )
+            self.assertEqual(
+                initial_hash,
+                head_hash_after_init,
+                "HEAD should not change after InitProject",
+            )
+
+            # Now make a change and commit it
+            test_file = os.path.join(self.temp_dir.name, "test_file.txt")
+            with open(test_file, "w") as f:
+                f.write("Test content for cherry-pick test")
+
+            # Commit the changes - this should cherry-pick the reference commit first
+            success, message = await commit_changes(
+                path=self.temp_dir.name,
+                description="Testing cherry-pick",
+                chat_id=chat_id,
+            )
+
+            self.assertTrue(success, f"Commit failed: {message}")
+
+            # Verify HEAD has a new commit with the right chat ID
+            head_chat_id = await get_head_commit_chat_id(self.temp_dir.name)
+            self.assertEqual(
+                chat_id,
+                head_chat_id,
+                "HEAD commit should have the correct chat ID after cherry-pick",
+            )
+
+            # Verify the commit message contains the original subject and body from InitProject
+            head_commit_msg = await get_head_commit_message(self.temp_dir.name)
+            self.assertIsNotNone(head_commit_msg, "Commit message should not be None")
+
+            # Check that both the subject and body are in the commit message
+            self.assertIn(
+                test_subject,
+                head_commit_msg,
+                "Commit message should contain the original subject line",
+            )
+            self.assertIn(
+                test_body,
+                head_commit_msg,
+                "Commit message should contain the original body",
+            )
+
+            # Check that the new description is also included since this is an amended commit
+            self.assertIn(
+                "Testing cherry-pick",
+                head_commit_msg,
+                "Commit message should contain the new change description",
+            )
+
+            # Get commit count to verify we have more than just the initial commit
+            result = subprocess.run(
+                ["git", "rev-list", "--count", "HEAD"],
+                cwd=self.temp_dir.name,
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+            commit_count = int(result.stdout.strip())
+            self.assertGreater(
+                commit_count, 1, "Should have more than one commit after changes"
+            )
 
 
 if __name__ == "__main__":
