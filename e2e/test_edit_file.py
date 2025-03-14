@@ -53,12 +53,7 @@ class EditFileTest(MCPEndToEndTestCase):
             )
 
             # Extract chat_id from the init result
-            import re
-
-            chat_id_match = re.search(
-                r"chat has been assigned a unique ID: ([^\n]+)", init_result_text
-            )
-            chat_id = chat_id_match.group(1) if chat_id_match else "test-chat-id"
+            chat_id = self.extract_chat_id_from_text(init_result_text)
 
             # Call the EditFile tool with chat_id using our new helper method
             result_text = await self.call_tool_assert_success(
@@ -149,12 +144,7 @@ nothing to commit, working tree clean
             )
 
             # Extract chat_id from the init result
-            import re
-
-            chat_id_match = re.search(
-                r"chat has been assigned a unique ID: ([^\n]+)", init_result_text
-            )
-            chat_id = chat_id_match.group(1) if chat_id_match else "test-chat-id"
+            chat_id = self.extract_chat_id_from_text(init_result_text)
 
             # Try to edit the untracked file
             new_content = "Modified untracked content"
@@ -217,12 +207,7 @@ nothing to commit, working tree clean
             )
 
             # Extract chat_id from the init result
-            import re
-
-            chat_id_match = re.search(
-                r"chat has been assigned a unique ID: ([^\n]+)", init_result_text
-            )
-            chat_id = chat_id_match.group(1) if chat_id_match else "test-chat-id"
+            chat_id = self.extract_chat_id_from_text(init_result_text)
 
             # Try to create a new file using EditFile with empty old_string
             # Using call_tool_assert_success since we expect this to succeed
@@ -345,12 +330,7 @@ nothing to commit, working tree clean
             )
 
             # Extract chat_id from the init result
-            import re
-
-            chat_id_match = re.search(
-                r"chat has been assigned a unique ID: ([^\n]+)", init_result_text
-            )
-            chat_id = chat_id_match.group(1) if chat_id_match else "test-chat-id"
+            chat_id = self.extract_chat_id_from_text(init_result_text)
 
             # Try to write to the removed file
             # Not using call_tool_assert_success because behavior is conditional

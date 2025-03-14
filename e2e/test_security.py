@@ -69,12 +69,7 @@ class SecurityTest(MCPEndToEndTestCase):
             )
 
             # Extract chat_id from the init result
-            import re
-
-            chat_id_match = re.search(
-                r"chat has been assigned a unique ID: ([^\n]+)", init_result_text
-            )
-            chat_id = chat_id_match.group(1) if chat_id_match else "test-chat-id"
+            chat_id = self.extract_chat_id_from_text(init_result_text)
 
             for path in traversal_paths:
                 path_desc = path.replace(
@@ -167,12 +162,7 @@ class SecurityTest(MCPEndToEndTestCase):
             )
 
             # Extract chat_id from the init result
-            import re
-
-            chat_id_match = re.search(
-                r"chat has been assigned a unique ID: ([^\n]+)", init_result_text
-            )
-            chat_id = chat_id_match.group(1) if chat_id_match else "test-chat-id"
+            chat_id = self.extract_chat_id_from_text(init_result_text)
 
             # Try to edit the ignored file
             # Using regular session.call_tool because behavior is conditional

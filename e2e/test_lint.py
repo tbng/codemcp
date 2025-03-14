@@ -112,12 +112,7 @@ lint = ["./run_lint.sh"]
             )
 
             # Extract chat_id from the init result
-            import re
-
-            chat_id_match = re.search(
-                r"chat has been assigned a unique ID: ([^\n]+)", init_result_text
-            )
-            chat_id = chat_id_match.group(1) if chat_id_match else "test-chat-id"
+            chat_id = self.extract_chat_id_from_text(init_result_text)
 
             # Call the RunCommand tool with lint command and chat_id
             result_text = await self.call_tool_assert_success(

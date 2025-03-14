@@ -8,7 +8,15 @@ project_prompt = '''
 
 ## expecttest
 
-We use expecttest for testing.  Below is its README.
+We use expecttest for testing.  If you need to match against a multiline
+string or some output that is likely to change in the future (e.g., the kind
+of thing you would have ordinarily done an assertIn with), use an expect test.
+If a test is assertExpectedInline and it fails, use 'accept' command to update
+the output, do NOT relax the test.  If the output of the test seems
+nondeterministic (e.g., you run accept but the test is still failing on the
+assertExpectedInline) you should halt and ask for help from the user.
+
+Below is its README.
 
 ----
 
