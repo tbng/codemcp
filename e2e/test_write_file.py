@@ -39,11 +39,17 @@ class WriteFileTest(MCPEndToEndTestCase):
 
         async with self.create_client_session() as session:
             # First initialize project to get chat_id
-            init_result = await session.call_tool(
+            init_result_text = await self.call_tool_assert_success(
+                session,
                 "codemcp",
-                {"subtool": "InitProject", "path": self.temp_dir.name},
+                {
+                    "subtool": "InitProject",
+                    "path": self.temp_dir.name,
+                    "user_prompt": "Test initialization for write_file test",
+                    "subject_line": "test: initialize for write file test",
+                    "reuse_head_chat_id": False,
+                },
             )
-            init_result_text = self.extract_text_from_result(init_result)
 
             # Extract chat_id from the init result
             import re
@@ -53,8 +59,9 @@ class WriteFileTest(MCPEndToEndTestCase):
             )
             chat_id = chat_id_match.group(1) if chat_id_match else "test-chat-id"
 
-            # Call the WriteFile tool with chat_id
-            result = await session.call_tool(
+            # Call the WriteFile tool with chat_id using our new helper method
+            result_text = await self.call_tool_assert_success(
+                session,
                 "codemcp",
                 {
                     "subtool": "WriteFile",
@@ -64,10 +71,6 @@ class WriteFileTest(MCPEndToEndTestCase):
                     "chat_id": chat_id,
                 },
             )
-
-            # Normalize the result
-            normalized_result = self.normalize_path(result)
-            result_text = self.extract_text_from_result(normalized_result)
 
             # Verify the success message
             self.assertIn("Successfully wrote to", result_text)
@@ -92,6 +95,26 @@ nothing to commit, working tree clean
 """,
             )
 
+            # Get the commit message of the HEAD commit
+            commit_message = (
+                subprocess.check_output(
+                    ["git", "log", "-1", "--pretty=%B"],
+                    cwd=self.temp_dir.name,
+                    env=self.env,
+                )
+                .decode()
+                .strip()
+            )
+
+            # Use expect test to verify the commit message
+            self.assertExpectedInline(
+                commit_message,
+                """\
+wip: Create new file
+
+codemcp-id: test-chat-id""",
+            )
+
     async def test_create_new_file_with_write_file(self):
         """Test creating a new file that doesn't exist yet with WriteFile."""
         # Path to a new file that doesn't exist yet, within the git repository
@@ -104,11 +127,17 @@ nothing to commit, working tree clean
 
         async with self.create_client_session() as session:
             # First initialize project to get chat_id
-            init_result = await session.call_tool(
+            init_result_text = await self.call_tool_assert_success(
+                session,
                 "codemcp",
-                {"subtool": "InitProject", "path": self.temp_dir.name},
+                {
+                    "subtool": "InitProject",
+                    "path": self.temp_dir.name,
+                    "user_prompt": "Test initialization for creating new file",
+                    "subject_line": "test: initialize for new file test",
+                    "reuse_head_chat_id": False,
+                },
             )
-            init_result_text = self.extract_text_from_result(init_result)
 
             # Extract chat_id from the init result
             import re
@@ -118,8 +147,9 @@ nothing to commit, working tree clean
             )
             chat_id = chat_id_match.group(1) if chat_id_match else "test-chat-id"
 
-            # Create a new file
-            result = await session.call_tool(
+            # Create a new file using our helper method
+            result_text = await self.call_tool_assert_success(
+                session,
                 "codemcp",
                 {
                     "subtool": "WriteFile",
@@ -129,10 +159,6 @@ nothing to commit, working tree clean
                     "chat_id": chat_id,
                 },
             )
-
-            # Normalize the result
-            normalized_result = self.normalize_path(result)
-            result_text = self.extract_text_from_result(normalized_result)
 
             # Check that the operation succeeded
             self.assertIn("Successfully wrote to", result_text)
@@ -205,11 +231,17 @@ nothing to commit, working tree clean
 
         async with self.create_client_session() as session:
             # First initialize project to get chat_id
-            init_result = await session.call_tool(
+            init_result_text = await self.call_tool_assert_success(
+                session,
                 "codemcp",
-                {"subtool": "InitProject", "path": self.temp_dir.name},
+                {
+                    "subtool": "InitProject",
+                    "path": self.temp_dir.name,
+                    "user_prompt": "Test initialization for untracked file test",
+                    "subject_line": "test: initialize for untracked file test",
+                    "reuse_head_chat_id": False,
+                },
             )
-            init_result_text = self.extract_text_from_result(init_result)
 
             # Extract chat_id from the init result
             import re
@@ -232,10 +264,9 @@ nothing to commit, working tree clean
                 },
             )
 
-            # Normalize the result
+            # Normalize the result and extract text (not using call_tool_assert_success
+            # because we expect this to fail)
             normalized_result = self.normalize_path(result)
-
-            # Extract the text content for assertions
             result_text = self.extract_text_from_result(normalized_result)
 
             # Verify that the operation was rejected
@@ -277,11 +308,17 @@ nothing to commit, working tree clean
 
         async with self.create_client_session() as session:
             # First initialize project to get chat_id
-            init_result = await session.call_tool(
+            init_result_text = await self.call_tool_assert_success(
+                session,
                 "codemcp",
-                {"subtool": "InitProject", "path": self.temp_dir.name},
+                {
+                    "subtool": "InitProject",
+                    "path": self.temp_dir.name,
+                    "user_prompt": "Test initialization for untracked directory test",
+                    "subject_line": "test: initialize for untracked directory test",
+                    "reuse_head_chat_id": False,
+                },
             )
-            init_result_text = self.extract_text_from_result(init_result)
 
             # Extract chat_id from the init result
             import re
@@ -292,6 +329,7 @@ nothing to commit, working tree clean
             chat_id = chat_id_match.group(1) if chat_id_match else "test-chat-id"
 
             # Try to write a new file in the untracked directory
+            # Not using call_tool_assert_success because the behavior is conditional
             result = await session.call_tool(
                 "codemcp",
                 {
