@@ -55,6 +55,27 @@ class SecurityTest(MCPEndToEndTestCase):
         ]
 
         async with self.create_client_session() as session:
+            # First initialize project to get chat_id
+            init_result_text = await self.call_tool_assert_success(
+                session,
+                "codemcp",
+                {
+                    "subtool": "InitProject",
+                    "path": self.temp_dir.name,
+                    "user_prompt": "Test initialization for path traversal test",
+                    "subject_line": "test: initialize for path traversal test",
+                    "reuse_head_chat_id": False,
+                },
+            )
+
+            # Extract chat_id from the init result
+            import re
+
+            chat_id_match = re.search(
+                r"chat has been assigned a unique ID: ([^\n]+)", init_result_text
+            )
+            chat_id = chat_id_match.group(1) if chat_id_match else "test-chat-id"
+
             for path in traversal_paths:
                 path_desc = path.replace(
                     parent_dir,
@@ -62,13 +83,15 @@ class SecurityTest(MCPEndToEndTestCase):
                 )  # For better error messages
 
                 # Try to write to a file outside the repository
+                # Using regular session.call_tool because we expect errors
                 result = await session.call_tool(
                     "codemcp",
                     {
                         "subtool": "WriteFile",
-                        "file_path": path,
+                        "path": path,
                         "content": "This should not be allowed to write outside the repo",
                         "description": f"Attempt path traversal attack ({path_desc})",
+                        "chat_id": chat_id,
                     },
                 )
 
@@ -130,15 +153,38 @@ class SecurityTest(MCPEndToEndTestCase):
         self.assertNotIn("ignored.txt", status, "File should be ignored by git")
 
         async with self.create_client_session() as session:
+            # First initialize project to get chat_id
+            init_result_text = await self.call_tool_assert_success(
+                session,
+                "codemcp",
+                {
+                    "subtool": "InitProject",
+                    "path": self.temp_dir.name,
+                    "user_prompt": "Test initialization for gitignored file test",
+                    "subject_line": "test: initialize for gitignored file test",
+                    "reuse_head_chat_id": False,
+                },
+            )
+
+            # Extract chat_id from the init result
+            import re
+
+            chat_id_match = re.search(
+                r"chat has been assigned a unique ID: ([^\n]+)", init_result_text
+            )
+            chat_id = chat_id_match.group(1) if chat_id_match else "test-chat-id"
+
             # Try to edit the ignored file
+            # Using regular session.call_tool because behavior is conditional
             result = await session.call_tool(
                 "codemcp",
                 {
                     "subtool": "EditFile",
-                    "file_path": ignored_file_path,
+                    "path": ignored_file_path,
                     "old_string": "This file is ignored by git",
                     "new_string": "Modified ignored content",
                     "description": "Attempt to modify gitignored file",
+                    "chat_id": chat_id,
                 },
             )
 
