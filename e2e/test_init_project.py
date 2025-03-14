@@ -31,29 +31,17 @@ test = ["./run_test.sh"]
 """)
 
         # Set up a git repository
-        subprocess.run(["git", "init"], cwd=self.temp_dir.name, check=True)
-        subprocess.run(
-            ["git", "config", "user.email", "test@example.com"],
-            cwd=self.temp_dir.name,
-            check=True,
-        )
-        subprocess.run(
-            ["git", "config", "user.name", "Test User"],
-            cwd=self.temp_dir.name,
-            check=True,
-        )
+        await self.git_run(["init"])
+        await self.git_run(["config", "user.email", "test@example.com"])
+        await self.git_run(["config", "user.name", "Test User"])
 
         # Create an initial commit to have a HEAD reference
         test_file = os.path.join(self.temp_dir.name, "test_file.txt")
         with open(test_file, "w") as f:
             f.write("Initial content")
 
-        subprocess.run(["git", "add", "."], cwd=self.temp_dir.name, check=True)
-        subprocess.run(
-            ["git", "commit", "-m", "Initial commit"],
-            cwd=self.temp_dir.name,
-            check=True,
-        )
+        await self.git_run(["add", "."])
+        await self.git_run(["commit", "-m", "Initial commit"])
 
         # First InitProject call to create a reference with a chat ID
         async with self.create_client_session() as session:
