@@ -454,7 +454,6 @@ async def commit_changes(
                 logging.warning("Expected codemcp-id in current commit but not found")
 
             # Check if message already has base revision
-            has_base_revision = "(Base revision)" in current_commit_message
 
             # Always use the update function for consistent formatting
             commit_message = update_commit_message_with_description(
