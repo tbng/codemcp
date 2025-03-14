@@ -146,10 +146,10 @@ async def init_project(
 
         # Validate the directory path
         if not os.path.exists(full_dir_path):
-            return f"Error: Directory does not exist: {directory}"
+            raise FileNotFoundError(f"Directory does not exist: {directory}")
 
         if not os.path.isdir(full_dir_path):
-            return f"Error: Path is not a directory: {directory}"
+            raise NotADirectoryError(f"Path is not a directory: {directory}")
 
         # Check if the directory is a Git repository
         is_git_repo = await is_git_repository(full_dir_path)
@@ -160,11 +160,17 @@ async def init_project(
 
         # If validation fails, return appropriate error messages
         if not is_git_repo and not has_codemcp_toml:
-            return f"Error: The directory is not a valid codemcp project. Please initialize a Git repository with 'git init' and create a codemcp.toml file with 'touch codemcp.toml'."
+            raise ValueError(
+                f"The directory is not a valid codemcp project. Please initialize a Git repository with 'git init' and create a codemcp.toml file with 'touch codemcp.toml'."
+            )
         elif not is_git_repo:
-            return f"Error: The directory is not a Git repository. Please initialize it with 'git init'."
+            raise ValueError(
+                f"The directory is not a Git repository. Please initialize it with 'git init'."
+            )
         elif not has_codemcp_toml:
-            return f"Error: The directory does not contain a codemcp.toml file. Please create one with 'touch codemcp.toml'."
+            raise ValueError(
+                f"The directory does not contain a codemcp.toml file. Please create one with 'touch codemcp.toml'."
+            )
 
         # If reuse_head_chat_id is True, try to get the chat ID from the HEAD commit
         chat_id = None
@@ -235,7 +241,7 @@ async def init_project(
                 f"Exception suppressed when reading codemcp.toml: {e!s}",
                 exc_info=True,
             )
-            return f"Error reading codemcp.toml file: {e!s}"
+            raise ValueError(f"Error reading codemcp.toml file: {e!s}")
 
         # Default system prompt, cribbed from claude code
         # TODO: Figure out if we want Sonnet to make determinations about what
