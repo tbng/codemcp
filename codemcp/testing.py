@@ -117,6 +117,37 @@ class MCPEndToEndTestCase(TestCase, unittest.IsolatedAsyncioTestCase):
             return result
         return str(result)
 
+    async def call_tool_assert_success(self, session, tool_name, tool_params):
+        """Call a tool and assert that it succeeds (isError=False).
+
+        This is a helper method for the happy path of tool calls, which:
+        1. Calls the specified tool with the given parameters
+        2. Asserts that the result is not an error
+        3. Returns the extracted text result
+
+        Args:
+            session: The client session to use
+            tool_name: The name of the tool to call
+            tool_params: Dictionary of parameters to pass to the tool
+
+        Returns:
+            str: The extracted text content from the result
+
+        Raises:
+            AssertionError: If the tool call results in an error
+        """
+        result = await session.call_tool(tool_name, tool_params)
+
+        # Check that the result is not an error
+        self.assertFalse(
+            getattr(result, "isError", False),
+            f"Tool call to {tool_name} failed with error: {self.extract_text_from_result(result)}",
+        )
+
+        # Return the normalized, extracted text result
+        normalized_result = self.normalize_path(result)
+        return self.extract_text_from_result(normalized_result)
+
     async def get_chat_id(self, session):
         """Initialize project and get chat_id.
 
