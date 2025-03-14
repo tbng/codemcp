@@ -427,16 +427,10 @@ class GitAmendTest(MCPEndToEndTestCase):
             self.assertIn("Successfully wrote to", result_text)
 
             # Get the commit count after the write
-            commit_count_after_write = len(
-                subprocess.check_output(
-                    ["git", "log", "--oneline"],
-                    cwd=self.temp_dir.name,
-                    env=self.env,
-                )
-                .decode()
-                .strip()
-                .split("\n")
+            log_output = await self.git_run(
+                ["log", "--oneline"], capture_output=True, text=True
             )
+            commit_count_after_write = len(log_output.split("\n"))
 
             # Verify a new commit was created (not amended)
             self.assertEqual(
@@ -446,14 +440,8 @@ class GitAmendTest(MCPEndToEndTestCase):
             )
 
             # Get the commit messages
-            commit_msgs = (
-                subprocess.check_output(
-                    ["git", "log", "-2", "--pretty=%B"],
-                    cwd=self.temp_dir.name,
-                    env=self.env,
-                )
-                .decode()
-                .strip()
+            commit_msgs = await self.git_run(
+                ["log", "-2", "--pretty=%B"], capture_output=True, text=True
             )
 
             # Verify new commit has AI chat_id
