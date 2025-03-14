@@ -98,6 +98,66 @@ HEAD     Create new file
 codemcp-id: test-chat-id""",
             )
 
+            # Second write to the same file
+            updated_content = content + "\nAdded third line"
+
+            # Call the WriteFile tool again with updated content
+            result_text = await self.call_tool_assert_success(
+                session,
+                "codemcp",
+                {
+                    "subtool": "WriteFile",
+                    "path": test_file_path,
+                    "content": updated_content,
+                    "description": "Update file with third line",
+                    "chat_id": chat_id,
+                },
+            )
+
+            # Verify the success message for second write
+            self.assertIn("Successfully wrote to", result_text)
+
+            # Verify the file was updated with the correct content
+            with open(test_file_path) as f:
+                file_content = f.read()
+            self.assertEqual(file_content, updated_content)
+
+            # Verify git state after second write
+            status = await self.git_run(["status"], capture_output=True, text=True)
+
+            # Use expect test to verify git status - should still show clean working tree
+            self.assertExpectedInline(
+                status,
+                """\
+On branch main
+nothing to commit, working tree clean""",
+            )
+
+            # Get the commit message of the HEAD commit after second write
+            commit_message = await self.git_run(
+                ["log", "-1", "--pretty=%B"], capture_output=True, text=True
+            )
+
+            # Normalize the chat_id in the commit message for expect test
+            normalized_commit_message = commit_message.replace(chat_id, "test-chat-id")
+
+            # Use expect test to verify the commit message format for second write
+            self.assertExpectedInline(
+                normalized_commit_message,
+                """\
+test: initialize for write file test
+
+Test initialization for write_file test
+
+```git-revs
+c9bcf9c  (Base revision)
+113f76f  Create new file
+HEAD     Update file with third line
+```
+
+codemcp-id: test-chat-id""",
+            )
+
     async def test_create_new_file_with_write_file(self):
         """Test creating a new file that doesn't exist yet with WriteFile."""
         # Path to a new file that doesn't exist yet, within the git repository
