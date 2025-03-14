@@ -12,6 +12,7 @@ from .tools.init_project import init_project
 from .tools.ls import ls_directory
 from .tools.read_file import read_file_content
 from .tools.run_command import run_command
+from .tools.user_prompt import user_prompt as user_prompt_tool
 from .tools.write_file import write_file_content
 
 # Initialize FastMCP server
@@ -254,7 +255,7 @@ async def codemcp(
         if user_prompt is None:
             raise ValueError("user_prompt is required for UserPrompt subtool")
 
-        return await user_prompt(user_prompt, chat_id)
+        return await user_prompt_tool(user_prompt, chat_id)
 
 
 def configure_logging(log_file="codemcp.log"):
