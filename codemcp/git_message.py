@@ -89,14 +89,18 @@ def update_commit_message_with_description(
         r"\ncodemcp-id:.*$", "", current_commit_message, flags=re.MULTILINE
     )
 
+    # Remove any ```git-revs markdown blocks if they exist
+    main_message = re.sub(r"```git-revs\n", "", main_message, flags=re.MULTILINE)
+    main_message = re.sub(r"```\n", "", main_message, flags=re.MULTILINE)
+
     # Extract the original subject and body (everything before the revisions)
     # Split the message into lines to process
     lines = main_message.splitlines()
-    
+
     # Collect revision entries and non-revision content separately
     rev_entries = []
     message_lines = []
-    
+
     # Process each line
     in_revisions = False
     for line in lines:
@@ -109,11 +113,11 @@ def update_commit_message_with_description(
                 # We're going to replace this with the actual commit hash
                 head_pos = line.find("HEAD")
                 head_len = len("HEAD")
-                
+
                 # Replace HEAD with commit hash
-                prefix = line[:head_pos].strip()
-                suffix = line[head_pos + head_len:].strip()
-                
+                line[:head_pos].strip()
+                suffix = line[head_pos + head_len :].strip()
+
                 # Add to revision entries, preserving alignment
                 rev_entries.append(f"{commit_hash}  {suffix}")
             else:
@@ -125,19 +129,19 @@ def update_commit_message_with_description(
             # This is part of the main message
             message_lines.append(line)
         # Skip marker lines (```) and empty lines in the revision section
-    
+
     # Clean up message lines (remove trailing empty lines)
     while message_lines and not message_lines[-1].strip():
         message_lines.pop()
-    
+
     # Reconstruct the message part
     message_part = "\n".join(message_lines)
-    
+
     # If we don't have a base revision marker but have a commit hash, add it
     has_base_revision = any("(Base revision)" in entry for entry in rev_entries)
     if not has_base_revision and commit_hash:
         rev_entries.insert(0, f"{commit_hash}  (Base revision)")
-    
+
     # Add HEAD entry with the new description if provided
     if description:
         if commit_hash:
@@ -146,10 +150,12 @@ def update_commit_message_with_description(
             rev_entries.append(f"HEAD{head_padding}  {description}")
         else:
             rev_entries.append(f"HEAD     {description}")
-    
+
     # Build the final message
     formatted_rev_list = "\n".join(rev_entries)
-    
+
+    # We MUST NOT wrap the revision list in a markdown code block (```git-revs)
+    # The test expects a plain format without markdown
     if message_part:
         if message_part.endswith("\n"):
             final_message = f"{message_part}\n{formatted_rev_list}"
@@ -157,7 +163,7 @@ def update_commit_message_with_description(
             final_message = f"{message_part}\n\n{formatted_rev_list}"
     else:
         final_message = formatted_rev_list
-    
+
     # Ensure the chat ID metadata is included if provided
     if chat_id:
         return append_metadata_to_message(final_message, {"codemcp-id": chat_id})
