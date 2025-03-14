@@ -2,6 +2,7 @@
 
 import asyncio
 import logging
+import os
 import subprocess
 from typing import Dict, List, Optional
 
@@ -40,28 +41,23 @@ async def run_command(
     log_cmd = " ".join(str(c) for c in cmd)
     logging.info(f"Running command: {log_cmd}")
 
-    # Add diagnostic logging to detect when git operations target the codemcp repository
-    codemcp_repo_path = "/Users/ezyang/Dev/codemcp"
-    import os
+    # Only log suspicious git operations when debug is enabled
+    if cmd and cmd[0] == "git" and os.environ.get("CODEMCP_DEBUG"):
+        import inspect
 
-    current_dir = os.path.abspath(os.curdir)
-    specified_dir = os.path.abspath(cwd) if cwd else current_dir
+        # Determine codemcp repo path dynamically
+        module_file = inspect.getfile(run_command)
+        current_module_dir = os.path.dirname(os.path.abspath(module_file))
+        codemcp_repo_path = os.path.abspath(os.path.join(current_module_dir, ".."))
 
-    if (
-        cmd
-        and cmd[0] == "git"
-        and (
-            specified_dir == codemcp_repo_path
-            or specified_dir.startswith(codemcp_repo_path + "/")
-        )
-    ):
-        logging.warning(
-            f"WARNING: Git command {log_cmd} running in codemcp repository: {specified_dir}, "
-            f"current dir: {current_dir}"
-        )
-        import traceback
-
-        logging.warning(f"Call stack:\n{traceback.format_stack()}")
+        # Check if we're operating in the codemcp repository
+        specified_dir = os.path.abspath(cwd) if cwd else os.path.abspath(os.curdir)
+        if specified_dir == codemcp_repo_path or specified_dir.startswith(
+            codemcp_repo_path + os.sep
+        ):
+            logging.warning(
+                f"Git command running in codemcp repository: {specified_dir}"
+            )
 
     # Prepare stdout and stderr pipes
     stdout_pipe = asyncio.subprocess.PIPE if capture_output else None

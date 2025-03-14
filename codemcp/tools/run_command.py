@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import os
 from typing import List, Optional
 
 from .code_command import get_command_from_config, run_code_command
@@ -27,18 +28,27 @@ async def run_command(
         A string containing the result of the command operation
     """
     import logging
-    import os
 
     # Get the normalized absolute path to ensure we're operating in the correct directory
     normalized_project_dir = os.path.abspath(project_dir)
 
+    # Get the absolute path of the codemcp repository from module location
+    import inspect
+
+    current_module_dir = os.path.dirname(
+        os.path.abspath(inspect.getfile(inspect.currentframe()))
+    )
+    codemcp_repo_path = os.path.abspath(os.path.join(current_module_dir, "..", ".."))
+
     # Add a safeguard to prevent using the codemcp repository directory for commands
-    codemcp_repo_path = "/Users/ezyang/Dev/codemcp"
     if normalized_project_dir == codemcp_repo_path:
-        logging.warning(
-            f"WARNING: Attempted to run command in codemcp repository directory: {normalized_project_dir}"
+        logging.error(
+            f"Attempted to run command in codemcp repository directory: {normalized_project_dir}"
         )
-        return f"Error: Cannot run commands directly in the codemcp repository directory. Please specify a valid project directory."
+        return (
+            f"Error: Cannot run commands directly in the codemcp repository directory. "
+            f"The command '{command}' must be run in a project directory."
+        )
 
     command_list = get_command_from_config(project_dir, command)
 

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import inspect
 import logging
 import os
 import re
@@ -153,18 +154,11 @@ async def get_repository_root(path: str) -> str:
         # Get the absolute path to ensure consistency
         directory = os.path.abspath(directory)
 
-        # Add diagnostic logging to help identify the issue
-        codemcp_repo_path = "/Users/ezyang/Dev/codemcp"
-        if directory == codemcp_repo_path or directory.startswith(
-            codemcp_repo_path + "/"
-        ):
-            logging.warning(
-                f"WARNING: get_repository_root called with codemcp repository path: {directory}, "
-                f"called from: {os.path.abspath(os.curdir)}"
-            )
-            import traceback
-
-            logging.warning(f"Call stack:\n{traceback.format_stack()}")
+        # Get the absolute path of the current module to identify codemcp repo
+        current_module_dir = os.path.dirname(
+            os.path.abspath(inspect.getfile(inspect.currentframe()))
+        )
+        codemcp_repo_path = os.path.abspath(os.path.join(current_module_dir, ".."))
 
         # Get the repository root
         result = await run_command(
@@ -177,12 +171,11 @@ async def get_repository_root(path: str) -> str:
 
         repo_root = result.stdout.strip()
 
-        # Also log when the repository root is the codemcp repository
-        if repo_root == codemcp_repo_path:
-            logging.warning(
-                f"WARNING: Repository root resolved to codemcp repository: {repo_root}, "
-                f"from path: {directory}, cwd: {os.path.abspath(os.curdir)}"
-            )
+        # Warn if operating in the codemcp repository (development issue)
+        if os.environ.get("CODEMCP_DEBUG") and repo_root == codemcp_repo_path:
+            logging.warning(f"Operating in codemcp repository: {repo_root}")
+
+        return repo_root
 
         return repo_root
     except (subprocess.SubprocessError, OSError) as e:
