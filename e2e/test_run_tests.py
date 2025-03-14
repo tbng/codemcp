@@ -95,10 +95,15 @@ test = ["./run_test.sh"]
             # Extract chat_id from the init result
             import re
 
-            chat_id_match = re.search(
-                r"chat has been assigned a unique ID: ([^\n]+)", init_result_text
-            )
-            chat_id = chat_id_match.group(1) if chat_id_match else "test-chat-id"
+            # Try to find the chat ID first with the helper, or fallback to direct regex
+            try:
+                chat_id = self.extract_chat_id_from_text(init_result_text)
+            except AssertionError:
+                # Fallback to direct regex if the format is different in this test
+                chat_id_match = re.search(
+                    r"chat has been assigned a unique ID: ([^\n]+)", init_result_text
+                )
+                chat_id = chat_id_match.group(1) if chat_id_match else "test-chat-id"
 
             # Call the RunCommand tool with test command and chat_id
             result = await session.call_tool(
