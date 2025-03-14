@@ -456,24 +456,13 @@ async def commit_changes(
             # Check if message already has base revision
             has_base_revision = "(Base revision)" in current_commit_message
 
-            # Prepare the commit message for amending
-            if not has_base_revision:
-                # Add base revision marker for the first edit
-                main_message = current_commit_message.replace(
-                    "\ncodemcp-id: " + chat_id, ""
-                )
-                main_message += f"\n\n{commit_hash}  (Base revision)"
-                commit_message = (
-                    main_message + f"\nHEAD     {description}\n\ncodemcp-id: {chat_id}"
-                )
-            else:
-                # Use the update function for subsequent edits
-                commit_message = update_commit_message_with_description(
-                    current_commit_message=current_commit_message,
-                    description=description,
-                    commit_hash=commit_hash,
-                    chat_id=chat_id,
-                )
+            # Always use the update function for consistent formatting
+            commit_message = update_commit_message_with_description(
+                current_commit_message=current_commit_message,
+                description=description,
+                commit_hash=commit_hash,
+                chat_id=chat_id,
+            )
 
             # Amend the previous commit
             commit_result = await run_command(
