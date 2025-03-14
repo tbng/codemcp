@@ -40,11 +40,17 @@ class EditFileTest(MCPEndToEndTestCase):
 
         async with self.create_client_session() as session:
             # First initialize project to get chat_id
-            init_result = await session.call_tool(
+            init_result_text = await self.call_tool_assert_success(
+                session,
                 "codemcp",
-                {"subtool": "InitProject", "path": self.temp_dir.name},
+                {
+                    "subtool": "InitProject",
+                    "path": self.temp_dir.name,
+                    "user_prompt": "Test initialization for edit file test",
+                    "subject_line": "test: initialize for edit file test",
+                    "reuse_head_chat_id": False,
+                },
             )
-            init_result_text = self.extract_text_from_result(init_result)
 
             # Extract chat_id from the init result
             import re
@@ -54,8 +60,9 @@ class EditFileTest(MCPEndToEndTestCase):
             )
             chat_id = chat_id_match.group(1) if chat_id_match else "test-chat-id"
 
-            # Call the EditFile tool with chat_id
-            result = await session.call_tool(
+            # Call the EditFile tool with chat_id using our new helper method
+            result_text = await self.call_tool_assert_success(
+                session,
                 "codemcp",
                 {
                     "subtool": "EditFile",
@@ -66,12 +73,6 @@ class EditFileTest(MCPEndToEndTestCase):
                     "chat_id": chat_id,
                 },
             )
-
-            # Normalize the result
-            normalized_result = self.normalize_path(result)
-
-            # Extract the text content for assertions
-            result_text = self.extract_text_from_result(normalized_result)
 
             # Verify the success message
             self.assertIn("Successfully edited", result_text)
@@ -135,11 +136,17 @@ nothing to commit, working tree clean
 
         async with self.create_client_session() as session:
             # First initialize project to get chat_id
-            init_result = await session.call_tool(
+            init_result_text = await self.call_tool_assert_success(
+                session,
                 "codemcp",
-                {"subtool": "InitProject", "path": self.temp_dir.name},
+                {
+                    "subtool": "InitProject",
+                    "path": self.temp_dir.name,
+                    "user_prompt": "Test initialization for untracked file test",
+                    "subject_line": "test: initialize for untracked file test",
+                    "reuse_head_chat_id": False,
+                },
             )
-            init_result_text = self.extract_text_from_result(init_result)
 
             # Extract chat_id from the init result
             import re
@@ -152,6 +159,7 @@ nothing to commit, working tree clean
             # Try to edit the untracked file
             new_content = "Modified untracked content"
 
+            # Using regular session.call_tool because we expect this to fail
             result = await session.call_tool(
                 "codemcp",
                 {
@@ -196,11 +204,17 @@ nothing to commit, working tree clean
 
         async with self.create_client_session() as session:
             # First initialize project to get chat_id
-            init_result = await session.call_tool(
+            init_result_text = await self.call_tool_assert_success(
+                session,
                 "codemcp",
-                {"subtool": "InitProject", "path": self.temp_dir.name},
+                {
+                    "subtool": "InitProject",
+                    "path": self.temp_dir.name,
+                    "user_prompt": "Test initialization for untracked directory test",
+                    "subject_line": "test: initialize for untracked directory test",
+                    "reuse_head_chat_id": False,
+                },
             )
-            init_result_text = self.extract_text_from_result(init_result)
 
             # Extract chat_id from the init result
             import re
@@ -211,7 +225,9 @@ nothing to commit, working tree clean
             chat_id = chat_id_match.group(1) if chat_id_match else "test-chat-id"
 
             # Try to create a new file using EditFile with empty old_string
-            result = await session.call_tool(
+            # Using call_tool_assert_success since we expect this to succeed
+            result_text = await self.call_tool_assert_success(
+                session,
                 "codemcp",
                 {
                     "subtool": "EditFile",
@@ -222,10 +238,6 @@ nothing to commit, working tree clean
                     "chat_id": chat_id,
                 },
             )
-
-            # Normalize the result
-            normalized_result = self.normalize_path(result)
-            result_text = self.extract_text_from_result(normalized_result)
 
             # Since we've changed the behavior, we now expect this to succeed
             self.assertIn("Successfully created", result_text)
@@ -320,11 +332,17 @@ nothing to commit, working tree clean
 
         async with self.create_client_session() as session:
             # First initialize project to get chat_id
-            init_result = await session.call_tool(
+            init_result_text = await self.call_tool_assert_success(
+                session,
                 "codemcp",
-                {"subtool": "InitProject", "path": self.temp_dir.name},
+                {
+                    "subtool": "InitProject",
+                    "path": self.temp_dir.name,
+                    "user_prompt": "Test initialization for git-removed file test",
+                    "subject_line": "test: initialize for git-removed file test",
+                    "reuse_head_chat_id": False,
+                },
             )
-            init_result_text = self.extract_text_from_result(init_result)
 
             # Extract chat_id from the init result
             import re
@@ -335,6 +353,7 @@ nothing to commit, working tree clean
             chat_id = chat_id_match.group(1) if chat_id_match else "test-chat-id"
 
             # Try to write to the removed file
+            # Not using call_tool_assert_success because behavior is conditional
             result = await session.call_tool(
                 "codemcp",
                 {
