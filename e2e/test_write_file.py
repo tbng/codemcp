@@ -22,20 +22,10 @@ class WriteFileTest(MCPEndToEndTestCase):
             f.write("")
 
         # Add it to git
-        subprocess.run(
-            ["git", "add", test_file_path],
-            cwd=self.temp_dir.name,
-            env=self.env,
-            check=True,
-        )
+        await self.git_run(["add", test_file_path])
 
         # Commit it
-        subprocess.run(
-            ["git", "commit", "-m", "Add empty file for WriteFile test"],
-            cwd=self.temp_dir.name,
-            env=self.env,
-            check=True,
-        )
+        await self.git_run(["commit", "-m", "Add empty file for WriteFile test"])
 
         async with self.create_client_session() as session:
             # First initialize project to get chat_id
@@ -76,29 +66,19 @@ class WriteFileTest(MCPEndToEndTestCase):
             self.assertEqual(file_content, content)
 
             # Verify git state (working tree should be clean after automatic commit)
-            status = subprocess.check_output(
-                ["git", "status"],
-                cwd=self.temp_dir.name,
-                env=self.env,
-            ).decode()
+            status = await self.git_run(["status"], capture_output=True, text=True)
 
             # Use expect test to verify git status - should show clean working tree
             self.assertExpectedInline(
                 status,
-                """On branch main
-nothing to commit, working tree clean
-""",
+                """\
+On branch main
+nothing to commit, working tree clean""",
             )
 
             # Get the commit message of the HEAD commit
-            commit_message = (
-                subprocess.check_output(
-                    ["git", "log", "-1", "--pretty=%B"],
-                    cwd=self.temp_dir.name,
-                    env=self.env,
-                )
-                .decode()
-                .strip()
+            commit_message = await self.git_run(
+                ["log", "-1", "--pretty=%B"], capture_output=True, text=True
             )
 
             # Normalize the chat_id in the commit message for expect test
@@ -173,17 +153,8 @@ codemcp-id: test-chat-id""",
             self.assertEqual(content, "This is a brand new file")
 
             # Verify the file was added to git
-            ls_files_output = (
-                subprocess.run(
-                    ["git", "ls-files", new_file_path],
-                    cwd=self.temp_dir.name,
-                    env=self.env,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
-                    check=False,
-                )
-                .stdout.decode()
-                .strip()
+            ls_files_output = await self.git_run(
+                ["ls-files", new_file_path], capture_output=True, text=True
             )
 
             # The new file should be tracked in git
@@ -207,17 +178,8 @@ codemcp-id: test-chat-id""",
         self.assertTrue(file_exists, "Test file should exist on filesystem")
 
         # Check that the file is untracked
-        ls_files_output = (
-            subprocess.run(
-                ["git", "ls-files", untracked_file_path],
-                cwd=self.temp_dir.name,
-                env=self.env,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                check=False,
-            )
-            .stdout.decode()
-            .strip()
+        ls_files_output = await self.git_run(
+            ["ls-files", untracked_file_path], capture_output=True, text=True
         )
 
         self.assertEqual(ls_files_output, "", "File should not be tracked by git")
@@ -331,11 +293,7 @@ codemcp-id: test-chat-id""",
 
             # Since we're using call_tool_assert_success, we know the operation succeeded
             # Check if the directory and file are now tracked in git
-            subprocess.check_output(
-                ["git", "status"],
-                cwd=self.temp_dir.name,
-                env=self.env,
-            ).decode()
+            await self.git_run(["status"], capture_output=True, text=True)
 
             # The file should exist
             self.assertTrue(
@@ -345,14 +303,8 @@ codemcp-id: test-chat-id""",
 
             # SECURITY CHECK: If writing to untracked directories succeeds,
             # both the directory and file should be tracked in git
-            ls_files_output = (
-                subprocess.check_output(
-                    ["git", "ls-files", new_file_path],
-                    cwd=self.temp_dir.name,
-                    env=self.env,
-                )
-                .decode()
-                .strip()
+            ls_files_output = await self.git_run(
+                ["ls-files", new_file_path], capture_output=True, text=True
             )
 
             # IMPORTANT: The file should be tracked in git after writing

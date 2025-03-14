@@ -20,19 +20,8 @@ class SecurityTest(MCPEndToEndTestCase):
             f.write("Target file content")
 
         # Add and commit the file
-        subprocess.run(
-            ["git", "add", "target.txt"],
-            cwd=self.temp_dir.name,
-            env=self.env,
-            check=True,
-        )
-
-        subprocess.run(
-            ["git", "commit", "-m", "Add target file"],
-            cwd=self.temp_dir.name,
-            env=self.env,
-            check=True,
-        )
+        await self.git_run(["add", "target.txt"])
+        await self.git_run(["commit", "-m", "Add target file"])
 
         # Create a directory outside of the repo
         parent_dir = os.path.dirname(self.temp_dir.name)
@@ -116,19 +105,8 @@ class SecurityTest(MCPEndToEndTestCase):
             f.write("ignored.txt\n")
 
         # Add and commit the .gitignore file
-        subprocess.run(
-            ["git", "add", ".gitignore"],
-            cwd=self.temp_dir.name,
-            env=self.env,
-            check=True,
-        )
-
-        subprocess.run(
-            ["git", "commit", "-m", "Add .gitignore"],
-            cwd=self.temp_dir.name,
-            env=self.env,
-            check=True,
-        )
+        await self.git_run(["add", ".gitignore"])
+        await self.git_run(["commit", "-m", "Add .gitignore"])
 
         # Create the ignored file
         ignored_file_path = os.path.join(self.temp_dir.name, "ignored.txt")
@@ -137,11 +115,7 @@ class SecurityTest(MCPEndToEndTestCase):
             f.write(original_content)
 
         # Verify the file is ignored
-        status = subprocess.check_output(
-            ["git", "status"],
-            cwd=self.temp_dir.name,
-            env=self.env,
-        ).decode()
+        status = await self.git_run(["status"], capture_output=True, text=True)
         self.assertNotIn("ignored.txt", status, "File should be ignored by git")
 
         async with self.create_client_session() as session:
@@ -184,14 +158,8 @@ class SecurityTest(MCPEndToEndTestCase):
                 self.assertEqual(new_content, "Modified ignored content")
 
                 # Check if git add succeeded (it should for explicitly named files even if ignored)
-                ls_files_output = (
-                    subprocess.check_output(
-                        ["git", "ls-files", ignored_file_path],
-                        cwd=self.temp_dir.name,
-                        env=self.env,
-                    )
-                    .decode()
-                    .strip()
+                ls_files_output = await self.git_run(
+                    ["ls-files", ignored_file_path], capture_output=True, text=True
                 )
 
                 # SECURITY CHECK: If editing ignored files succeeds, they should be explicitly added
