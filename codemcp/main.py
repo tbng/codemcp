@@ -44,8 +44,7 @@ async def codemcp(
     | None = None,  # Whether to reuse the chat ID from the HEAD commit
 ) -> str:
     """If and only if the user explicitly asks you to initialize codemcp with
-    path, you should invoke this tool with arguments `InitProject
-    path`.  This will return instructions which you should
+    path, you should invoke this tool.  This will return instructions which you should
     IMMEDIATELY follow before continuing.
 
     If the user indicates they want to "amend" or "continue working" on a PR,
@@ -177,6 +176,14 @@ async def codemcp(
     if subtool == "InitProject":
         if path is None:
             return "Error: path is required for InitProject subtool"
+        if user_prompt is None:
+            return "Error: user_prompt is required for InitProject subtool"
+        if subject_line is None:
+            return "Error: subject_line is required for InitProject subtool"
+        if reuse_head_chat_id is None:
+            reuse_head_chat_id = (
+                False  # Default value in main.py only, not in the implementation
+            )
 
         return await init_project(path, user_prompt, subject_line, reuse_head_chat_id)
 

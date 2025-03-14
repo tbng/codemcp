@@ -121,9 +121,9 @@ async def _generate_chat_id(directory: str, description: str = None) -> str:
 
 async def init_project(
     directory: str,
-    user_prompt: str = None,
-    subject_line: str = None,
-    reuse_head_chat_id: bool = False,
+    user_prompt: str,
+    subject_line: str,
+    reuse_head_chat_id: bool,
 ) -> str:
     """Initialize a project by reading the codemcp.toml TOML file and returning
     a combined system prompt. Creates an empty commit with the user's prompt as the body
@@ -131,9 +131,9 @@ async def init_project(
 
     Args:
         directory: The directory path containing the codemcp.toml file
-        user_prompt: The user's original prompt verbatim (optional)
-        subject_line: A short subject line in Git conventional commit format (optional)
-        reuse_head_chat_id: Whether to reuse the chat ID from the HEAD commit (optional)
+        user_prompt: The user's original prompt verbatim
+        subject_line: A short subject line in Git conventional commit format
+        reuse_head_chat_id: Whether to reuse the chat ID from the HEAD commit
 
     Returns:
         A string containing the system prompt plus any project_prompt from the config,
@@ -182,26 +182,25 @@ async def init_project(
         if not chat_id:
             chat_id = await _generate_chat_id(full_dir_path, subject_line)
 
-        # Create an empty commit with user prompt and subject line if provided
-        if user_prompt is not None and subject_line is not None:
-            from ..git import create_commit_reference
+        # Create an empty commit with user prompt and subject line
+        from ..git import create_commit_reference
 
-            # We already validated that we're in a git repository
-            # Format the commit message according to the specified format
-            commit_body = user_prompt
-            commit_msg = f"{subject_line}\n\n{commit_body}\n\ncodemcp-id: {chat_id}"
+        # We already validated that we're in a git repository
+        # Format the commit message according to the specified format
+        commit_body = user_prompt
+        commit_msg = f"{subject_line}\n\n{commit_body}\n\ncodemcp-id: {chat_id}"
 
-            # Create a commit reference instead of creating a regular commit
-            # This will not advance HEAD but store the commit in refs/codemcp/<chat_id>
-            success, message, commit_hash = await create_commit_reference(
-                full_dir_path,
-                description=subject_line,
-                chat_id=chat_id,
-                custom_message=commit_msg,
-            )
+        # Create a commit reference instead of creating a regular commit
+        # This will not advance HEAD but store the commit in refs/codemcp/<chat_id>
+        success, message, commit_hash = await create_commit_reference(
+            full_dir_path,
+            description=subject_line,
+            chat_id=chat_id,
+            custom_message=commit_msg,
+        )
 
-            if not success:
-                logging.warning(f"Failed to create commit reference: {message}")
+        if not success:
+            logging.warning(f"Failed to create commit reference: {message}")
 
         project_prompt = ""
         command_help = ""
