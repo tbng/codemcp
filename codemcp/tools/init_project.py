@@ -121,9 +121,9 @@ async def _generate_chat_id(directory: str, description: str = None) -> str:
 
 async def init_project(
     directory: str,
-    user_prompt: str = None,
-    subject_line: str = None,
-    reuse_head_chat_id: bool = False,
+    user_prompt: str,
+    subject_line: str,
+    reuse_head_chat_id: bool,
 ) -> str:
     """Initialize a project by reading the codemcp.toml TOML file and returning
     a combined system prompt. Creates an empty commit with the user's prompt as the body
@@ -131,9 +131,9 @@ async def init_project(
 
     Args:
         directory: The directory path containing the codemcp.toml file
-        user_prompt: The user's original prompt verbatim (optional)
-        subject_line: A short subject line in Git conventional commit format (optional)
-        reuse_head_chat_id: Whether to reuse the chat ID from the HEAD commit (optional)
+        user_prompt: The user's original prompt verbatim
+        subject_line: A short subject line in Git conventional commit format
+        reuse_head_chat_id: Whether to reuse the chat ID from the HEAD commit
 
     Returns:
         A string containing the system prompt plus any project_prompt from the config,
@@ -146,10 +146,10 @@ async def init_project(
 
         # Validate the directory path
         if not os.path.exists(full_dir_path):
-            return f"Error: Directory does not exist: {directory}"
+            raise FileNotFoundError(f"Directory does not exist: {directory}")
 
         if not os.path.isdir(full_dir_path):
-            return f"Error: Path is not a directory: {directory}"
+            raise NotADirectoryError(f"Path is not a directory: {directory}")
 
         # Check if the directory is a Git repository
         is_git_repo = await is_git_repository(full_dir_path)
@@ -160,11 +160,17 @@ async def init_project(
 
         # If validation fails, return appropriate error messages
         if not is_git_repo and not has_codemcp_toml:
-            return f"Error: The directory is not a valid codemcp project. Please initialize a Git repository with 'git init' and create a codemcp.toml file with 'touch codemcp.toml'."
+            raise ValueError(
+                f"The directory is not a valid codemcp project. Please initialize a Git repository with 'git init' and create a codemcp.toml file with 'touch codemcp.toml'."
+            )
         elif not is_git_repo:
-            return f"Error: The directory is not a Git repository. Please initialize it with 'git init'."
+            raise ValueError(
+                f"The directory is not a Git repository. Please initialize it with 'git init'."
+            )
         elif not has_codemcp_toml:
-            return f"Error: The directory does not contain a codemcp.toml file. Please create one with 'touch codemcp.toml'."
+            raise ValueError(
+                f"The directory does not contain a codemcp.toml file. Please create one with 'touch codemcp.toml'."
+            )
 
         # If reuse_head_chat_id is True, try to get the chat ID from the HEAD commit
         chat_id = None
@@ -182,26 +188,25 @@ async def init_project(
         if not chat_id:
             chat_id = await _generate_chat_id(full_dir_path, subject_line)
 
-        # Create an empty commit with user prompt and subject line if provided
-        if user_prompt is not None and subject_line is not None:
-            from ..git import create_commit_reference
+        # Create an empty commit with user prompt and subject line
+        from ..git import create_commit_reference
 
-            # We already validated that we're in a git repository
-            # Format the commit message according to the specified format
-            commit_body = user_prompt
-            commit_msg = f"{subject_line}\n\n{commit_body}\n\ncodemcp-id: {chat_id}"
+        # We already validated that we're in a git repository
+        # Format the commit message according to the specified format
+        commit_body = user_prompt
+        commit_msg = f"{subject_line}\n\n{commit_body}\n\ncodemcp-id: {chat_id}"
 
-            # Create a commit reference instead of creating a regular commit
-            # This will not advance HEAD but store the commit in refs/codemcp/<chat_id>
-            success, message, commit_hash = await create_commit_reference(
-                full_dir_path,
-                description=subject_line,
-                chat_id=chat_id,
-                custom_message=commit_msg,
-            )
+        # Create a commit reference instead of creating a regular commit
+        # This will not advance HEAD but store the commit in refs/codemcp/<chat_id>
+        success, message, commit_hash = await create_commit_reference(
+            full_dir_path,
+            description=subject_line,
+            chat_id=chat_id,
+            custom_message=commit_msg,
+        )
 
-            if not success:
-                logging.warning(f"Failed to create commit reference: {message}")
+        if not success:
+            logging.warning(f"Failed to create commit reference: {message}")
 
         project_prompt = ""
         command_help = ""
@@ -236,7 +241,7 @@ async def init_project(
                 f"Exception suppressed when reading codemcp.toml: {e!s}",
                 exc_info=True,
             )
-            return f"Error reading codemcp.toml file: {e!s}"
+            raise ValueError(f"Error reading codemcp.toml file: {e!s}")
 
         # Default system prompt, cribbed from claude code
         # TODO: Figure out if we want Sonnet to make determinations about what

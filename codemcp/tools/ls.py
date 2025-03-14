@@ -39,21 +39,21 @@ async def ls_directory(directory_path: str, chat_id: str | None = None) -> str:
 
         # Validate the directory path
         if not os.path.exists(full_directory_path):
-            return f"Error: Directory does not exist: {directory_path}"
+            raise FileNotFoundError(f"Directory does not exist: {directory_path}")
 
         if not os.path.isdir(full_directory_path):
-            return f"Error: Path is not a directory: {directory_path}"
+            raise NotADirectoryError(f"Path is not a directory: {directory_path}")
 
         # Safety check: Verify the directory is within a git repository with codemcp.toml
         if not await is_git_repository(full_directory_path):
-            return f"Error: Directory is not in a Git repository: {directory_path}"
+            raise ValueError(f"Directory is not in a Git repository: {directory_path}")
 
         # Check edit permission (which verifies codemcp.toml exists)
         is_permitted, permission_message = await check_edit_permission(
             full_directory_path
         )
         if not is_permitted:
-            return f"Error: {permission_message}"
+            raise ValueError(permission_message)
 
         # Get the directory contents asynchronously
         results = await list_directory(full_directory_path)

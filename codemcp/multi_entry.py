@@ -48,8 +48,14 @@ async def grep(
 
 
 @mcp.tool()
-async def init_project_tool(ctx: Context, file_path: str) -> str:
-    return await init_project(file_path)
+async def init_project_tool(
+    ctx: Context,
+    file_path: str,
+    user_prompt: str,
+    subject_line: str,
+    reuse_head_chat_id: bool = False,
+) -> str:
+    return await init_project(file_path, user_prompt, subject_line, reuse_head_chat_id)
 
 
 def main():
