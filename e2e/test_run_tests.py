@@ -86,24 +86,20 @@ test = ["./run_test.sh"]
 
         async with self.create_client_session() as session:
             # First initialize project to get chat_id
-            init_result = await session.call_tool(
+            init_result_text = await self.call_tool_assert_success(
+                session,
                 "codemcp",
-                {"subtool": "InitProject", "path": self.temp_dir.name},
+                {
+                    "subtool": "InitProject",
+                    "path": self.temp_dir.name,
+                    "user_prompt": "Test initialization for run tests test",
+                    "subject_line": "test: initialize for run tests test",
+                    "reuse_head_chat_id": False,
+                },
             )
-            init_result_text = self.extract_text_from_result(init_result)
 
             # Extract chat_id from the init result
-            import re
-
-            # Try to find the chat ID first with the helper, or fallback to direct regex
-            try:
-                chat_id = self.extract_chat_id_from_text(init_result_text)
-            except AssertionError:
-                # Fallback to direct regex if the format is different in this test
-                chat_id_match = re.search(
-                    r"chat has been assigned a unique ID: ([^\n]+)", init_result_text
-                )
-                chat_id = chat_id_match.group(1) if chat_id_match else "test-chat-id"
+            chat_id = self.extract_chat_id_from_text(init_result_text)
 
             # Call the RunCommand tool with test command and chat_id
             result = await session.call_tool(
