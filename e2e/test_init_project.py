@@ -207,29 +207,17 @@ format = ["./run_format.sh"]
         from codemcp.git import commit_changes
 
         # Set up a git repository in the temp dir
-        subprocess.run(["git", "init"], cwd=self.temp_dir.name, check=True)
-        subprocess.run(
-            ["git", "config", "user.email", "test@example.com"],
-            cwd=self.temp_dir.name,
-            check=True,
-        )
-        subprocess.run(
-            ["git", "config", "user.name", "Test User"],
-            cwd=self.temp_dir.name,
-            check=True,
-        )
+        await self.git_run(["init"])
+        await self.git_run(["config", "user.email", "test@example.com"])
+        await self.git_run(["config", "user.name", "Test User"])
 
         # Make an initial commit so we have a HEAD reference
         test_file = os.path.join(self.temp_dir.name, "test_file.txt")
         with open(test_file, "w") as f:
             f.write("Initial content")
 
-        subprocess.run(["git", "add", "."], cwd=self.temp_dir.name, check=True)
-        subprocess.run(
-            ["git", "commit", "-m", "Initial commit"],
-            cwd=self.temp_dir.name,
-            check=True,
-        )
+        await self.git_run(["add", "."])
+        await self.git_run(["commit", "-m", "Initial commit"])
 
         # Now try to make an empty commit with allow_empty=False (should fail to commit)
         success, message = await commit_changes(
@@ -244,14 +232,10 @@ format = ["./run_format.sh"]
         self.assertIn("No changes to commit", message)
 
         # Get the current commit count to verify no new commit was made
-        result = subprocess.run(
-            ["git", "rev-list", "--count", "HEAD"],
-            cwd=self.temp_dir.name,
-            capture_output=True,
-            text=True,
-            check=True,
+        commit_count_output = await self.git_run(
+            ["rev-list", "--count", "HEAD"], capture_output=True, text=True
         )
-        commit_count_before = int(result.stdout.strip())
+        commit_count_before = int(commit_count_output.strip())
 
         # Now try with allow_empty=True (should succeed in making an empty commit)
         success, message = await commit_changes(
@@ -266,14 +250,10 @@ format = ["./run_format.sh"]
         self.assertIn("Changes committed successfully", message)
 
         # Verify a new commit was actually created
-        result = subprocess.run(
-            ["git", "rev-list", "--count", "HEAD"],
-            cwd=self.temp_dir.name,
-            capture_output=True,
-            text=True,
-            check=True,
+        commit_count_output = await self.git_run(
+            ["rev-list", "--count", "HEAD"], capture_output=True, text=True
         )
-        commit_count_after = int(result.stdout.strip())
+        commit_count_after = int(commit_count_output.strip())
 
         # Ensure we have one more commit now
         self.assertEqual(commit_count_before + 1, commit_count_after)
@@ -293,29 +273,17 @@ test = ["./run_test.sh"]
         import subprocess
         from codemcp.git import get_head_commit_hash, get_ref_commit_chat_id
 
-        subprocess.run(["git", "init"], cwd=self.temp_dir.name, check=True)
-        subprocess.run(
-            ["git", "config", "user.email", "test@example.com"],
-            cwd=self.temp_dir.name,
-            check=True,
-        )
-        subprocess.run(
-            ["git", "config", "user.name", "Test User"],
-            cwd=self.temp_dir.name,
-            check=True,
-        )
+        await self.git_run(["init"])
+        await self.git_run(["config", "user.email", "test@example.com"])
+        await self.git_run(["config", "user.name", "Test User"])
 
         # Create an initial commit to have a HEAD reference
         test_file = os.path.join(self.temp_dir.name, "test_file.txt")
         with open(test_file, "w") as f:
             f.write("Initial content")
 
-        subprocess.run(["git", "add", "."], cwd=self.temp_dir.name, check=True)
-        subprocess.run(
-            ["git", "commit", "-m", "Initial commit"],
-            cwd=self.temp_dir.name,
-            check=True,
-        )
+        await self.git_run(["add", "."])
+        await self.git_run(["commit", "-m", "Initial commit"])
 
         # Get the hash of the initial commit
         initial_hash = await get_head_commit_hash(self.temp_dir.name, short=False)
@@ -373,29 +341,17 @@ test = ["./run_test.sh"]
         )
 
         # Set up a git repository
-        subprocess.run(["git", "init"], cwd=self.temp_dir.name, check=True)
-        subprocess.run(
-            ["git", "config", "user.email", "test@example.com"],
-            cwd=self.temp_dir.name,
-            check=True,
-        )
-        subprocess.run(
-            ["git", "config", "user.name", "Test User"],
-            cwd=self.temp_dir.name,
-            check=True,
-        )
+        await self.git_run(["init"])
+        await self.git_run(["config", "user.email", "test@example.com"])
+        await self.git_run(["config", "user.name", "Test User"])
 
         # Create an initial commit
         initial_file = os.path.join(self.temp_dir.name, "initial.txt")
         with open(initial_file, "w") as f:
             f.write("Initial content")
 
-        subprocess.run(["git", "add", "."], cwd=self.temp_dir.name, check=True)
-        subprocess.run(
-            ["git", "commit", "-m", "Initial commit"],
-            cwd=self.temp_dir.name,
-            check=True,
-        )
+        await self.git_run(["add", "."])
+        await self.git_run(["commit", "-m", "Initial commit"])
 
         # Get the hash of the initial commit
         initial_hash = await get_head_commit_hash(self.temp_dir.name, short=False)
@@ -476,14 +432,10 @@ test = ["./run_test.sh"]
             )
 
             # Get commit count to verify we have more than just the initial commit
-            result = subprocess.run(
-                ["git", "rev-list", "--count", "HEAD"],
-                cwd=self.temp_dir.name,
-                capture_output=True,
-                text=True,
-                check=True,
+            commit_count_output = await self.git_run(
+                ["rev-list", "--count", "HEAD"], capture_output=True, text=True
             )
-            commit_count = int(result.stdout.strip())
+            commit_count = int(commit_count_output.strip())
             self.assertGreater(
                 commit_count, 1, "Should have more than one commit after changes"
             )
