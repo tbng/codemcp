@@ -121,10 +121,10 @@ async def run_code_command(
         full_dir_path = normalize_file_path(project_dir)
 
         if not os.path.exists(full_dir_path):
-            return f"Error: Directory does not exist: {project_dir}"
+            raise FileNotFoundError(f"Directory does not exist: {project_dir}")
 
         if not os.path.isdir(full_dir_path):
-            return f"Error: Path is not a directory: {project_dir}"
+            raise NotADirectoryError(f"Path is not a directory: {project_dir}")
 
         if not command:
             # Map the command_name to keep backward compatibility with existing tests
@@ -134,7 +134,7 @@ async def run_code_command(
             elif command_name == "formatting":
                 command_key = "format"
 
-            return f"Error: No {command_key} command configured in codemcp.toml"
+            raise ValueError(f"No {command_key} command configured in codemcp.toml")
 
         # Check if directory is in a git repository
         is_git_repo = await is_git_repository(full_dir_path)

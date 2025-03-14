@@ -130,7 +130,7 @@ class MCPEndToEndTestCase(TestCase, unittest.IsolatedAsyncioTestCase):
         init_result = await session.call_tool(
             "codemcp",
             {
-                "subtool": "InitProject", 
+                "subtool": "InitProject",
                 "path": self.temp_dir.name,
                 "user_prompt": "Test initialization for get_chat_id",
                 "subject_line": "test: initialize for e2e testing",
