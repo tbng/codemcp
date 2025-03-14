@@ -101,10 +101,22 @@ nothing to commit, working tree clean
                 .strip()
             )
 
-            # Check for the description in the commit message
-            self.assertIn("Create new file", commit_message)
-            # Check for the codemcp-id in the commit message
-            self.assertIn(f"codemcp-id: {chat_id}", commit_message)
+            # Normalize the chat_id in the commit message for expect test
+            normalized_commit_message = commit_message.replace(chat_id, "test-chat-id")
+
+            # Use expect test to verify the commit message format
+            self.assertExpectedInline(
+                normalized_commit_message,
+                """\
+test: initialize for write file test
+
+Test initialization for write_file test
+
+c9bcf9c  (Base revision)
+HEAD     Create new file
+
+codemcp-id: test-chat-id""",
+            )
 
     async def test_create_new_file_with_write_file(self):
         """Test creating a new file that doesn't exist yet with WriteFile."""
