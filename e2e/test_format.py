@@ -28,20 +28,10 @@ class RunCommandFormatTest(MCPEndToEndTestCase):
             f.write(unformatted_content)
 
         # Add it to git
-        subprocess.run(
-            ["git", "add", unformatted_file_path],
-            cwd=self.temp_dir.name,
-            env=self.env,
-            check=True,
-        )
+        await self.git_run(["add", unformatted_file_path])
 
         # Commit it
-        subprocess.run(
-            ["git", "commit", "-m", "Add unformatted file"],
-            cwd=self.temp_dir.name,
-            env=self.env,
-            check=True,
-        )
+        await self.git_run(["commit", "-m", "Add unformatted file"])
 
         # Create a simple format script that simulates ruff formatting
         format_script_path = os.path.join(self.temp_dir.name, "run_format.sh")
@@ -74,14 +64,8 @@ format = ["./run_format.sh"]
 """)
 
         # Record the current commit hash before formatting
-        commit_before = (
-            subprocess.check_output(
-                ["git", "rev-parse", "HEAD"],
-                cwd=self.temp_dir.name,
-                env=self.env,
-            )
-            .decode()
-            .strip()
+        commit_before = await self.git_run(
+            ["rev-parse", "HEAD"], capture_output=True, text=True
         )
 
         async with self.create_client_session() as session:
@@ -128,43 +112,27 @@ format = ["./run_format.sh"]
             self.assertEqual(file_content, expected_content)
 
             # Verify git state shows clean working tree after commit
-            status = subprocess.check_output(
-                ["git", "status"],
-                cwd=self.temp_dir.name,
-                env=self.env,
-            ).decode()
+            status = await self.git_run(["status"], capture_output=True, text=True)
 
             # Verify that the working tree is clean (changes were committed)
             self.assertExpectedInline(
                 status,
-                """On branch main
-nothing to commit, working tree clean
-""",
+                """\
+On branch main
+nothing to commit, working tree clean""",
             )
 
             # Verify that a new commit was created
-            commit_after = (
-                subprocess.check_output(
-                    ["git", "rev-parse", "HEAD"],
-                    cwd=self.temp_dir.name,
-                    env=self.env,
-                )
-                .decode()
-                .strip()
+            commit_after = await self.git_run(
+                ["rev-parse", "HEAD"], capture_output=True, text=True
             )
 
             # The commit hash should be different
             self.assertNotEqual(commit_before, commit_after)
 
             # Verify the commit message indicates it was a formatting change
-            commit_msg = (
-                subprocess.check_output(
-                    ["git", "log", "-1", "--pretty=%B"],
-                    cwd=self.temp_dir.name,
-                    env=self.env,
-                )
-                .decode()
-                .strip()
+            commit_msg = await self.git_run(
+                ["log", "-1", "--pretty=%B"], capture_output=True, text=True
             )
 
             self.assertIn("Auto-commit format changes", commit_msg)

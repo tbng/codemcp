@@ -339,16 +339,10 @@ class GitAmendTest(MCPEndToEndTestCase):
         await create_chat_commit("Modified by user", "User edit", "some-other-chat")
 
         # Get the current commit count
-        initial_commit_count = len(
-            subprocess.check_output(
-                ["git", "log", "--oneline"],
-                cwd=self.temp_dir.name,
-                env=self.env,
-            )
-            .decode()
-            .strip()
-            .split("\n")
+        log_output = await self.git_run(
+            ["log", "--oneline"], capture_output=True, text=True
         )
+        initial_commit_count = len(log_output.split("\n"))
 
         async with self.create_client_session() as session:
             # New edit with the original chat_id1
@@ -369,16 +363,10 @@ class GitAmendTest(MCPEndToEndTestCase):
             self.assertIn("Successfully edited", result_text)
 
             # Get the commit count after the new edit
-            commit_count_after_edit = len(
-                subprocess.check_output(
-                    ["git", "log", "--oneline"],
-                    cwd=self.temp_dir.name,
-                    env=self.env,
-                )
-                .decode()
-                .strip()
-                .split("\n")
+            log_output = await self.git_run(
+                ["log", "--oneline"], capture_output=True, text=True
             )
+            commit_count_after_edit = len(log_output.split("\n"))
 
             # Verify a new commit was created (not amended) - we can't safely amend past HEAD
             self.assertEqual(
@@ -388,14 +376,8 @@ class GitAmendTest(MCPEndToEndTestCase):
             )
 
             # Get the last commit message
-            last_commit_msg = (
-                subprocess.check_output(
-                    ["git", "log", "-1", "--pretty=%B"],
-                    cwd=self.temp_dir.name,
-                    env=self.env,
-                )
-                .decode()
-                .strip()
+            last_commit_msg = await self.git_run(
+                ["log", "-1", "--pretty=%B"], capture_output=True, text=True
             )
 
             # Verify the latest commit has the correct chat_id
@@ -445,16 +427,10 @@ class GitAmendTest(MCPEndToEndTestCase):
             self.assertIn("Successfully wrote to", result_text)
 
             # Get the commit count after the write
-            commit_count_after_write = len(
-                subprocess.check_output(
-                    ["git", "log", "--oneline"],
-                    cwd=self.temp_dir.name,
-                    env=self.env,
-                )
-                .decode()
-                .strip()
-                .split("\n")
+            log_output = await self.git_run(
+                ["log", "--oneline"], capture_output=True, text=True
             )
+            commit_count_after_write = len(log_output.split("\n"))
 
             # Verify a new commit was created (not amended)
             self.assertEqual(
@@ -464,14 +440,8 @@ class GitAmendTest(MCPEndToEndTestCase):
             )
 
             # Get the commit messages
-            commit_msgs = (
-                subprocess.check_output(
-                    ["git", "log", "-2", "--pretty=%B"],
-                    cwd=self.temp_dir.name,
-                    env=self.env,
-                )
-                .decode()
-                .strip()
+            commit_msgs = await self.git_run(
+                ["log", "-2", "--pretty=%B"], capture_output=True, text=True
             )
 
             # Verify new commit has AI chat_id
@@ -498,33 +468,19 @@ class GitAmendTest(MCPEndToEndTestCase):
             f.write(initial_content)
 
         # Add it to git
-        subprocess.run(
-            ["git", "add", test_file_path],
-            cwd=self.temp_dir.name,
-            env=self.env,
-            check=True,
-        )
+        await self.git_run(["add", test_file_path])
 
         # Create a commit with a specific chat ID
         first_chat_id = "first-chat-123"
-        subprocess.run(
-            ["git", "commit", "-m", f"First commit\n\ncodemcp-id: {first_chat_id}"],
-            cwd=self.temp_dir.name,
-            env=self.env,
-            check=True,
+        await self.git_run(
+            ["commit", "-m", f"First commit\n\ncodemcp-id: {first_chat_id}"]
         )
 
         # Get the current commit count
-        initial_commit_count = len(
-            subprocess.check_output(
-                ["git", "log", "--oneline"],
-                cwd=self.temp_dir.name,
-                env=self.env,
-            )
-            .decode()
-            .strip()
-            .split("\n")
+        log_output = await self.git_run(
+            ["log", "--oneline"], capture_output=True, text=True
         )
+        initial_commit_count = len(log_output.split("\n"))
 
         # Use a different chat ID for the write operation
         second_chat_id = "second-chat-456"
@@ -547,16 +503,10 @@ class GitAmendTest(MCPEndToEndTestCase):
             self.assertIn("Successfully wrote to", result_text)
 
             # Get the commit count after the write
-            commit_count_after_write = len(
-                subprocess.check_output(
-                    ["git", "log", "--oneline"],
-                    cwd=self.temp_dir.name,
-                    env=self.env,
-                )
-                .decode()
-                .strip()
-                .split("\n")
+            log_output = await self.git_run(
+                ["log", "--oneline"], capture_output=True, text=True
             )
+            commit_count_after_write = len(log_output.split("\n"))
 
             # Verify a new commit was created (not amended)
             self.assertEqual(
@@ -566,14 +516,8 @@ class GitAmendTest(MCPEndToEndTestCase):
             )
 
             # Get the commit messages
-            commit_msgs = (
-                subprocess.check_output(
-                    ["git", "log", "-2", "--pretty=%B"],
-                    cwd=self.temp_dir.name,
-                    env=self.env,
-                )
-                .decode()
-                .strip()
+            commit_msgs = await self.git_run(
+                ["log", "-2", "--pretty=%B"], capture_output=True, text=True
             )
 
             # Verify both chat IDs are in the commit history
@@ -597,20 +541,10 @@ class GitAmendTest(MCPEndToEndTestCase):
             f.write(initial_content)
 
         # Add it to git
-        subprocess.run(
-            ["git", "add", test_file_path],
-            cwd=self.temp_dir.name,
-            env=self.env,
-            check=True,
-        )
+        await self.git_run(["add", test_file_path])
 
         # Commit it
-        subprocess.run(
-            ["git", "commit", "-m", "Add file for hash test"],
-            cwd=self.temp_dir.name,
-            env=self.env,
-            check=True,
-        )
+        await self.git_run(["commit", "-m", "Add file for hash test"])
 
         # Define a chat_id for our test
         chat_id = "hash-test-123"
@@ -634,14 +568,8 @@ class GitAmendTest(MCPEndToEndTestCase):
             self.assertIn("Successfully edited", result1_text)
 
             # Get the commit hash for the first edit
-            first_commit_hash = (
-                subprocess.check_output(
-                    ["git", "rev-parse", "--short", "HEAD"],
-                    cwd=self.temp_dir.name,
-                    env=self.env,
-                )
-                .decode()
-                .strip()
+            first_commit_hash = await self.git_run(
+                ["rev-parse", "--short", "HEAD"], capture_output=True, text=True
             )
 
             # Second edit with the same chat_id
@@ -668,14 +596,8 @@ class GitAmendTest(MCPEndToEndTestCase):
             )
 
             # Get the last commit message
-            commit_msg = (
-                subprocess.check_output(
-                    ["git", "log", "-1", "--pretty=%B"],
-                    cwd=self.temp_dir.name,
-                    env=self.env,
-                )
-                .decode()
-                .strip()
+            commit_msg = await self.git_run(
+                ["log", "-1", "--pretty=%B"], capture_output=True, text=True
             )
 
             # Verify the commit hash format in the message with base revision and HEAD
@@ -708,25 +630,13 @@ class GitAmendTest(MCPEndToEndTestCase):
             )
 
             # Get the second commit hash
-            second_commit_hash = (
-                subprocess.check_output(
-                    ["git", "rev-parse", "--short", "HEAD"],
-                    cwd=self.temp_dir.name,
-                    env=self.env,
-                )
-                .decode()
-                .strip()
+            second_commit_hash = await self.git_run(
+                ["rev-parse", "--short", "HEAD"], capture_output=True, text=True
             )
 
             # Get the updated commit message
-            final_commit_msg = (
-                subprocess.check_output(
-                    ["git", "log", "-1", "--pretty=%B"],
-                    cwd=self.temp_dir.name,
-                    env=self.env,
-                )
-                .decode()
-                .strip()
+            final_commit_msg = await self.git_run(
+                ["log", "-1", "--pretty=%B"], capture_output=True, text=True
             )
 
             # Verify both commit hashes appear in the correct format

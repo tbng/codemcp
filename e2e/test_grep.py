@@ -20,19 +20,8 @@ class GrepTest(MCPEndToEndTestCase):
         self.create_test_files()
 
         # Add our test files to git
-        subprocess.run(
-            ["git", "add", "."],
-            cwd=self.temp_dir.name,
-            env=self.env,
-            check=True,
-        )
-
-        subprocess.run(
-            ["git", "commit", "-m", "Add test files for grep"],
-            cwd=self.temp_dir.name,
-            env=self.env,
-            check=True,
-        )
+        await self.git_run(["add", "."])
+        await self.git_run(["commit", "-m", "Add test files for grep"])
 
     def create_test_files(self):
         """Create test files with content for grep testing."""
