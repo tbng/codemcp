@@ -142,6 +142,9 @@ test = ["./run_test.sh"]
                 {
                     "subtool": "InitProject",
                     "path": self.temp_dir.name,
+                    "user_prompt": "Test initialization",
+                    "subject_line": "feat: test basic functionality",
+                    "reuse_head_chat_id": False,
                 },
             )
 
@@ -180,6 +183,9 @@ doc = "Run tests with optional arguments"
                 {
                     "subtool": "InitProject",
                     "path": self.temp_dir.name,
+                    "user_prompt": "Test with complex TOML",
+                    "subject_line": "feat: test complex TOML parsing",
+                    "reuse_head_chat_id": False,
                 },
             )
 
@@ -211,6 +217,9 @@ format = ["./run_format.sh"]
                 {
                     "subtool": "InitProject",
                     "path": self.temp_dir.name,
+                    "user_prompt": "Test with binary characters",
+                    "subject_line": "feat: test binary character handling",
+                    "reuse_head_chat_id": False,
                 },
             )
 

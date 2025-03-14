@@ -663,7 +663,7 @@ async def edit_file_content(
                 full_file_path,
             )
             if not is_tracked:
-                return f"Error: {track_error}"
+                raise ValueError(track_error)
 
         # Debug string comparison using our thorough utility
         strings_are_different = debug_string_comparison(
@@ -680,7 +680,7 @@ async def edit_file_content(
 
         # Handle creating a new file
         if old_string == "" and os.path.exists(full_file_path):
-            return "Cannot create new file - file already exists."
+            raise FileExistsError("Cannot create new file - file already exists.")
 
         # Handle creating a new file
         if old_string == "" and not os.path.exists(full_file_path):
@@ -707,26 +707,30 @@ async def edit_file_content(
         if not os.path.exists(full_file_path):
             # Try to find a similar file
             similar_file = find_similar_file(full_file_path)
-            message = f"Error: File does not exist: {full_file_path}"
+            message = f"File does not exist: {full_file_path}"
             if similar_file:
                 message += f" Did you mean {similar_file}?"
-            return message
+            raise FileNotFoundError(message)
 
         # Check if file is a Jupyter notebook
         if full_file_path.endswith(".ipynb"):
-            return "Error: File is a Jupyter Notebook. Use the NotebookEditTool to edit this file."
+            raise ValueError(
+                "File is a Jupyter Notebook. Use the NotebookEditTool to edit this file."
+            )
 
         # Check if file has been read
         if read_file_timestamps and full_file_path not in read_file_timestamps:
-            return (
-                "Error: File has not been read yet. Read it first before writing to it."
+            raise ValueError(
+                "File has not been read yet. Read it first before writing to it."
             )
 
         # Check if file has been modified since read
         if read_file_timestamps and os.path.exists(full_file_path):
             last_write_time = os.stat(full_file_path).st_mtime
             if last_write_time > read_file_timestamps.get(full_file_path, 0):
-                return "Error: File has been modified since read, either by the user or by a linter. Read it again before attempting to write it."
+                raise ValueError(
+                    "File has been modified since read, either by the user or by a linter. Read it again before attempting to write it."
+                )
 
         # Detect encoding and line endings
         encoding = await detect_file_encoding(full_file_path)
@@ -750,11 +754,11 @@ async def edit_file_content(
             if not test_match:
                 # If no match found, try to provide helpful suggestions
                 similar = find_similar_lines(old_string, content)
-                error_msg = "Error: String to replace not found in file."
+                error_msg = "String to replace not found in file."
 
                 if similar:
                     error_msg += f"\n\nDid you mean to match these lines?\n\n```\n{similar}\n```\n\nTip: Make sure whitespace, indentation, and exact characters match."
-                return error_msg
+                raise ValueError(error_msg)
 
             # If we're here, we found a match using advanced techniques
             logger.debug("Found match using advanced matching techniques")
@@ -772,11 +776,15 @@ async def edit_file_content(
                 else:
                     # Fall back to the original error message
                     matches = content.count(old_string)
-                    return f"Error: Found {matches} matches of the string to replace. For safety, this tool only supports replacing exactly one occurrence at a time. Add more lines of context to your edit and try again."
+                    raise ValueError(
+                        f"Found {matches} matches of the string to replace. For safety, this tool only supports replacing exactly one occurrence at a time. Add more lines of context to your edit and try again."
+                    )
             except ValueError:
                 # If dotdotdots approach failed, give the original error message
                 matches = content.count(old_string)
-                return f"Error: Found {matches} matches of the string to replace. For safety, this tool only supports replacing exactly one occurrence at a time. Add more lines of context to your edit and try again."
+                raise ValueError(
+                    f"Found {matches} matches of the string to replace. For safety, this tool only supports replacing exactly one occurrence at a time. Add more lines of context to your edit and try again."
+                )
 
         # Apply the edit with advanced matching if needed
         patch, updated_file = await apply_edit(full_file_path, old_string, new_string)

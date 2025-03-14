@@ -107,12 +107,12 @@ async def write_file_content(
         # Validate file path and permissions
         is_valid, error_message = await check_file_path_and_permissions(file_path)
         if not is_valid:
-            return error_message
+            raise ValueError(error_message)
 
         # Check git tracking for existing files
         is_tracked, track_error = await check_git_tracking_for_existing_file(file_path)
         if not is_tracked:
-            return f"Error: {track_error}"
+            raise ValueError(track_error)
 
         # Determine encoding and line endings
         old_file_exists = os.path.exists(file_path)

@@ -28,12 +28,12 @@ async def check_file_path_and_permissions(file_path: str) -> tuple[bool, str | N
     """
     # Check that the path is absolute
     if not os.path.isabs(file_path):
-        return False, f"Error: File path must be absolute, not relative: {file_path}"
+        return False, f"File path must be absolute, not relative: {file_path}"
 
     # Check if we have permission to edit this file
     is_permitted, permission_message = await check_edit_permission(file_path)
     if not is_permitted:
-        return False, f"Error: {permission_message}"
+        return False, permission_message
 
     return True, None
 

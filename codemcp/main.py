@@ -12,6 +12,7 @@ from .tools.init_project import init_project
 from .tools.ls import ls_directory
 from .tools.read_file import read_file_content
 from .tools.run_command import run_command
+from .tools.user_prompt import user_prompt as user_prompt_tool
 from .tools.write_file import write_file_content
 
 # Initialize FastMCP server
@@ -44,8 +45,7 @@ async def codemcp(
     | None = None,  # Whether to reuse the chat ID from the HEAD commit
 ) -> str:
     """If and only if the user explicitly asks you to initialize codemcp with
-    path, you should invoke this tool with arguments `InitProject
-    path`.  This will return instructions which you should
+    path, you should invoke this tool.  This will return instructions which you should
     IMMEDIATELY follow before continuing.
 
     If the user indicates they want to "amend" or "continue working" on a PR,
@@ -91,7 +91,9 @@ async def codemcp(
 
     # Check if subtool exists
     if subtool not in expected_params:
-        return f"Unknown subtool: {subtool}. Available subtools: {', '.join(expected_params.keys())}"
+        raise ValueError(
+            f"Unknown subtool: {subtool}. Available subtools: {', '.join(expected_params.keys())}"
+        )
 
     # Handle string arguments - convert to a list with one element
     if isinstance(arguments, str):
@@ -129,36 +131,40 @@ async def codemcp(
     # Check for unexpected parameters
     unexpected_params = set(provided_params.keys()) - expected_params[subtool]
     if unexpected_params:
-        return f"Error: Unexpected parameters for {subtool} subtool: {', '.join(unexpected_params)}"
+        raise ValueError(
+            f"Unexpected parameters for {subtool} subtool: {', '.join(unexpected_params)}"
+        )
 
     # Check for required chat_id for all tools except InitProject
     if subtool != "InitProject" and chat_id is None:
-        return f"Error: chat_id is required for {subtool} subtool"
+        raise ValueError(f"chat_id is required for {subtool} subtool")
 
     # Now handle each subtool with its expected parameters
     if subtool == "ReadFile":
         if path is None:
-            return "Error: path is required for ReadFile subtool"
+            raise ValueError("path is required for ReadFile subtool")
 
         return await read_file_content(path, offset, limit, chat_id)
 
     if subtool == "WriteFile":
         if path is None:
-            return "Error: path is required for WriteFile subtool"
+            raise ValueError("path is required for WriteFile subtool")
         if description is None:
-            return "Error: description is required for WriteFile subtool"
+            raise ValueError("description is required for WriteFile subtool")
 
         content_str = content or ""
         return await write_file_content(path, content_str, description, chat_id)
 
     if subtool == "EditFile":
         if path is None:
-            return "Error: path is required for EditFile subtool"
+            raise ValueError("path is required for EditFile subtool")
         if description is None:
-            return "Error: description is required for EditFile subtool"
+            raise ValueError("description is required for EditFile subtool")
         if old_string is None and old_str is None:
             # TODO: I want telemetry to tell me when this occurs.
-            return "Error: Either old_string or old_str is required for EditFile subtool (use empty string for new file creation)"
+            raise ValueError(
+                "Either old_string or old_str is required for EditFile subtool (use empty string for new file creation)"
+            )
 
         # Accept either old_string or old_str (prefer old_string if both are provided)
         old_content = old_string or old_str or ""
@@ -170,13 +176,21 @@ async def codemcp(
 
     if subtool == "LS":
         if path is None:
-            return "Error: path is required for LS subtool"
+            raise ValueError("path is required for LS subtool")
 
         return await ls_directory(path, chat_id)
 
     if subtool == "InitProject":
         if path is None:
-            return "Error: path is required for InitProject subtool"
+            raise ValueError("path is required for InitProject subtool")
+        if user_prompt is None:
+            raise ValueError("user_prompt is required for InitProject subtool")
+        if subject_line is None:
+            raise ValueError("subject_line is required for InitProject subtool")
+        if reuse_head_chat_id is None:
+            reuse_head_chat_id = (
+                False  # Default value in main.py only, not in the implementation
+            )
 
         return await init_project(path, user_prompt, subject_line, reuse_head_chat_id)
 
@@ -187,18 +201,18 @@ async def codemcp(
         # not to conflict with codemcp's subtools.
 
         if path is None:
-            return "Error: path is required for RunCommand subtool"
+            raise ValueError("path is required for RunCommand subtool")
         if command is None:
-            return "Error: command is required for RunCommand subtool"
+            raise ValueError("command is required for RunCommand subtool")
 
         return await run_command(path, command, arguments, chat_id)
 
     if subtool == "Grep":
         if pattern is None:
-            return "Error: pattern is required for Grep subtool"
+            raise ValueError("pattern is required for Grep subtool")
 
         if path is None:
-            return "Error: path is required for Grep subtool"
+            raise ValueError("path is required for Grep subtool")
 
         try:
             result = await grep_files(pattern, path, include, chat_id)
@@ -214,10 +228,10 @@ async def codemcp(
 
     if subtool == "Glob":
         if pattern is None:
-            return "Error: pattern is required for Glob subtool"
+            raise ValueError("pattern is required for Glob subtool")
 
         if path is None:
-            return "Error: path is required for Glob subtool"
+            raise ValueError("path is required for Glob subtool")
 
         try:
             result = await glob_files(
@@ -239,9 +253,9 @@ async def codemcp(
 
     if subtool == "UserPrompt":
         if user_prompt is None:
-            return "Error: user_prompt is required for UserPrompt subtool"
+            raise ValueError("user_prompt is required for UserPrompt subtool")
 
-        return await user_prompt(user_prompt, chat_id)
+        return await user_prompt_tool(user_prompt, chat_id)
 
 
 def configure_logging(log_file="codemcp.log"):

@@ -39,15 +39,17 @@ async def read_file_content(
         # Validate the file path
         if not os.path.exists(full_file_path):
             # Try to find a similar file (stub - would need implementation)
-            return f"Error: File does not exist: {file_path}"
+            raise FileNotFoundError(f"File does not exist: {file_path}")
 
         if os.path.isdir(full_file_path):
-            return f"Error: Path is a directory, not a file: {file_path}"
+            raise IsADirectoryError(f"Path is a directory, not a file: {file_path}")
 
         # Check file size before reading
         file_size = os.path.getsize(full_file_path)
         if file_size > MAX_OUTPUT_SIZE and not offset and not limit:
-            return f"Error: File content ({file_size // 1024}KB) exceeds maximum allowed size ({MAX_OUTPUT_SIZE // 1024}KB). Please use offset and limit parameters to read specific portions of the file."
+            raise ValueError(
+                f"File content ({file_size // 1024}KB) exceeds maximum allowed size ({MAX_OUTPUT_SIZE // 1024}KB). Please use offset and limit parameters to read specific portions of the file."
+            )
 
         # Handle text files - use async file operations with anyio
         from .async_file_utils import async_readlines
@@ -64,7 +66,9 @@ async def read_file_content(
 
         # Apply offset and limit
         if line_offset >= total_lines:
-            return f"Error: Offset {offset} is beyond the end of the file (total lines: {total_lines})"
+            raise IndexError(
+                f"Offset {offset} is beyond the end of the file (total lines: {total_lines})"
+            )
 
         max_lines = MAX_LINES_TO_READ if limit is None else limit
         selected_lines = all_lines[line_offset : line_offset + max_lines]
