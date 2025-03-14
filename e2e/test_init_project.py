@@ -69,11 +69,7 @@ test = ["./run_test.sh"]
             )
 
             # Extract the chat ID from the result
-            import re
-
-            chat_id_match = re.search(r"chat ID: ([\w-]+)", result_text1)
-            self.assertIsNotNone(chat_id_match, "Chat ID not found in result")
-            original_chat_id = chat_id_match.group(1)
+            original_chat_id = self.extract_chat_id_from_text(result_text1)
 
             # Verify the reference contains the chat ID
             ref_name = f"refs/codemcp/{original_chat_id}"
@@ -121,9 +117,7 @@ test = ["./run_test.sh"]
             )
 
             # Extract the chat ID from the result
-            chat_id_match = re.search(r"chat ID: ([\w-]+)", result_text2)
-            self.assertIsNotNone(chat_id_match, "Chat ID not found in result")
-            reused_chat_id = chat_id_match.group(1)
+            reused_chat_id = self.extract_chat_id_from_text(result_text2)
 
             # Verify the chat ID is the same as the original
             self.assertEqual(original_chat_id, reused_chat_id, "Chat ID not reused")
@@ -359,11 +353,7 @@ test = ["./run_test.sh"]
             self.assertIn("feat-add-new-feature-with-spaces", result_text)
 
             # Extract the chat ID from the result
-            import re
-
-            chat_id_match = re.search(r"chat ID: ([\w-]+)", result_text)
-            self.assertIsNotNone(chat_id_match, "Chat ID not found in result")
-            chat_id = chat_id_match.group(1)
+            chat_id = self.extract_chat_id_from_text(result_text)
 
             # Verify that HEAD hasn't changed - it should still point to the initial commit
             head_hash_after = await get_head_commit_hash(
@@ -440,11 +430,7 @@ test = ["./run_test.sh"]
             )
 
             # Extract the chat ID from the result
-            import re
-
-            chat_id_match = re.search(r"chat ID: ([\w-]+)", result_text)
-            self.assertIsNotNone(chat_id_match, "Chat ID not found in result")
-            chat_id = chat_id_match.group(1)
+            chat_id = self.extract_chat_id_from_text(result_text)
 
             # Verify HEAD is unchanged
             head_hash_after_init = await get_head_commit_hash(
