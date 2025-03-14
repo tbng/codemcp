@@ -32,11 +32,17 @@ class LSTest(MCPEndToEndTestCase):
 
         async with self.create_client_session() as session:
             # First initialize project to get chat_id
-            init_result = await session.call_tool(
+            init_result_text = await self.call_tool_assert_success(
+                session,
                 "codemcp",
-                {"subtool": "InitProject", "path": self.temp_dir.name},
+                {
+                    "subtool": "InitProject",
+                    "path": self.temp_dir.name,
+                    "user_prompt": "Test initialization for LS test",
+                    "subject_line": "test: initialize for LS test",
+                    "reuse_head_chat_id": False,
+                },
             )
-            init_result_text = self.extract_text_from_result(init_result)
 
             # Extract chat_id from the init result
             import re
@@ -47,14 +53,11 @@ class LSTest(MCPEndToEndTestCase):
             chat_id = chat_id_match.group(1) if chat_id_match else "test-chat-id"
 
             # Call the LS tool with chat_id
-            result = await session.call_tool(
+            result_text = await self.call_tool_assert_success(
+                session,
                 "codemcp",
                 {"subtool": "LS", "path": test_dir, "chat_id": chat_id},
             )
-
-            # Normalize the result
-            normalized_result = self.normalize_path(result)
-            result_text = self.extract_text_from_result(normalized_result)
 
             # Verify the result includes all files and directories
             self.assertIn("file1.txt", result_text)

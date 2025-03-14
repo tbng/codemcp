@@ -59,7 +59,8 @@ class GrepTest(MCPEndToEndTestCase):
             chat_id = await self.get_chat_id(session)
 
             # Call the Grep tool with directory path
-            result = await session.call_tool(
+            result_text = await self.call_tool_assert_success(
+                session,
                 "codemcp",
                 {
                     "subtool": "Grep",
@@ -68,10 +69,6 @@ class GrepTest(MCPEndToEndTestCase):
                     "chat_id": chat_id,
                 },
             )
-
-            # Normalize and extract result
-            normalized_result = self.normalize_path(result)
-            result_text = self.extract_text_from_result(normalized_result)
 
             # Verify results
             self.assertIn("file1.js", result_text)
@@ -90,7 +87,8 @@ class GrepTest(MCPEndToEndTestCase):
             file_path = os.path.join(self.temp_dir.name, "file1.js")
 
             # Call the Grep tool with file path
-            result = await session.call_tool(
+            result_text = await self.call_tool_assert_success(
+                session,
                 "codemcp",
                 {
                     "subtool": "Grep",
@@ -99,10 +97,6 @@ class GrepTest(MCPEndToEndTestCase):
                     "chat_id": chat_id,
                 },
             )
-
-            # Normalize and extract result
-            normalized_result = self.normalize_path(result)
-            result_text = self.extract_text_from_result(normalized_result)
 
             # Verify results - should only find the specific file
             self.assertIn("file1.js", result_text)
@@ -116,7 +110,8 @@ class GrepTest(MCPEndToEndTestCase):
             chat_id = await self.get_chat_id(session)
 
             # Call the Grep tool with an include filter
-            result = await session.call_tool(
+            result_text = await self.call_tool_assert_success(
+                session,
                 "codemcp",
                 {
                     "subtool": "Grep",
@@ -126,10 +121,6 @@ class GrepTest(MCPEndToEndTestCase):
                     "chat_id": chat_id,
                 },
             )
-
-            # Normalize and extract result
-            normalized_result = self.normalize_path(result)
-            result_text = self.extract_text_from_result(normalized_result)
 
             # Verify results - should only find Python files
             self.assertIn("script.py", result_text)

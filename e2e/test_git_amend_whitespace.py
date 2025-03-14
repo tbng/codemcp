@@ -44,7 +44,8 @@ class GitAmendWhitespaceTest(MCPEndToEndTestCase):
 
         async with self.create_client_session() as session:
             # First edit with our chat_id
-            result1 = await session.call_tool(
+            result_text1 = await self.call_tool_assert_success(
+                session,
                 "codemcp",
                 {
                     "subtool": "EditFile",
@@ -68,7 +69,8 @@ class GitAmendWhitespaceTest(MCPEndToEndTestCase):
             )
 
             # Second edit with the same chat_id
-            result2 = await session.call_tool(
+            result_text2 = await self.call_tool_assert_success(
+                session,
                 "codemcp",
                 {
                     "subtool": "EditFile",
@@ -136,7 +138,8 @@ class GitAmendWhitespaceTest(MCPEndToEndTestCase):
             )
 
             # Third edit to check multiple aligned entries
-            result3 = await session.call_tool(
+            result_text3 = await self.call_tool_assert_success(
+                session,
                 "codemcp",
                 {
                     "subtool": "EditFile",

@@ -31,7 +31,8 @@ class DirectoryCreationTest(MCPEndToEndTestCase):
             chat_id = await self.get_chat_id(session)
 
             # Call the WriteFile tool with chat_id
-            result = await session.call_tool(
+            result_text = await self.call_tool_assert_success(
+                session,
                 "codemcp",
                 {
                     "subtool": "WriteFile",
@@ -42,25 +43,19 @@ class DirectoryCreationTest(MCPEndToEndTestCase):
                 },
             )
 
-            # Normalize the result
-            normalized_result = self.normalize_path(result)
-            result_text = self.extract_text_from_result(normalized_result)
+            # Check for success message
+            self.assertIn("Successfully wrote to", result_text)
 
-            # Check for success or permission error - base directories might not be in git
-            if "Successfully wrote to" in result_text:
-                # Test passed - the directories were created as expected
-                self.assertTrue(
-                    os.path.exists(nested_path), "Nested directories were not created"
-                )
+            # Verify the directories were created as expected
+            self.assertTrue(
+                os.path.exists(nested_path), "Nested directories were not created"
+            )
 
-                # Verify the file was created with the correct content
-                self.assertTrue(os.path.exists(test_file_path), "File was not created")
-                with open(test_file_path) as f:
-                    file_content = f.read()
-                self.assertEqual(file_content, content)
-            else:
-                # Unexpected error
-                self.fail(f"Unexpected error: {result_text}")
+            # Verify the file was created with the correct content
+            self.assertTrue(os.path.exists(test_file_path), "File was not created")
+            with open(test_file_path) as f:
+                file_content = f.read()
+            self.assertEqual(file_content, content)
 
     async def test_edit_file_nested_directories(self):
         """Test EditFile can create nested directories when old_string is empty."""
@@ -80,7 +75,8 @@ class DirectoryCreationTest(MCPEndToEndTestCase):
             chat_id = await self.get_chat_id(session)
 
             # Call the EditFile tool with empty old_string and chat_id
-            result = await session.call_tool(
+            result_text = await self.call_tool_assert_success(
+                session,
                 "codemcp",
                 {
                     "subtool": "EditFile",
@@ -92,25 +88,19 @@ class DirectoryCreationTest(MCPEndToEndTestCase):
                 },
             )
 
-            # Normalize the result
-            normalized_result = self.normalize_path(result)
-            result_text = self.extract_text_from_result(normalized_result)
+            # Check for success message
+            self.assertIn("Successfully created", result_text)
 
-            # Check for success or permission error - base directories might not be in git
-            if "Successfully created" in result_text:
-                # Test passed - the directories were created as expected
-                self.assertTrue(
-                    os.path.exists(nested_path), "Nested directories were not created"
-                )
+            # Verify the directories were created as expected
+            self.assertTrue(
+                os.path.exists(nested_path), "Nested directories were not created"
+            )
 
-                # Verify the file was created with the correct content
-                self.assertTrue(os.path.exists(test_file_path), "File was not created")
-                with open(test_file_path) as f:
-                    file_content = f.read()
-                self.assertEqual(file_content, content)
-            else:
-                # Unexpected error
-                self.fail(f"Unexpected error: {result_text}")
+            # Verify the file was created with the correct content
+            self.assertTrue(os.path.exists(test_file_path), "File was not created")
+            with open(test_file_path) as f:
+                file_content = f.read()
+            self.assertEqual(file_content, content)
 
 
 if __name__ == "__main__":

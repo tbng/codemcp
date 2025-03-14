@@ -24,14 +24,11 @@ class ReadFileTest(MCPEndToEndTestCase):
             chat_id = await self.get_chat_id(session)
 
             # Call the ReadFile tool with the chat_id
-            result = await session.call_tool(
+            result_text = await self.call_tool_assert_success(
+                session,
                 "codemcp",
                 {"subtool": "ReadFile", "path": test_file_path, "chat_id": chat_id},
             )
-
-            # Normalize the result for easier comparison
-            normalized_result = self.normalize_path(result)
-            result_text = self.extract_text_from_result(normalized_result)
 
             # Verify the result includes our file content (ignoring line numbers)
             for line in test_content.splitlines():
@@ -50,7 +47,8 @@ class ReadFileTest(MCPEndToEndTestCase):
             chat_id = await self.get_chat_id(session)
 
             # Call the ReadFile tool with offset and limit and the chat_id
-            result = await session.call_tool(
+            result_text = await self.call_tool_assert_success(
+                session,
                 "codemcp",
                 {
                     "subtool": "ReadFile",
@@ -60,10 +58,6 @@ class ReadFileTest(MCPEndToEndTestCase):
                     "chat_id": chat_id,
                 },
             )
-
-            # Normalize the result
-            normalized_result = self.normalize_path(result)
-            result_text = self.extract_text_from_result(normalized_result)
 
             # Verify we got exactly lines 2-3
             self.assertIn("Line 2", result_text)
