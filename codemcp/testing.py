@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 
+import asyncio
 import os
 import subprocess
 import sys
 import tempfile
 import unittest
 from contextlib import asynccontextmanager
+from typing import Any, List, Union
 
 from expecttest import TestCase
 from mcp import ClientSession, StdioServerParameters
@@ -264,3 +266,77 @@ class MCPEndToEndTestCase(TestCase, unittest.IsolatedAsyncioTestCase):
                         # Initialize the connection
                         await session.initialize()
                         yield session
+
+    async def git_run(
+        self,
+        args: List[str],
+        check: bool = True,
+        capture_output: bool = False,
+        text: bool = False,
+        **kwargs: Any,
+    ) -> Union[subprocess.CompletedProcess, str]:
+        """Run git command asynchronously with appropriate temp_dir and env settings.
+
+        This helper method simplifies git subprocess calls in e2e tests by:
+        1. Automatically using the test's temp_dir as the working directory
+        2. Using the test's pre-configured env variables
+        3. Supporting async execution and various output capture options
+
+        Args:
+            args: List of git command arguments (without 'git' prefix)
+            check: If True, raises if the command returns a non-zero exit code
+            capture_output: If True, captures stdout and stderr
+            text: If True, decodes stdout and stderr using the preferred encoding
+            **kwargs: Additional keyword arguments to pass to subprocess.run
+
+        Returns:
+            If capture_output is False: subprocess.CompletedProcess instance
+            If capture_output is True and decode is True: The stdout content as string
+
+        Example:
+            # Run git add command
+            await self.git_run(["add", "file.txt"])
+
+            # Get commit log as string
+            log_output = await self.git_run(["log", "--oneline"], capture_output=True, text=True)
+        """
+        # Always include 'git' as the command
+        cmd = ["git"] + args
+
+        # Set defaults for working directory and environment
+        kwargs.setdefault("cwd", self.temp_dir.name)
+        kwargs.setdefault("env", self.env)
+
+        # Capture output if requested
+        if capture_output:
+            kwargs.setdefault("stdout", subprocess.PIPE)
+            kwargs.setdefault("stderr", subprocess.PIPE)
+
+        # Run the command asynchronously
+        proc = await asyncio.create_subprocess_exec(
+            *cmd,
+            **kwargs,
+        )
+
+        stdout, stderr = await proc.communicate()
+
+        # Build a CompletedProcess-like result
+        result = subprocess.CompletedProcess(
+            args=cmd,
+            returncode=proc.returncode,
+            stdout=stdout,
+            stderr=stderr,
+        )
+
+        # Check for error if requested
+        if check and proc.returncode != 0:
+            stderr.decode() if stderr else "Unknown error"
+            cmd_str = " ".join(cmd)
+            raise subprocess.CalledProcessError(
+                proc.returncode, cmd_str, output=stdout, stderr=stderr
+            )
+
+        # Return the appropriate result type
+        if capture_output and text and stdout is not None:
+            return stdout.decode().strip()
+        return result
