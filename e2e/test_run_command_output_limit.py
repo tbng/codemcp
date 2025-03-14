@@ -43,18 +43,9 @@ verbose = ["./generate_output.sh"]
 """)
 
         # Add files to git
-        subprocess.run(
-            ["git", "add", "."],
-            cwd=self.temp_dir.name,
-            env=self.env,
-            check=True,
-        )
-
-        subprocess.run(
-            ["git", "commit", "-m", "Add test files for output truncation test"],
-            cwd=self.temp_dir.name,
-            env=self.env,
-            check=True,
+        await self.git_run(["add", "."])
+        await self.git_run(
+            ["commit", "-m", "Add test files for output truncation test"]
         )
 
         async with self.create_client_session() as session:

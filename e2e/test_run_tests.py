@@ -70,19 +70,8 @@ test = ["./run_test.sh"]
 """)
 
         # Add files to git
-        subprocess.run(
-            ["git", "add", "."],
-            cwd=self.temp_dir.name,
-            env=self.env,
-            check=True,
-        )
-
-        subprocess.run(
-            ["git", "commit", "-m", "Add test files"],
-            cwd=self.temp_dir.name,
-            env=self.env,
-            check=True,
-        )
+        await self.git_run(["add", "."])
+        await self.git_run(["commit", "-m", "Add test files"])
 
         async with self.create_client_session() as session:
             # First initialize project to get chat_id

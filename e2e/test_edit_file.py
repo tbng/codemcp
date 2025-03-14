@@ -21,18 +21,8 @@ class EditFileTest(MCPEndToEndTestCase):
             f.write(original_content)
 
         # Add the file to git and commit it
-        subprocess.run(
-            ["git", "add", "edit_file.txt"],
-            cwd=self.temp_dir.name,
-            env=self.env,
-            check=False,
-        )
-        subprocess.run(
-            ["git", "commit", "-m", "Add file for editing"],
-            cwd=self.temp_dir.name,
-            env=self.env,
-            check=False,
-        )
+        await self.git_run(["add", "edit_file.txt"], check=False)
+        await self.git_run(["commit", "-m", "Add file for editing"], check=False)
 
         # Edit the file using the EditFile subtool with proper context
         old_string = "Line 1\nLine 2\nLine 3\n"
@@ -80,19 +70,15 @@ class EditFileTest(MCPEndToEndTestCase):
             self.assertEqual(file_content, expected_content)
 
             # Verify git state shows file was committed
-            status = subprocess.check_output(
-                ["git", "status"],
-                cwd=self.temp_dir.name,
-                env=self.env,
-            ).decode()
+            status = await self.git_run(["status"], capture_output=True, text=True)
 
             # Use expect test to verify git status - should show as clean working tree
             # since EditFile automatically commits changes
             self.assertExpectedInline(
                 status,
-                """On branch main
-nothing to commit, working tree clean
-""",
+                """\
+On branch main
+nothing to commit, working tree clean""",
             )
 
     async def test_edit_untracked_file(self):
@@ -104,23 +90,13 @@ nothing to commit, working tree clean
             f.write(original_content)
 
         # Verify the file exists but is not tracked
-        status = subprocess.check_output(
-            ["git", "status"],
-            cwd=self.temp_dir.name,
-            env=self.env,
-        ).decode()
+        status = await self.git_run(["status"], capture_output=True, text=True)
 
-        (
-            subprocess.run(
-                ["git", "ls-files", untracked_file_path],
-                cwd=self.temp_dir.name,
-                env=self.env,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                check=False,
-            )
-            .stdout.decode()
-            .strip()
+        await self.git_run(
+            ["ls-files", untracked_file_path],
+            capture_output=True,
+            text=True,
+            check=False,
         )
 
         self.assertIn("Untracked files:", status)
@@ -236,36 +212,23 @@ nothing to commit, working tree clean
             # For this test, we'll manually add and commit the file
             # This is a change in the test expectation since we don't need automatic git tracking
             # for files in untracked directories - we just want file creation to work
-            subprocess.run(
-                ["git", "add", new_file_path],
-                cwd=self.temp_dir.name,
-                env=self.env,
+            await self.git_run(
+                ["add", new_file_path],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 check=False,
             )
 
-            subprocess.run(
-                ["git", "commit", "-m", "Add test file"],
-                cwd=self.temp_dir.name,
-                env=self.env,
+            await self.git_run(
+                ["commit", "-m", "Add test file"],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 check=False,
             )
 
             # Now check if the file is tracked
-            ls_files_output = (
-                subprocess.run(
-                    ["git", "ls-files", new_file_path],
-                    cwd=self.temp_dir.name,
-                    env=self.env,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
-                    check=False,
-                )
-                .stdout.decode()
-                .strip()
+            ls_files_output = await self.git_run(
+                ["ls-files", new_file_path], capture_output=True, text=True, check=False
             )
 
             # Verify the file is tracked by git after our manual commit
@@ -282,27 +245,11 @@ nothing to commit, working tree clean
             f.write("Tracked file content")
 
         # Add and commit the file
-        subprocess.run(
-            ["git", "add", "tracked.txt"],
-            cwd=self.temp_dir.name,
-            env=self.env,
-            check=True,
-        )
-
-        subprocess.run(
-            ["git", "commit", "-m", "Add tracked file"],
-            cwd=self.temp_dir.name,
-            env=self.env,
-            check=True,
-        )
+        await self.git_run(["add", "tracked.txt"])
+        await self.git_run(["commit", "-m", "Add tracked file"])
 
         # Remove the file with git rm
-        subprocess.run(
-            ["git", "rm", "tracked.txt"],
-            cwd=self.temp_dir.name,
-            env=self.env,
-            check=True,
-        )
+        await self.git_run(["rm", "tracked.txt"])
 
         # Verify file was removed
         self.assertFalse(
@@ -355,11 +302,9 @@ nothing to commit, working tree clean
                 self.assertEqual(content, "Attempt to write to git-removed file")
 
                 # Check if the recreated file is tracked in git
-                status_after = subprocess.check_output(
-                    ["git", "status"],
-                    cwd=self.temp_dir.name,
-                    env=self.env,
-                ).decode()
+                status_after = await self.git_run(
+                    ["status"], capture_output=True, text=True
+                )
 
                 # If the file is untracked or deleted, we have a problem
                 self.assertNotIn(
