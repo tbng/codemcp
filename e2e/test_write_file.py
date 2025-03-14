@@ -52,12 +52,7 @@ class WriteFileTest(MCPEndToEndTestCase):
             )
 
             # Extract chat_id from the init result
-            import re
-
-            chat_id_match = re.search(
-                r"chat has been assigned a unique ID: ([^\n]+)", init_result_text
-            )
-            chat_id = chat_id_match.group(1) if chat_id_match else "test-chat-id"
+            chat_id = self.extract_chat_id_from_text(init_result_text)
 
             # Call the WriteFile tool with chat_id using our new helper method
             result_text = await self.call_tool_assert_success(
@@ -106,14 +101,10 @@ nothing to commit, working tree clean
                 .strip()
             )
 
-            # Use expect test to verify the commit message
-            self.assertExpectedInline(
-                commit_message,
-                """\
-wip: Create new file
-
-codemcp-id: test-chat-id""",
-            )
+            # Check for the description in the commit message
+            self.assertIn("Create new file", commit_message)
+            # Check for the codemcp-id in the commit message
+            self.assertIn(f"codemcp-id: {chat_id}", commit_message)
 
     async def test_create_new_file_with_write_file(self):
         """Test creating a new file that doesn't exist yet with WriteFile."""
@@ -140,12 +131,7 @@ codemcp-id: test-chat-id""",
             )
 
             # Extract chat_id from the init result
-            import re
-
-            chat_id_match = re.search(
-                r"chat has been assigned a unique ID: ([^\n]+)", init_result_text
-            )
-            chat_id = chat_id_match.group(1) if chat_id_match else "test-chat-id"
+            chat_id = self.extract_chat_id_from_text(init_result_text)
 
             # Create a new file using our helper method
             result_text = await self.call_tool_assert_success(
@@ -244,12 +230,7 @@ codemcp-id: test-chat-id""",
             )
 
             # Extract chat_id from the init result
-            import re
-
-            chat_id_match = re.search(
-                r"chat has been assigned a unique ID: ([^\n]+)", init_result_text
-            )
-            chat_id = chat_id_match.group(1) if chat_id_match else "test-chat-id"
+            chat_id = self.extract_chat_id_from_text(init_result_text)
 
             # Try to write to the untracked file
             new_content = "This content should not be written to untracked file"
@@ -321,12 +302,7 @@ codemcp-id: test-chat-id""",
             )
 
             # Extract chat_id from the init result
-            import re
-
-            chat_id_match = re.search(
-                r"chat has been assigned a unique ID: ([^\n]+)", init_result_text
-            )
-            chat_id = chat_id_match.group(1) if chat_id_match else "test-chat-id"
+            chat_id = self.extract_chat_id_from_text(init_result_text)
 
             # Try to write a new file in the untracked directory
             # Not using call_tool_assert_success because the behavior is conditional

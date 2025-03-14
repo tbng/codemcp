@@ -117,6 +117,24 @@ class MCPEndToEndTestCase(TestCase, unittest.IsolatedAsyncioTestCase):
             return result
         return str(result)
 
+    def extract_chat_id_from_text(self, text):
+        """Extract chat_id from init_result_text.
+
+        Args:
+            text: The text output from InitProject tool
+
+        Returns:
+            str: The extracted chat_id
+
+        Raises:
+            AssertionError: If chat_id cannot be found in text
+        """
+        import re
+
+        chat_id_match = re.search(r"chat ID: ([^\n]+)", text)
+        assert chat_id_match is not None, "Could not find chat ID in text"
+        return chat_id_match.group(1)
+
     async def call_tool_assert_success(self, session, tool_name, tool_params):
         """Call a tool and assert that it succeeds (isError=False).
 
