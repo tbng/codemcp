@@ -57,7 +57,8 @@ test = ["./run_test.sh"]
 
         # First InitProject call to create a reference with a chat ID
         async with self.create_client_session() as session:
-            result1 = await session.call_tool(
+            result_text1 = await self.call_tool_assert_success(
+                session,
                 "codemcp",
                 {
                     "subtool": "InitProject",
@@ -68,8 +69,6 @@ test = ["./run_test.sh"]
             )
 
             # Extract the chat ID from the result
-            normalized_result1 = self.normalize_path(result1)
-            result_text1 = self.extract_text_from_result(normalized_result1)
             import re
 
             chat_id_match = re.search(r"chat ID: ([\w-]+)", result_text1)
@@ -109,7 +108,8 @@ test = ["./run_test.sh"]
 
         # Second InitProject call with reuse_head_chat_id=True
         async with self.create_client_session() as session:
-            result2 = await session.call_tool(
+            result_text2 = await self.call_tool_assert_success(
+                session,
                 "codemcp",
                 {
                     "subtool": "InitProject",
@@ -121,8 +121,6 @@ test = ["./run_test.sh"]
             )
 
             # Extract the chat ID from the result
-            normalized_result2 = self.normalize_path(result2)
-            result_text2 = self.extract_text_from_result(normalized_result2)
             chat_id_match = re.search(r"chat ID: ([\w-]+)", result_text2)
             self.assertIsNotNone(chat_id_match, "Chat ID not found in result")
             reused_chat_id = chat_id_match.group(1)
@@ -136,8 +134,9 @@ test = ["./run_test.sh"]
         # We'll test that InitProject can read it correctly
 
         async with self.create_client_session() as session:
-            # Call the InitProject tool
-            result = await session.call_tool(
+            # Call the InitProject tool with our new helper method
+            result_text = await self.call_tool_assert_success(
+                session,
                 "codemcp",
                 {
                     "subtool": "InitProject",
@@ -147,10 +146,6 @@ test = ["./run_test.sh"]
                     "reuse_head_chat_id": False,
                 },
             )
-
-            # Normalize the result
-            normalized_result = self.normalize_path(result)
-            result_text = self.extract_text_from_result(normalized_result)
 
             # Verify the result contains expected system prompt elements
             self.assertIn("You are an AI assistant", result_text)
@@ -177,8 +172,9 @@ doc = "Run tests with optional arguments"
 """)
 
         async with self.create_client_session() as session:
-            # Call the InitProject tool
-            result = await session.call_tool(
+            # Call the InitProject tool with our new helper method
+            result_text = await self.call_tool_assert_success(
+                session,
                 "codemcp",
                 {
                     "subtool": "InitProject",
@@ -188,10 +184,6 @@ doc = "Run tests with optional arguments"
                     "reuse_head_chat_id": False,
                 },
             )
-
-            # Normalize the result
-            normalized_result = self.normalize_path(result)
-            result_text = self.extract_text_from_result(normalized_result)
 
             # Verify the result contains expected elements from the complex TOML
             self.assertIn("This is a multiline string", result_text)
@@ -211,8 +203,9 @@ format = ["./run_format.sh"]
 """)
 
         async with self.create_client_session() as session:
-            # Call the InitProject tool
-            result = await session.call_tool(
+            # Call the InitProject tool with our new helper method
+            result_text = await self.call_tool_assert_success(
+                session,
                 "codemcp",
                 {
                     "subtool": "InitProject",
@@ -222,10 +215,6 @@ format = ["./run_format.sh"]
                     "reuse_head_chat_id": False,
                 },
             )
-
-            # Normalize the result
-            normalized_result = self.normalize_path(result)
-            result_text = self.extract_text_from_result(normalized_result)
 
             # Verify the result contains expected elements, ensuring binary data was handled properly
             self.assertIn("format", result_text)
@@ -351,7 +340,8 @@ test = ["./run_test.sh"]
 
         async with self.create_client_session() as session:
             # Call InitProject with a conventional commit style subject line
-            result = await session.call_tool(
+            result_text = await self.call_tool_assert_success(
+                session,
                 "codemcp",
                 {
                     "subtool": "InitProject",
@@ -362,9 +352,6 @@ test = ["./run_test.sh"]
             )
 
             # Verify that the chat ID contains the slugified subject line
-            normalized_result = self.normalize_path(result)
-            result_text = self.extract_text_from_result(normalized_result)
-
             # The chat ID should be something like "1-feat-add-new-feature-with-spaces"
             # Check that it's not using "untitled"
             self.assertNotIn("untitled", result_text)
@@ -441,7 +428,8 @@ test = ["./run_test.sh"]
 
         # Call InitProject which should create a reference without changing HEAD
         async with self.create_client_session() as session:
-            result = await session.call_tool(
+            result_text = await self.call_tool_assert_success(
+                session,
                 "codemcp",
                 {
                     "subtool": "InitProject",
@@ -452,8 +440,6 @@ test = ["./run_test.sh"]
             )
 
             # Extract the chat ID from the result
-            normalized_result = self.normalize_path(result)
-            result_text = self.extract_text_from_result(normalized_result)
             import re
 
             chat_id_match = re.search(r"chat ID: ([\w-]+)", result_text)
