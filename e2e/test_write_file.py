@@ -92,6 +92,26 @@ nothing to commit, working tree clean
 """,
             )
 
+            # Get the commit message of the HEAD commit
+            commit_message = (
+                subprocess.check_output(
+                    ["git", "log", "-1", "--pretty=%B"],
+                    cwd=self.temp_dir.name,
+                    env=self.env,
+                )
+                .decode()
+                .strip()
+            )
+
+            # Use expect test to verify the commit message
+            self.assertExpectedInline(
+                commit_message,
+                """\
+wip: Create new file
+
+codemcp-id: test-chat-id""",
+            )
+
     async def test_create_new_file_with_write_file(self):
         """Test creating a new file that doesn't exist yet with WriteFile."""
         # Path to a new file that doesn't exist yet, within the git repository
