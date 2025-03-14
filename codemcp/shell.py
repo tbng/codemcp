@@ -40,6 +40,29 @@ async def run_command(
     log_cmd = " ".join(str(c) for c in cmd)
     logging.info(f"Running command: {log_cmd}")
 
+    # Add diagnostic logging to detect when git operations target the codemcp repository
+    codemcp_repo_path = "/Users/ezyang/Dev/codemcp"
+    import os
+
+    current_dir = os.path.abspath(os.curdir)
+    specified_dir = os.path.abspath(cwd) if cwd else current_dir
+
+    if (
+        cmd
+        and cmd[0] == "git"
+        and (
+            specified_dir == codemcp_repo_path
+            or specified_dir.startswith(codemcp_repo_path + "/")
+        )
+    ):
+        logging.warning(
+            f"WARNING: Git command {log_cmd} running in codemcp repository: {specified_dir}, "
+            f"current dir: {current_dir}"
+        )
+        import traceback
+
+        logging.warning(f"Call stack:\n{traceback.format_stack()}")
+
     # Prepare stdout and stderr pipes
     stdout_pipe = asyncio.subprocess.PIPE if capture_output else None
     stderr_pipe = asyncio.subprocess.PIPE if capture_output else None

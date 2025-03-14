@@ -53,7 +53,14 @@ class AnotherTestCase(unittest.TestCase):
         with open(runner_script_path, "w") as f:
             f.write(f"""#!/bin/bash
 set -e
-cd "$(dirname "$0")"
+SCRIPT_DIR="$(cd "$(dirname "${{BASH_SOURCE[0]}}")" && pwd)"
+echo "===== TEST RUNNER DIAGNOSTICS ====="
+echo "PWD before: $(pwd)"
+echo "SCRIPT_DIR: $SCRIPT_DIR"
+echo "Arguments: $@"
+cd "$SCRIPT_DIR"
+echo "PWD after: $(pwd)"
+echo "===== END DIAGNOSTICS ====="
 {current_python} -m pytest $@
 """)
         os.chmod(runner_script_path, 0o755)  # Make it executable

@@ -26,12 +26,31 @@ async def run_command(
     Returns:
         A string containing the result of the command operation
     """
+    import logging
+    import os
+
+    # Get the normalized absolute path to ensure we're operating in the correct directory
+    normalized_project_dir = os.path.abspath(project_dir)
+
+    # Add a safeguard to prevent using the codemcp repository directory for commands
+    codemcp_repo_path = "/Users/ezyang/Dev/codemcp"
+    if normalized_project_dir == codemcp_repo_path:
+        logging.warning(
+            f"WARNING: Attempted to run command in codemcp repository directory: {normalized_project_dir}"
+        )
+        return f"Error: Cannot run commands directly in the codemcp repository directory. Please specify a valid project directory."
+
     command_list = get_command_from_config(project_dir, command)
 
     # If arguments are provided, extend the command with them
     if arguments and command_list:
         command_list = command_list.copy()
         command_list.extend(arguments)
+
+    # Ensure we log what's happening
+    logging.info(
+        f"Running {command} command in directory {normalized_project_dir} with arguments: {arguments}"
+    )
 
     return await run_code_command(
         project_dir, command, command_list, f"Auto-commit {command} changes", chat_id

@@ -153,6 +153,19 @@ async def get_repository_root(path: str) -> str:
         # Get the absolute path to ensure consistency
         directory = os.path.abspath(directory)
 
+        # Add diagnostic logging to help identify the issue
+        codemcp_repo_path = "/Users/ezyang/Dev/codemcp"
+        if directory == codemcp_repo_path or directory.startswith(
+            codemcp_repo_path + "/"
+        ):
+            logging.warning(
+                f"WARNING: get_repository_root called with codemcp repository path: {directory}, "
+                f"called from: {os.path.abspath(os.curdir)}"
+            )
+            import traceback
+
+            logging.warning(f"Call stack:\n{traceback.format_stack()}")
+
         # Get the repository root
         result = await run_command(
             ["git", "rev-parse", "--show-toplevel"],
@@ -162,7 +175,16 @@ async def get_repository_root(path: str) -> str:
             text=True,
         )
 
-        return result.stdout.strip()
+        repo_root = result.stdout.strip()
+
+        # Also log when the repository root is the codemcp repository
+        if repo_root == codemcp_repo_path:
+            logging.warning(
+                f"WARNING: Repository root resolved to codemcp repository: {repo_root}, "
+                f"from path: {directory}, cwd: {os.path.abspath(os.curdir)}"
+            )
+
+        return repo_root
     except (subprocess.SubprocessError, OSError) as e:
         raise ValueError(f"Path is not in a git repository: {str(e)}")
 
