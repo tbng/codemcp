@@ -53,7 +53,20 @@ class AnotherTestCase(unittest.TestCase):
         with open(runner_script_path, "w") as f:
             f.write(f"""#!/bin/bash
 set -e
-cd "$(dirname "$0")"
+
+# Ensure we're always running from the script directory
+SCRIPT_DIR="$(cd "$(dirname "${{BASH_SOURCE[0]}}")" && pwd)"
+
+# If in debug mode, output diagnostic information
+if [ -n "$CODEMCP_DEBUG" ]; then
+    echo "===== TEST SCRIPT DEBUG INFO ====="
+    echo "Original directory: $(pwd)"
+    echo "Script directory: $SCRIPT_DIR"
+    echo "Test arguments: $@"
+    echo "============================="
+fi
+
+cd "$SCRIPT_DIR"
 {current_python} -m pytest $@
 """)
         os.chmod(runner_script_path, 0o755)  # Make it executable

@@ -250,11 +250,29 @@ class MCPEndToEndTestCase(TestCase, unittest.IsolatedAsyncioTestCase):
     async def create_client_session(self):
         """Create an MCP client session connected to codemcp server."""
         # Set up server parameters for the codemcp MCP server
+
+        # Ensure we're using the temporary directory as the working directory
+        temp_dir = self.temp_dir.name
+
+        # Add a safeguard to ensure we're not accidentally using the codemcp repo
+        import inspect
+        import os
+
+        current_module_dir = os.path.dirname(
+            os.path.abspath(inspect.getfile(MCPEndToEndTestCase))
+        )
+        codemcp_repo_path = os.path.abspath(os.path.join(current_module_dir, ".."))
+
+        if temp_dir.startswith(codemcp_repo_path):
+            raise RuntimeError(
+                f"Test is using codemcp repository for temp_dir: {temp_dir}"
+            )
+
         server_params = StdioServerParameters(
             command=sys.executable,  # Current Python executable
             args=["-m", "codemcp"],  # Module path to codemcp
             env=self.env,
-            cwd=self.temp_dir.name,  # Set the working directory to our test directory
+            cwd=temp_dir,  # Set the working directory to our test directory
         )
 
         async with self._unwrap_exception_groups():

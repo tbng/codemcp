@@ -2,6 +2,7 @@
 
 import asyncio
 import logging
+import os
 import subprocess
 from typing import Dict, List, Optional
 
@@ -39,6 +40,24 @@ async def run_command(
     # Log the command being run at INFO level
     log_cmd = " ".join(str(c) for c in cmd)
     logging.info(f"Running command: {log_cmd}")
+
+    # Only log suspicious git operations when debug is enabled
+    if cmd and cmd[0] == "git" and os.environ.get("CODEMCP_DEBUG"):
+        import inspect
+
+        # Determine codemcp repo path dynamically
+        module_file = inspect.getfile(run_command)
+        current_module_dir = os.path.dirname(os.path.abspath(module_file))
+        codemcp_repo_path = os.path.abspath(os.path.join(current_module_dir, ".."))
+
+        # Check if we're operating in the codemcp repository
+        specified_dir = os.path.abspath(cwd) if cwd else os.path.abspath(os.curdir)
+        if specified_dir == codemcp_repo_path or specified_dir.startswith(
+            codemcp_repo_path + os.sep
+        ):
+            logging.warning(
+                f"Git command running in codemcp repository: {specified_dir}"
+            )
 
     # Prepare stdout and stderr pipes
     stdout_pipe = asyncio.subprocess.PIPE if capture_output else None

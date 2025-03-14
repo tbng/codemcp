@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import inspect
 import logging
 import os
 import re
@@ -153,6 +154,12 @@ async def get_repository_root(path: str) -> str:
         # Get the absolute path to ensure consistency
         directory = os.path.abspath(directory)
 
+        # Get the absolute path of the current module to identify codemcp repo
+        current_module_dir = os.path.dirname(
+            os.path.abspath(inspect.getfile(inspect.currentframe()))
+        )
+        codemcp_repo_path = os.path.abspath(os.path.join(current_module_dir, ".."))
+
         # Get the repository root
         result = await run_command(
             ["git", "rev-parse", "--show-toplevel"],
@@ -162,7 +169,15 @@ async def get_repository_root(path: str) -> str:
             text=True,
         )
 
-        return result.stdout.strip()
+        repo_root = result.stdout.strip()
+
+        # Warn if operating in the codemcp repository (development issue)
+        if os.environ.get("CODEMCP_DEBUG") and repo_root == codemcp_repo_path:
+            logging.warning(f"Operating in codemcp repository: {repo_root}")
+
+        return repo_root
+
+        return repo_root
     except (subprocess.SubprocessError, OSError) as e:
         raise ValueError(f"Path is not in a git repository: {str(e)}")
 
