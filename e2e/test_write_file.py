@@ -258,27 +258,30 @@ codemcp-id: test-chat-id""",
                 },
             )
 
-            # Check if the operation reported an error
-            has_error = "Error" in result_text and "not tracked by git" in result_text
+            # Check if the operation reported an error - this should be deterministic
+            # The WriteFile function should return an error for untracked files
+            has_error = result_text.startswith("Error writing file: ")
+            self.assertTrue(
+                has_error, "WriteFile should reject untracked files with an error"
+            )
 
-            # Verify the file content based on error status
+            # Check specifically for the expected error message about git tracking
+            expected_error_msg = "File is not tracked by git"
+            self.assertIn(
+                expected_error_msg,
+                result_text,
+                f"Expected error message about untracked file not found in: {result_text}",
+            )
+
+            # Verify the file content has not changed
             with open(untracked_file_path) as f:
                 actual_content = f.read()
 
-            if has_error:
-                # If error message is present, content should not change
-                self.assertEqual(
-                    original_content,
-                    actual_content,
-                    "File content should not change when operation is rejected",
-                )
-            else:
-                # If no error message, the content should have changed
-                self.assertEqual(
-                    new_content,
-                    actual_content,
-                    "File content should be updated if operation succeeded",
-                )
+            self.assertEqual(
+                original_content,
+                actual_content,
+                "File content should not change when operation is rejected",
+            )
 
             # Verify file modification time was not changed
             current_mtime = os.path.getmtime(untracked_file_path)
