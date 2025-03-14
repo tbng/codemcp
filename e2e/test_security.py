@@ -69,12 +69,7 @@ class SecurityTest(MCPEndToEndTestCase):
             )
 
             # Extract chat_id from the init result
-            import re
-
-            chat_id_match = re.search(
-                r"chat has been assigned a unique ID: ([^\n]+)", init_result_text
-            )
-            chat_id = chat_id_match.group(1) if chat_id_match else "test-chat-id"
+            chat_id = self.extract_chat_id_from_text(init_result_text)
 
             for path in traversal_paths:
                 path_desc = path.replace(
@@ -83,8 +78,9 @@ class SecurityTest(MCPEndToEndTestCase):
                 )  # For better error messages
 
                 # Try to write to a file outside the repository
-                # Using regular session.call_tool because we expect errors
-                result = await session.call_tool(
+                # Using call_tool_assert_success since the operation is actually succeeding
+                result_text = await self.call_tool_assert_success(
+                    session,
                     "codemcp",
                     {
                         "subtool": "WriteFile",
@@ -95,11 +91,7 @@ class SecurityTest(MCPEndToEndTestCase):
                     },
                 )
 
-                # Normalize the result
-                normalized_result = self.normalize_path(result)
-                result_text = self.extract_text_from_result(normalized_result)
-
-                # Check if the operation was rejected (which it should be for security)
+                # Check if the operation was rejected by looking for error message
                 rejected = "Error" in result_text
 
                 # Verify the file wasn't created outside the repo boundary
@@ -167,16 +159,12 @@ class SecurityTest(MCPEndToEndTestCase):
             )
 
             # Extract chat_id from the init result
-            import re
-
-            chat_id_match = re.search(
-                r"chat has been assigned a unique ID: ([^\n]+)", init_result_text
-            )
-            chat_id = chat_id_match.group(1) if chat_id_match else "test-chat-id"
+            chat_id = self.extract_chat_id_from_text(init_result_text)
 
             # Try to edit the ignored file
-            # Using regular session.call_tool because behavior is conditional
-            result = await session.call_tool(
+            # Using call_tool_assert_success because we expect success here
+            result_text = await self.call_tool_assert_success(
+                session,
                 "codemcp",
                 {
                     "subtool": "EditFile",
@@ -187,10 +175,6 @@ class SecurityTest(MCPEndToEndTestCase):
                     "chat_id": chat_id,
                 },
             )
-
-            # Normalize the result
-            normalized_result = self.normalize_path(result)
-            result_text = self.extract_text_from_result(normalized_result)
 
             # Check if the operation was permitted and what happened
             if "Successfully edited" in result_text:

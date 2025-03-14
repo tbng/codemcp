@@ -86,22 +86,24 @@ test = ["./run_test.sh"]
 
         async with self.create_client_session() as session:
             # First initialize project to get chat_id
-            init_result = await session.call_tool(
+            init_result_text = await self.call_tool_assert_success(
+                session,
                 "codemcp",
-                {"subtool": "InitProject", "path": self.temp_dir.name},
+                {
+                    "subtool": "InitProject",
+                    "path": self.temp_dir.name,
+                    "user_prompt": "Test initialization for run tests test",
+                    "subject_line": "test: initialize for run tests test",
+                    "reuse_head_chat_id": False,
+                },
             )
-            init_result_text = self.extract_text_from_result(init_result)
 
             # Extract chat_id from the init result
-            import re
-
-            chat_id_match = re.search(
-                r"chat has been assigned a unique ID: ([^\n]+)", init_result_text
-            )
-            chat_id = chat_id_match.group(1) if chat_id_match else "test-chat-id"
+            chat_id = self.extract_chat_id_from_text(init_result_text)
 
             # Call the RunCommand tool with test command and chat_id
-            result = await session.call_tool(
+            result_text = await self.call_tool_assert_success(
+                session,
                 "codemcp",
                 {
                     "subtool": "RunCommand",
@@ -111,15 +113,12 @@ test = ["./run_test.sh"]
                 },
             )
 
-            # Normalize the result
-            normalized_result = self.normalize_path(result)
-            result_text = self.extract_text_from_result(normalized_result)
-
             # Verify the success message
             self.assertIn("Code test successful", result_text)
 
             # Call the RunCommand tool with test command and arguments
-            selector_result = await session.call_tool(
+            selector_result_text = await self.call_tool_assert_success(
+                session,
                 "codemcp",
                 {
                     "subtool": "RunCommand",
@@ -130,11 +129,7 @@ test = ["./run_test.sh"]
                 },
             )
 
-            # Normalize the result
-            normalized_selector_result = self.normalize_path(selector_result)
-            selector_result_text = self.extract_text_from_result(
-                normalized_selector_result
-            )
+            # Use the result text directly
 
             # Verify the success message
             self.assertIn("Code test successful", selector_result_text)
