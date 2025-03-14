@@ -214,7 +214,8 @@ class GitAmendTest(MCPEndToEndTestCase):
 
         async with self.create_client_session() as session:
             # First edit with chat_id1
-            result1 = await session.call_tool(
+            result1_text = await self.call_tool_assert_success(
+                session,
                 "codemcp",
                 {
                     "subtool": "EditFile",
@@ -226,10 +227,8 @@ class GitAmendTest(MCPEndToEndTestCase):
                 },
             )
 
-            # Normalize and check the result
-            normalized_result1 = self.normalize_path(result1)
-            result_text1 = self.extract_text_from_result(normalized_result1)
-            self.assertIn("Successfully edited", result_text1)
+            # Check the result
+            self.assertIn("Successfully edited", result1_text)
 
             # Get the commit count after first edit
             commit_count_after_first_edit = len(
@@ -254,7 +253,8 @@ class GitAmendTest(MCPEndToEndTestCase):
             chat_id2 = "chat-session-2"
 
             # Edit with chat_id2
-            result2 = await session.call_tool(
+            result2_text = await self.call_tool_assert_success(
+                session,
                 "codemcp",
                 {
                     "subtool": "EditFile",
@@ -266,10 +266,8 @@ class GitAmendTest(MCPEndToEndTestCase):
                 },
             )
 
-            # Normalize and check the result
-            normalized_result2 = self.normalize_path(result2)
-            result_text2 = self.extract_text_from_result(normalized_result2)
-            self.assertIn("Successfully edited", result_text2)
+            # Check the result
+            self.assertIn("Successfully edited", result2_text)
 
             # Get the commit count after second edit
             commit_count_after_second_edit = len(
@@ -351,7 +349,8 @@ class GitAmendTest(MCPEndToEndTestCase):
 
         async with self.create_client_session() as session:
             # AI-generated edit
-            result = await session.call_tool(
+            result_text = await self.call_tool_assert_success(
+                session,
                 "codemcp",
                 {
                     "subtool": "EditFile",
@@ -363,9 +362,7 @@ class GitAmendTest(MCPEndToEndTestCase):
                 },
             )
 
-            # Normalize and check the result
-            normalized_result = self.normalize_path(result)
-            result_text = self.extract_text_from_result(normalized_result)
+            # Check the result
             self.assertIn("Successfully edited", result_text)
 
             # Get the commit count after AI edit
@@ -478,7 +475,8 @@ class GitAmendTest(MCPEndToEndTestCase):
 
         async with self.create_client_session() as session:
             # New edit with the original chat_id1
-            result = await session.call_tool(
+            result_text = await self.call_tool_assert_success(
+                session,
                 "codemcp",
                 {
                     "subtool": "EditFile",
@@ -490,9 +488,7 @@ class GitAmendTest(MCPEndToEndTestCase):
                 },
             )
 
-            # Normalize and check the result
-            normalized_result = self.normalize_path(result)
-            result_text = self.extract_text_from_result(normalized_result)
+            # Check the result
             self.assertIn("Successfully edited", result_text)
 
             # Get the commit count after the new edit
@@ -760,7 +756,8 @@ class GitAmendTest(MCPEndToEndTestCase):
 
         async with self.create_client_session() as session:
             # First edit with our chat_id
-            result1 = await session.call_tool(
+            result1_text = await self.call_tool_assert_success(
+                session,
                 "codemcp",
                 {
                     "subtool": "EditFile",
@@ -772,10 +769,8 @@ class GitAmendTest(MCPEndToEndTestCase):
                 },
             )
 
-            # Normalize and check the result
-            normalized_result1 = self.normalize_path(result1)
-            result_text1 = self.extract_text_from_result(normalized_result1)
-            self.assertIn("Successfully edited", result_text1)
+            # Check the result
+            self.assertIn("Successfully edited", result1_text)
 
             # Get the commit hash for the first edit
             first_commit_hash = (
@@ -789,7 +784,8 @@ class GitAmendTest(MCPEndToEndTestCase):
             )
 
             # Second edit with the same chat_id
-            result2 = await session.call_tool(
+            result2_text = await self.call_tool_assert_success(
+                session,
                 "codemcp",
                 {
                     "subtool": "EditFile",
@@ -801,17 +797,13 @@ class GitAmendTest(MCPEndToEndTestCase):
                 },
             )
 
-            # Normalize and check the result
-            normalized_result2 = self.normalize_path(result2)
-            result_text2 = self.extract_text_from_result(normalized_result2)
-
             # Check in the response text for the commit hash pattern in the result
             import re
 
             hash_pattern = r"previous commit was [0-9a-f]{7}"
             self.assertTrue(
-                re.search(hash_pattern, result_text2),
-                f"Result text doesn't mention previous commit hash. Got: {result_text2}",
+                re.search(hash_pattern, result2_text),
+                f"Result text doesn't mention previous commit hash. Got: {result2_text}",
             )
 
             # Get the last commit message
@@ -841,7 +833,8 @@ class GitAmendTest(MCPEndToEndTestCase):
             )
 
             # Third edit to check multiple hash entries
-            result3 = await session.call_tool(
+            result3_text = await self.call_tool_assert_success(
+                session,
                 "codemcp",
                 {
                     "subtool": "EditFile",

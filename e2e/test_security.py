@@ -78,8 +78,9 @@ class SecurityTest(MCPEndToEndTestCase):
                 )  # For better error messages
 
                 # Try to write to a file outside the repository
-                # Using regular session.call_tool because we expect errors
-                result = await session.call_tool(
+                # This should result in an error
+                result_text = await self.call_tool_assert_error(
+                    session,
                     "codemcp",
                     {
                         "subtool": "WriteFile",
@@ -90,12 +91,8 @@ class SecurityTest(MCPEndToEndTestCase):
                     },
                 )
 
-                # Normalize the result
-                normalized_result = self.normalize_path(result)
-                result_text = self.extract_text_from_result(normalized_result)
-
-                # Check if the operation was rejected (which it should be for security)
-                rejected = "Error" in result_text
+                # Since we used call_tool_assert_error, we don't need to check if rejected
+                rejected = True
 
                 # Verify the file wasn't created outside the repo boundary
                 file_created = os.path.exists(outside_file_path)
@@ -165,8 +162,9 @@ class SecurityTest(MCPEndToEndTestCase):
             chat_id = self.extract_chat_id_from_text(init_result_text)
 
             # Try to edit the ignored file
-            # Using regular session.call_tool because behavior is conditional
-            result = await session.call_tool(
+            # Using call_tool_assert_success because we expect success here
+            result_text = await self.call_tool_assert_success(
+                session,
                 "codemcp",
                 {
                     "subtool": "EditFile",
@@ -177,10 +175,6 @@ class SecurityTest(MCPEndToEndTestCase):
                     "chat_id": chat_id,
                 },
             )
-
-            # Normalize the result
-            normalized_result = self.normalize_path(result)
-            result_text = self.extract_text_from_result(normalized_result)
 
             # Check if the operation was permitted and what happened
             if "Successfully edited" in result_text:

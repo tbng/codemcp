@@ -135,6 +135,37 @@ class MCPEndToEndTestCase(TestCase, unittest.IsolatedAsyncioTestCase):
         assert chat_id_match is not None, "Could not find chat ID in text"
         return chat_id_match.group(1)
 
+    async def call_tool_assert_error(self, session, tool_name, tool_params):
+        """Call a tool and assert that it fails (isError=True).
+
+        This is a helper method for the error path of tool calls, which:
+        1. Calls the specified tool with the given parameters
+        2. Asserts that the result is an error
+        3. Returns the extracted text result
+
+        Args:
+            session: The client session to use
+            tool_name: The name of the tool to call
+            tool_params: Dictionary of parameters to pass to the tool
+
+        Returns:
+            str: The extracted text content from the result
+
+        Raises:
+            AssertionError: If the tool call does not result in an error
+        """
+        result = await session.call_tool(tool_name, tool_params)
+
+        # Check that the result is an error
+        self.assertTrue(
+            getattr(result, "isError", False),
+            f"Tool call to {tool_name} succeeded, expected to fail",
+        )
+
+        # Return the normalized, extracted text result
+        normalized_result = self.normalize_path(result)
+        return self.extract_text_from_result(normalized_result)
+
     async def call_tool_assert_success(self, session, tool_name, tool_params):
         """Call a tool and assert that it succeeds (isError=False).
 

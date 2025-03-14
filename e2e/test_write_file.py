@@ -246,7 +246,8 @@ codemcp-id: test-chat-id""",
 
             # Try to write to the untracked file
             new_content = "This content should not be written to untracked file"
-            result = await session.call_tool(
+            result_text = await self.call_tool_assert_error(
+                session,
                 "codemcp",
                 {
                     "subtool": "WriteFile",
@@ -256,11 +257,6 @@ codemcp-id: test-chat-id""",
                     "chat_id": chat_id,
                 },
             )
-
-            # Normalize the result and extract text (not using call_tool_assert_success
-            # because we expect this to fail)
-            normalized_result = self.normalize_path(result)
-            result_text = self.extract_text_from_result(normalized_result)
 
             # Verify that the operation was rejected
             self.assertIn(
@@ -317,24 +313,37 @@ codemcp-id: test-chat-id""",
             chat_id = self.extract_chat_id_from_text(init_result_text)
 
             # Try to write a new file in the untracked directory
-            # Not using call_tool_assert_success because the behavior is conditional
-            result = await session.call_tool(
-                "codemcp",
-                {
-                    "subtool": "WriteFile",
-                    "path": new_file_path,
-                    "content": "New file in untracked directory",
-                    "description": "Attempt to create file in untracked directory",
-                    "chat_id": chat_id,
-                },
-            )
-
-            # Normalize the result
-            normalized_result = self.normalize_path(result)
-            result_text = self.extract_text_from_result(normalized_result)
+            # Using call_tool_assert_success because we expect it to succeed
+            try:
+                result_text = await self.call_tool_assert_success(
+                    session,
+                    "codemcp",
+                    {
+                        "subtool": "WriteFile",
+                        "path": new_file_path,
+                        "content": "New file in untracked directory",
+                        "description": "Attempt to create file in untracked directory",
+                        "chat_id": chat_id,
+                    },
+                )
+                success = True
+            except AssertionError:
+                # If call_tool_assert_success fails, try with call_tool_assert_error
+                result_text = await self.call_tool_assert_error(
+                    session,
+                    "codemcp",
+                    {
+                        "subtool": "WriteFile",
+                        "path": new_file_path,
+                        "content": "New file in untracked directory",
+                        "description": "Attempt to create file in untracked directory",
+                        "chat_id": chat_id,
+                    },
+                )
+                success = False
 
             # Check the actual behavior
-            if "Successfully wrote to" in result_text:
+            if success:
                 # The operation succeeded - check if the directory and file are now tracked in git
                 subprocess.check_output(
                     ["git", "status"],

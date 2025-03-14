@@ -149,8 +149,9 @@ nothing to commit, working tree clean
             # Try to edit the untracked file
             new_content = "Modified untracked content"
 
-            # Using regular session.call_tool because we expect this to fail
-            result = await session.call_tool(
+            # Using assert_error because we expect this to fail
+            result_text = await self.call_tool_assert_error(
+                session,
                 "codemcp",
                 {
                     "subtool": "EditFile",
@@ -161,12 +162,6 @@ nothing to commit, working tree clean
                     "chat_id": chat_id,
                 },
             )
-
-            # Get the result content
-            (result.content if hasattr(result, "content") else str(result))
-
-            # Normalize the result
-            self.normalize_path(result)
 
             # Check file after the operation
             if os.path.exists(untracked_file_path):
@@ -333,8 +328,9 @@ nothing to commit, working tree clean
             chat_id = self.extract_chat_id_from_text(init_result_text)
 
             # Try to write to the removed file
-            # Not using call_tool_assert_success because behavior is conditional
-            result = await session.call_tool(
+            # Using call_tool_assert_success as we expect this to succeed
+            result_text = await self.call_tool_assert_success(
+                session,
                 "codemcp",
                 {
                     "subtool": "WriteFile",
@@ -344,10 +340,6 @@ nothing to commit, working tree clean
                     "chat_id": chat_id,
                 },
             )
-
-            # Normalize the result
-            normalized_result = self.normalize_path(result)
-            result_text = self.extract_text_from_result(normalized_result)
 
             # Check the actual behavior
             if "Successfully wrote to" in result_text:
