@@ -149,11 +149,9 @@ test: initialize for write file test
 
 Test initialization for write_file test
 
-```git-revs
 c9bcf9c  (Base revision)
 113f76f  Create new file
 HEAD     Update file with third line
-```
 
 codemcp-id: test-chat-id""",
             )
