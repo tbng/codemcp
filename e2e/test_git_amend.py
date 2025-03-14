@@ -54,8 +54,9 @@ class GitAmendTest(MCPEndToEndTestCase):
         chat_id = "test-chat-123"
 
         async with self.create_client_session() as session:
-            # First edit with our chat_id
-            result1 = await session.call_tool(
+            # First edit with our chat_id using our helper method
+            result_text1 = await self.call_tool_assert_success(
+                session,
                 "codemcp",
                 {
                     "subtool": "EditFile",
@@ -67,9 +68,7 @@ class GitAmendTest(MCPEndToEndTestCase):
                 },
             )
 
-            # Normalize and check the result
-            normalized_result1 = self.normalize_path(result1)
-            result_text1 = self.extract_text_from_result(normalized_result1)
+            # Verify success message
             self.assertIn("Successfully edited", result_text1)
 
             # Get the current commit count after first edit
@@ -104,8 +103,9 @@ class GitAmendTest(MCPEndToEndTestCase):
             self.assertIn(f"codemcp-id: {chat_id}", commit_msg1)
             self.assertIn("First edit", commit_msg1)
 
-            # Second edit with the same chat_id
-            result2 = await session.call_tool(
+            # Second edit with the same chat_id using our helper method
+            result_text2 = await self.call_tool_assert_success(
+                session,
                 "codemcp",
                 {
                     "subtool": "EditFile",
@@ -117,9 +117,7 @@ class GitAmendTest(MCPEndToEndTestCase):
                 },
             )
 
-            # Normalize and check the result
-            normalized_result2 = self.normalize_path(result2)
-            result_text2 = self.extract_text_from_result(normalized_result2)
+            # Verify success message
             self.assertIn("Successfully edited", result_text2)
 
             # Get the commit count after second edit
@@ -573,8 +571,9 @@ class GitAmendTest(MCPEndToEndTestCase):
         ai_chat_id = "ai-chat-789"
 
         async with self.create_client_session() as session:
-            # Write with an AI chat ID
-            result = await session.call_tool(
+            # Write with an AI chat ID using our helper method
+            result_text = await self.call_tool_assert_success(
+                session,
                 "codemcp",
                 {
                     "subtool": "WriteFile",
@@ -585,9 +584,7 @@ class GitAmendTest(MCPEndToEndTestCase):
                 },
             )
 
-            # Normalize and check the result
-            normalized_result = self.normalize_path(result)
-            result_text = self.extract_text_from_result(normalized_result)
+            # Verify success message
             self.assertIn("Successfully wrote to", result_text)
 
             # Get the commit count after the write
@@ -676,8 +673,9 @@ class GitAmendTest(MCPEndToEndTestCase):
         second_chat_id = "second-chat-456"
 
         async with self.create_client_session() as session:
-            # Write to the file with a different chat ID
-            result = await session.call_tool(
+            # Write to the file with a different chat ID using our helper method
+            result_text = await self.call_tool_assert_success(
+                session,
                 "codemcp",
                 {
                     "subtool": "WriteFile",
@@ -688,9 +686,7 @@ class GitAmendTest(MCPEndToEndTestCase):
                 },
             )
 
-            # Normalize and check the result
-            normalized_result = self.normalize_path(result)
-            result_text = self.extract_text_from_result(normalized_result)
+            # Verify success message
             self.assertIn("Successfully wrote to", result_text)
 
             # Get the commit count after the write
