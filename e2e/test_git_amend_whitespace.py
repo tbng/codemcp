@@ -24,20 +24,10 @@ class GitAmendWhitespaceTest(MCPEndToEndTestCase):
             f.write(initial_content)
 
         # Add it to git
-        subprocess.run(
-            ["git", "add", test_file_path],
-            cwd=self.temp_dir.name,
-            env=self.env,
-            check=True,
-        )
+        await self.git_run(["add", test_file_path])
 
         # Commit it
-        subprocess.run(
-            ["git", "commit", "-m", "Add file for whitespace test"],
-            cwd=self.temp_dir.name,
-            env=self.env,
-            check=True,
-        )
+        await self.git_run(["commit", "-m", "Add file for whitespace test"])
 
         # Define a chat_id for our test
         chat_id = "whitespace-test-123"
@@ -58,14 +48,8 @@ class GitAmendWhitespaceTest(MCPEndToEndTestCase):
             )
 
             # Get the commit hash for the first edit
-            first_commit_hash = (
-                subprocess.check_output(
-                    ["git", "rev-parse", "--short", "HEAD"],
-                    cwd=self.temp_dir.name,
-                    env=self.env,
-                )
-                .decode()
-                .strip()
+            first_commit_hash = await self.git_run(
+                ["rev-parse", "--short", "HEAD"], capture_output=True, text=True
             )
 
             # Second edit with the same chat_id
@@ -83,11 +67,9 @@ class GitAmendWhitespaceTest(MCPEndToEndTestCase):
             )
 
             # Get the commit message with hash and HEAD
-            commit_msg = subprocess.check_output(
-                ["git", "log", "-1", "--pretty=%B"],
-                cwd=self.temp_dir.name,
-                env=self.env,
-            ).decode()
+            commit_msg = await self.git_run(
+                ["log", "-1", "--pretty=%B"], capture_output=True, text=True
+            )
 
             # Print the commit message for debugging
             print(f"Commit message after second edit:\n{commit_msg}")
@@ -152,22 +134,14 @@ class GitAmendWhitespaceTest(MCPEndToEndTestCase):
             )
 
             # Get the second commit hash
-            second_commit_hash = (
-                subprocess.check_output(
-                    ["git", "rev-parse", "--short", "HEAD"],
-                    cwd=self.temp_dir.name,
-                    env=self.env,
-                )
-                .decode()
-                .strip()
+            second_commit_hash = await self.git_run(
+                ["rev-parse", "--short", "HEAD"], capture_output=True, text=True
             )
 
             # Get the updated commit message with multiple entries
-            final_commit_msg = subprocess.check_output(
-                ["git", "log", "-1", "--pretty=%B"],
-                cwd=self.temp_dir.name,
-                env=self.env,
-            ).decode()
+            final_commit_msg = await self.git_run(
+                ["log", "-1", "--pretty=%B"], capture_output=True, text=True
+            )
 
             print(f"Commit message after third edit:\n{final_commit_msg}")
 
