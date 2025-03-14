@@ -75,7 +75,8 @@ verbose = ["./generate_output.sh"]
             chat_id = self.extract_chat_id_from_text(init_result_text)
 
             # Call the RunCommand tool with the verbose command
-            result = await session.call_tool(
+            result_text = await self.call_tool_assert_success(
+                session,
                 "codemcp",
                 {
                     "subtool": "RunCommand",
@@ -84,10 +85,6 @@ verbose = ["./generate_output.sh"]
                     "chat_id": chat_id,
                 },
             )
-
-            # Normalize the result
-            normalized_result = self.normalize_path(result)
-            result_text = self.extract_text_from_result(normalized_result)
 
             # Verify the truncation message is present
             self.assertIn("output truncated", result_text)
