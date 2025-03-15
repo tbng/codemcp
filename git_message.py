@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 
 import re
+from typing import Dict, List, Tuple
 
 
-def parse_message(message):
+def parse_message(message: str) -> Tuple[str, str, Dict[str, str]]:
     """
     Parse a Git commit message into subject, body, and trailers.
 
@@ -15,13 +16,13 @@ def parse_message(message):
       lines before a line that starts with "---" (the "divider").
 
     Args:
-        message (str): The commit message to parse.
+        message: The commit message to parse.
 
     Returns:
-        tuple: (subject, body, trailers) where:
-            - subject (str): The first line of the message
-            - body (str): The body of the message (may be empty)
-            - trailers (dict): A dictionary mapping trailer keys to values
+        A tuple containing:
+            - subject: The first line of the message
+            - body: The body of the message (may be empty)
+            - trailers: A dictionary mapping trailer keys to values
     """
     # Handle empty message
     if not message:
@@ -72,15 +73,15 @@ def parse_message(message):
     return subject, body, trailers
 
 
-def find_trailer_block_start(lines):
+def find_trailer_block_start(lines: List[str]) -> int:
     """
     Find the start index of the trailer block in a list of lines.
 
     Args:
-        lines (list): List of message lines (without subject and divider).
+        lines: List of message lines (without subject and divider).
 
     Returns:
-        int: Index of the first line of the trailer block, or -1 if no trailer block is found.
+        Index of the first line of the trailer block, or -1 if no trailer block is found.
     """
     # Start from the end and find the last block
     last_block_start = len(lines)
@@ -108,7 +109,7 @@ def find_trailer_block_start(lines):
     return 0 if is_trailer_block(lines[:last_block_start]) else -1
 
 
-def is_trailer_block(lines):
+def is_trailer_block(lines: List[str]) -> bool:
     """
     Determine if the given lines form a trailer block.
 
@@ -117,10 +118,10 @@ def is_trailer_block(lines):
     2. At least one Git-generated trailer exists and at least 25% of lines are trailers
 
     Args:
-        lines (list): List of lines to check.
+        lines: List of lines to check.
 
     Returns:
-        bool: True if the lines form a trailer block, False otherwise.
+        True if the lines form a trailer block, False otherwise.
     """
     # Skip empty lines at the beginning and end
     start = 0
@@ -183,7 +184,7 @@ def is_trailer_block(lines):
     )
 
 
-def parse_trailers(lines):
+def parse_trailers(lines: List[str]) -> Dict[str, str]:
     """
     Parse trailer lines into a dictionary.
 
@@ -191,10 +192,10 @@ def parse_trailers(lines):
     of the previous trailer value.
 
     Args:
-        lines (list): List of trailer lines.
+        lines: List of trailer lines.
 
     Returns:
-        dict: A dictionary mapping trailer keys to values.
+        A dictionary mapping trailer keys to values.
     """
     # Regex to match a trailer line
     trailer_re = re.compile(r"^([A-Za-z0-9_-]+)(\s*:\s*)(.*)$")
