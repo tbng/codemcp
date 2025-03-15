@@ -23,28 +23,28 @@ log = logging.getLogger(__name__)
 
 async def create_commit_reference(
     path: str,
-    description: str,
     chat_id: str,
-    ref_name: str = None,
-    custom_message: str = None,
+    commit_msg: str,
 ) -> tuple[bool, str, str]:
     """Create a Git commit without advancing HEAD and store it in a reference.
 
-    This function creates a commit using Git plumbing commands and stores it in
-    a reference (refs/codemcp/<chat_id>) without changing HEAD.
+    This function creates a commit using Git plumbing commands and stores it
+    in a reference (refs/codemcp/<chat_id>) without changing HEAD.  We'll use
+    this to make the "real" commit once our first change happens.
 
     Args:
         path: The path to the file or directory to commit
-        description: Commit message describing the change
         chat_id: The unique ID of the current chat session
-        ref_name: Optional custom reference name (defaults to refs/codemcp/<chat_id>)
-        custom_message: Optional custom commit message (overrides description)
+        commit_msg: Commit message
 
     Returns:
         A tuple of (success, message, commit_hash)
     """
     log.debug(
-        "create_commit_reference(%s, %s, %s, %s)", path, description, chat_id, ref_name
+        "create_commit_reference(%s, %s, %s, %s, %s)",
+        path,
+        chat_id,
+        commit_msg,
     )
     try:
         # First, check if this is a git repository
@@ -74,10 +74,6 @@ async def create_commit_reference(
         except (subprocess.SubprocessError, OSError):
             # Fall back to the directory if we can't get the repo root
             git_cwd = directory
-
-        # Use the default reference name if none provided
-        if ref_name is None:
-            ref_name = f"refs/codemcp/{chat_id}"
 
         # Create the tree object for the empty commit
         # Get the tree from HEAD or create a new empty tree if no HEAD exists
@@ -113,21 +109,12 @@ async def create_commit_reference(
             )
             tree_hash = empty_tree_result.stdout.strip()
 
-        # Prepare the commit message with metadata
-        if custom_message:
-            # Use our updated function to prepare the message
-            commit_message = update_commit_message_with_description(
-                current_commit_message=custom_message,
-                description="",  # Empty because we're not adding a description
-                chat_id=chat_id,
-            )
-        else:
-            # Start with the description and add chat_id
-            commit_message = description
-            if chat_id:
-                commit_message = append_metadata_to_message(
-                    commit_message, {"codemcp-id": chat_id}
-                )
+        # Use our updated function to prepare the message
+        commit_message = update_commit_message_with_description(
+            current_commit_message=commit_msg,
+            description="",  # Empty because we're not adding a description
+            chat_id=chat_id,
+        )
 
         # Get parent commit if we have HEAD
         parent_arg = []
@@ -151,6 +138,8 @@ async def create_commit_reference(
             check=True,
         )
         commit_hash = commit_result.stdout.strip()
+
+        ref_name = f"refs/codemcp/{chat_id}"
 
         # Update the reference to point to the new commit
         await run_command(
