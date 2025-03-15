@@ -133,7 +133,7 @@ class MCPEndToEndTestCase(TestCase, unittest.IsolatedAsyncioTestCase):
         """
         import re
 
-        chat_id_match = re.search(r"chat ID: ([^\n]+)", text)
+        chat_id_match = re.search(r"chat ID: ([a-zA-Z0-9-]+)", text)
         assert chat_id_match is not None, "Could not find chat ID in text"
         return chat_id_match.group(1)
 
@@ -224,7 +224,7 @@ class MCPEndToEndTestCase(TestCase, unittest.IsolatedAsyncioTestCase):
         # Extract chat_id from the init result
         import re
 
-        chat_id_match = re.search(r"chat ID: ([^\n]+)", init_result_text)
+        chat_id_match = re.search(r"chat ID: ([a-zA-Z0-9-]+)", init_result_text)
         chat_id = chat_id_match.group(1)
         assert chat_id is not None
 

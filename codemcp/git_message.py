@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 
 import logging
-import re
 import subprocess
+
+from .git_parse_message import parse_message
 
 __all__ = [
     "append_metadata_to_message",
@@ -36,8 +37,7 @@ def append_metadata_to_message(message: str, metadata: dict) -> str:
 def update_commit_message_with_description(
     current_commit_message: str,
     description: str,
-    commit_hash: str = None,
-    chat_id: str = None,
+    commit_hash: str,
 ) -> str:
     """Update a commit message with a new description.
 
@@ -45,11 +45,10 @@ def update_commit_message_with_description(
     - Updates the message by adding the description as a new entry
     - Uses marker tokens ```git-revs and ``` to demarcate commit list
     - Handles base revision markers and HEAD alignment
-    - Ensures the chat_id metadata is included
 
     Args:
         current_commit_message: The current Git commit message to update
-        description: The new description to add to the message
+        description: Description of the amend we're doing
         commit_hash: The current commit hash (used for updating HEAD entries and base revision)
         chat_id: The chat ID to ensure is in the metadata
 
@@ -60,10 +59,7 @@ def update_commit_message_with_description(
     START_MARKER = "```git-revs"
     END_MARKER = "```"
 
-    # Extract the commit message without any codemcp-id
-    main_message = re.sub(
-        r"\ncodemcp-id:.*$", "", current_commit_message, flags=re.MULTILINE
-    )
+    subject, main_message, trailers = parse_message(current_commit_message)
 
     # Extract the content parts (before, between, and after markers)
     start_marker_pos = main_message.find(START_MARKER)
@@ -211,13 +207,7 @@ def update_commit_message_with_description(
                         main_message += "\n"
                     main_message += description
 
-                    # Ensure the chat ID metadata is included if provided
-                    if chat_id:
-                        return append_metadata_to_message(
-                            main_message, {"codemcp-id": chat_id}
-                        )
-                    else:
-                        return main_message
+                    return main_message
 
                 # Format the revision list with markers
                 formatted_rev_list = "\n".join(rev_entries)
@@ -240,8 +230,4 @@ def update_commit_message_with_description(
                 else:
                     main_message = f"{START_MARKER}\n{formatted_rev_list}\n{END_MARKER}"
 
-    # Ensure the chat ID metadata is included if provided
-    if chat_id:
-        return append_metadata_to_message(main_message, {"codemcp-id": chat_id})
-    else:
-        return main_message
+    return subject + "\n\n" + main_message + "\n\n" + trailers

@@ -2,6 +2,7 @@
 
 import logging
 import os
+import re
 import subprocess
 
 from .git_message import (
@@ -39,8 +40,9 @@ async def create_commit_reference(
     Returns:
         A tuple of (success, message, commit_hash)
     """
+    assert re.fullmatch(r"^[A-Za-z0-9-]+$", chat_id)
     log.debug(
-        "create_commit_reference(%s, %s, %s, %s, %s)",
+        "create_commit_reference(%s, %s, %s)",
         path,
         chat_id,
         commit_msg,
@@ -108,12 +110,7 @@ async def create_commit_reference(
             )
             tree_hash = empty_tree_result.stdout.strip()
 
-        # Use our updated function to prepare the message
-        commit_message = update_commit_message_with_description(
-            current_commit_message=commit_msg,
-            description="",  # Empty because we're not adding a description
-            chat_id=chat_id,
-        )
+        commit_message = commit_msg
 
         # Get parent commit if we have HEAD
         parent_arg = []
@@ -364,7 +361,9 @@ async def commit_changes(
                 # After applying, the HEAD commit should have the right chat_id
                 head_chat_id = await get_head_commit_chat_id(git_cwd)
 
-        assert head_chat_id == chat_id
+        assert head_chat_id == chat_id, (
+            "This usually fails because you didn't InitProject before interacting with codemcp"
+        )
 
         # Get the current commit hash before amending
         commit_hash = await get_head_commit_hash(git_cwd)
@@ -383,7 +382,6 @@ async def commit_changes(
             current_commit_message=current_commit_message,
             description=description,
             commit_hash=commit_hash,
-            chat_id=chat_id,
         )
 
         # Amend the previous commit
@@ -403,8 +401,5 @@ async def commit_changes(
             True,
             f"Changes {verb} successfully (previous commit was {commit_hash})",
         )
-    except Exception as e:
-        logging.warning(
-            f"Exception suppressed when committing changes: {e!s}", exc_info=True
-        )
-        return False, f"Error committing changes: {e!s}"
+    except Exception:
+        raise

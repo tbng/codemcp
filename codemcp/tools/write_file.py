@@ -140,5 +140,5 @@ async def write_file_content(
             git_message = f"\nFailed to commit changes to git: {message}"
 
         return f"Successfully wrote to {file_path}{git_message}"
-    except Exception as e:
-        return f"Error writing file: {e!s}"
+    except Exception:
+        raise
