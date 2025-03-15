@@ -200,9 +200,8 @@ async def init_project(
         # This will not advance HEAD but store the commit in refs/codemcp/<chat_id>
         success, message, commit_hash = await create_commit_reference(
             full_dir_path,
-            description=subject_line,
             chat_id=chat_id,
-            custom_message=commit_msg,
+            commit_msg=commit_msg,
         )
 
         if not success:
