@@ -28,7 +28,6 @@ class TestGitMessage(TestCase):
         self.assertExpectedInline(
             body,
             """\
-
 This is the body of the commit message.
 It spans multiple lines.""",
         )
@@ -93,7 +92,6 @@ It spans multiple lines.""",
         self.assertExpectedInline(
             body,
             """\
-
 This is the body of the commit message.
 
 Not-a-trailer: This is not a proper trailer

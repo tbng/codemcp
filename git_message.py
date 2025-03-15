@@ -1,7 +1,15 @@
 #!/usr/bin/env python3
 
 import re
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
+
+# Compile regexes once at module level for better performance
+TRAILER_RE = re.compile(r"^([A-Za-z0-9_-]+)(\s*:\s*)(.*)$")
+CONTINUATION_RE = re.compile(r"^\s+\S.*$")
+DIVIDER_RE = re.compile(r"^---")
+
+# Git-generated trailer prefixes
+GIT_GENERATED_PREFIXES = ["Signed-off-by: ", "(cherry picked from commit "]
 
 
 def parse_message(message: str) -> Tuple[str, str, Dict[str, str]]:
@@ -24,51 +32,38 @@ def parse_message(message: str) -> Tuple[str, str, Dict[str, str]]:
             - body: The body of the message (may be empty)
             - trailers: A dictionary mapping trailer keys to values
     """
-    # Handle empty message
     if not message:
         return "", "", {}
 
+    # Split into lines and get the subject (first line)
     lines = message.splitlines()
-
-    # Extract subject (first line)
     subject = lines[0] if lines else ""
 
-    # Handle case where there's only a subject
     if len(lines) <= 1:
         return subject, "", {}
 
-    # Find the divider line (---) if any
-    message_end = len(lines)
-    for i, line in enumerate(lines):
-        if line.startswith("---"):
-            message_end = i
-            break
-
-    # Use the lines after the subject and before the divider
+    # Find the divider line (---) and use only the content before it
+    message_end = next(
+        (i for i, line in enumerate(lines) if DIVIDER_RE.match(line)), len(lines)
+    )
     message_lines = lines[1:message_end]
 
-    # If there are no message lines, return just the subject
     if not message_lines:
         return subject, "", {}
 
-    # Find the trailer block start if any
+    # Find where the trailer block starts
     trailer_start = find_trailer_block_start(message_lines)
 
     if trailer_start == -1:
         # No trailer block found, everything after subject is body
-        body = "\n".join(message_lines)
+        body = "\n".join(message_lines).strip()
         return subject, body, {}
 
     # Parse trailers
     trailers = parse_trailers(message_lines[trailer_start:])
 
-    # Body is everything between subject and trailers, skip leading newlines
-    body_lines = message_lines[:trailer_start]
-    # Skip any leading blank lines
-    start = 0
-    while start < len(body_lines) and not body_lines[start].strip():
-        start += 1
-    body = "\n".join(body_lines[start:]).rstrip()
+    # Body is everything between subject and trailers (with empty lines trimmed)
+    body = "\n".join(message_lines[:trailer_start]).strip()
 
     return subject, body, trailers
 
@@ -83,30 +78,32 @@ def find_trailer_block_start(lines: List[str]) -> int:
     Returns:
         Index of the first line of the trailer block, or -1 if no trailer block is found.
     """
-    # Start from the end and find the last block
-    last_block_start = len(lines)
+    # Remove trailing empty lines
+    trimmed_lines = list(reversed([line for line in reversed(lines) if line.strip()]))
 
-    # Skip trailing empty lines
-    while last_block_start > 0 and not lines[last_block_start - 1].strip():
-        last_block_start -= 1
-
-    if last_block_start == 0:
-        # All lines are empty
+    if not trimmed_lines:
         return -1
 
-    # Find the beginning of the last block (preceded by an empty line)
-    for i in range(last_block_start - 1, -1, -1):
-        if not lines[i].strip():
-            # Found a blank line
-            # Check if the block after it is a trailer block
-            if is_trailer_block(lines[i + 1 : last_block_start]):
-                return i + 1
-            # Not a trailer block, no need to check further
+    # Find the last non-empty block
+    block_indices = [-1] + [i for i, line in enumerate(lines) if not line.strip()]
+
+    # Try blocks from last to first
+    for i in range(len(block_indices) - 1, -1, -1):
+        start_idx = block_indices[i] + 1
+        # If we're at the beginning or checking the whole message
+        if i == 0 or start_idx == 0:
+            # Check if the whole remaining content is a trailer block
+            if is_trailer_block(lines[start_idx:]):
+                return start_idx
+            # No more blocks to check
             return -1
 
-    # No blank line found before the last block
-    # Check if the entire message is a trailer block
-    return 0 if is_trailer_block(lines[:last_block_start]) else -1
+        # Check if the block after this blank line is a trailer block
+        end_idx = block_indices[i + 1] if i + 1 < len(block_indices) else len(lines)
+        if is_trailer_block(lines[start_idx:end_idx]):
+            return start_idx
+
+    return -1
 
 
 def is_trailer_block(lines: List[str]) -> bool:
@@ -123,64 +120,42 @@ def is_trailer_block(lines: List[str]) -> bool:
     Returns:
         True if the lines form a trailer block, False otherwise.
     """
-    # Skip empty lines at the beginning and end
-    start = 0
-    while start < len(lines) and not lines[start].strip():
-        start += 1
+    # Filter out empty lines
+    content_lines = [line for line in lines if line.strip()]
 
-    end = len(lines)
-    while end > start and not lines[end - 1].strip():
-        end -= 1
-
-    if start >= end:
-        # All lines are empty
+    if not content_lines:
         return False
-
-    # Regex to match a trailer line (token followed by separator and value)
-    trailer_re = re.compile(r"^([A-Za-z0-9_-]+)(\s*:\s*)(.*)$")
-
-    # Git-generated trailer prefixes
-    git_generated_prefixes = ["Signed-off-by: ", "(cherry picked from commit "]
 
     trailer_lines = 0
     non_trailer_lines = 0
     has_git_generated_trailer = False
 
-    i = start
-    while i < end:
-        line = lines[i]
+    i = 0
+    while i < len(content_lines):
+        line = content_lines[i]
 
-        # Check if it's a continuation line (starts with whitespace)
-        if line.strip() and line[0].isspace():
-            # Count as part of the previous line, which we've already categorized
+        # Skip continuation lines (they belong to the previous trailer)
+        if CONTINUATION_RE.match(line):
             i += 1
             continue
 
         # Check if it's a git-generated trailer
-        is_git_trailer = False
-        for prefix in git_generated_prefixes:
-            if line.startswith(prefix):
-                has_git_generated_trailer = True
-                trailer_lines += 1
-                is_git_trailer = True
-                break
-
-        if not is_git_trailer:
-            # Check if it's a regular trailer
-            if trailer_re.match(line):
-                trailer_lines += 1
-            else:
-                # Not a trailer line
-                non_trailer_lines += 1
+        if any(line.startswith(prefix) for prefix in GIT_GENERATED_PREFIXES):
+            has_git_generated_trailer = True
+            trailer_lines += 1
+        elif TRAILER_RE.match(line):
+            # Regular trailer
+            trailer_lines += 1
+        else:
+            # Not a trailer line
+            non_trailer_lines += 1
 
         i += 1
 
-    # Determine if it's a trailer block based on the criteria
-    return (
-        (trailer_lines > 0 and non_trailer_lines == 0)  # All lines are trailers
-        or (
-            has_git_generated_trailer and trailer_lines * 3 >= non_trailer_lines
-        )  # At least 25% trailers with git-generated trailer
+    # A block is a trailer block if all lines are trailers OR
+    # it has at least one git-generated trailer and >= 25% of lines are trailers
+    return (trailer_lines > 0 and non_trailer_lines == 0) or (
+        has_git_generated_trailer and trailer_lines * 3 >= non_trailer_lines
     )
 
 
@@ -197,57 +172,53 @@ def parse_trailers(lines: List[str]) -> Dict[str, str]:
     Returns:
         A dictionary mapping trailer keys to values.
     """
-    # Regex to match a trailer line
-    trailer_re = re.compile(r"^([A-Za-z0-9_-]+)(\s*:\s*)(.*)$")
-
-    # Git-generated trailer prefixes
-    git_generated_prefixes = ["Signed-off-by: ", "(cherry picked from commit "]
-
-    trailers = {}
-    current_token = None
+    trailers: Dict[str, str] = {}
+    current_token: Optional[str] = None
 
     for line in lines:
-        # Skip empty lines
         if not line.strip():
             continue
 
-        # Check if it's a continuation line
-        if line.strip() and line[0].isspace() and current_token:
+        # Handle continuation lines
+        if CONTINUATION_RE.match(line) and current_token:
             trailers[current_token] += " " + line.strip()
             continue
 
-        # Check if it's a git-generated trailer
-        is_git_trailer = False
-        for prefix in git_generated_prefixes:
+        # Process git-generated trailers
+        git_trailer = False
+        for prefix in GIT_GENERATED_PREFIXES:
             if line.startswith(prefix):
                 token = prefix.strip(": ")
                 value = line[len(prefix) :].strip()
 
-                # Handle multiple occurrences of the same token
+                # Update or add the trailer
                 if token in trailers:
-                    trailers[token] += ", " + value
+                    trailers[token] += f", {value}"
                 else:
                     trailers[token] = value
 
                 current_token = token
-                is_git_trailer = True
+                git_trailer = True
                 break
 
-        if not is_git_trailer:
-            # Check if it's a regular trailer
-            match = trailer_re.match(line)
+        if not git_trailer:
+            # Try to match a regular trailer
+            match = TRAILER_RE.match(line)
             if match:
                 token, _, value = match.groups()
+                value = value.strip()
 
-                # Handle multiple occurrences of the same token
+                # Update or add the trailer
                 if token in trailers:
-                    trailers[token] += ", " + value.strip()
+                    trailers[token] += f", {value}"
                 else:
-                    trailers[token] = value.strip()
+                    trailers[token] = value
 
                 current_token = token
             else:
-                # Not a trailer line, ignore it
+                # Not a trailer line
                 current_token = None
+
+    return trailers
 
     return trailers
