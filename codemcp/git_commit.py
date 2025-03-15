@@ -16,15 +16,9 @@ from .git_query import (
 )
 from .shell import run_command
 
-__all__ = ["commit_changes", "create_commit_reference", "GitError"]
+__all__ = ["commit_changes", "create_commit_reference"]
 
 log = logging.getLogger(__name__)
-
-
-class GitError(Exception):
-    """Base exception class for Git operation errors."""
-
-    pass
 
 
 async def create_commit_reference(
@@ -47,10 +41,13 @@ async def create_commit_reference(
         A tuple of (message, commit_hash)
 
     Raises:
-        GitError: If the operation fails for any reason
+        ValueError: If the chat_id format is invalid
+        FileNotFoundError: If the path doesn't exist or isn't in a Git repository
+        subprocess.CalledProcessError: If a Git command fails
+        RuntimeError: For other errors during the Git operations
     """
     if not re.fullmatch(r"^[A-Za-z0-9-]+$", chat_id):
-        raise GitError(f"Invalid chat_id format: {chat_id}")
+        raise ValueError(f"Invalid chat_id format: {chat_id}")
 
     log.debug(
         "create_commit_reference(%s, %s, %s)",
@@ -61,7 +58,7 @@ async def create_commit_reference(
     try:
         # First, check if this is a git repository
         if not await is_git_repository(path):
-            raise GitError(f"Path '{path}' is not in a Git repository")
+            raise FileNotFoundError(f"Path '{path}' is not in a Git repository")
 
         # Get absolute paths for consistency
         abs_path = os.path.abspath(path)
@@ -166,10 +163,15 @@ async def create_commit_reference(
         )
     except subprocess.CalledProcessError as e:
         log.warning(f"Git command failed: {e.stderr}", exc_info=True)
-        raise GitError(f"Git command failed: {e.stderr}") from e
+        raise  # Re-raise the original exception
     except Exception as e:
         log.warning(f"Exception when creating commit reference: {e!s}", exc_info=True)
-        raise GitError(f"Error creating commit reference: {e!s}") from e
+        # Convert generic exceptions to RuntimeError with a descriptive message
+        if not isinstance(
+            e, (ValueError, FileNotFoundError, subprocess.CalledProcessError)
+        ):
+            raise RuntimeError(f"Error creating commit reference: {e!s}") from e
+        raise  # Re-raise the original exception
 
 
 async def commit_changes(
