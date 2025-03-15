@@ -44,7 +44,7 @@ async def create_commit_reference(
         ValueError: If the chat_id format is invalid
         FileNotFoundError: If the path doesn't exist or isn't in a Git repository
         subprocess.CalledProcessError: If a Git command fails
-        RuntimeError: For other errors during the Git operations
+        Exception: For other errors during the Git operations
     """
     if not re.fullmatch(r"^[A-Za-z0-9-]+$", chat_id):
         raise ValueError(f"Invalid chat_id format: {chat_id}")
@@ -163,15 +163,10 @@ async def create_commit_reference(
         )
     except subprocess.CalledProcessError as e:
         log.warning(f"Git command failed: {e.stderr}", exc_info=True)
-        raise  # Re-raise the original exception
+        raise
     except Exception as e:
         log.warning(f"Exception when creating commit reference: {e!s}", exc_info=True)
-        # Convert generic exceptions to RuntimeError with a descriptive message
-        if not isinstance(
-            e, (ValueError, FileNotFoundError, subprocess.CalledProcessError)
-        ):
-            raise RuntimeError(f"Error creating commit reference: {e!s}") from e
-        raise  # Re-raise the original exception
+        raise
 
 
 async def commit_changes(
