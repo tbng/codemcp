@@ -269,7 +269,7 @@ codemcp-id: test-chat-id""",
 
             # Try to write to the untracked file
             new_content = "This content should not be written to untracked file"
-            result_text = await self.call_tool_assert_success(
+            result_text = await self.call_tool_assert_error(
                 session,
                 "codemcp",
                 {
@@ -281,19 +281,9 @@ codemcp-id: test-chat-id""",
                 },
             )
 
-            # Check if the operation reported an error - this should be deterministic
-            # The WriteFile function should return an error for untracked files
-            has_error = result_text.startswith("Error writing file: ")
-            self.assertTrue(
-                has_error, "WriteFile should reject untracked files with an error"
-            )
-
-            # Check specifically for the expected error message about git tracking
-            expected_error_msg = "File is not tracked by git"
-            self.assertIn(
-                expected_error_msg,
+            self.assertExpectedInline(
                 result_text,
-                f"Expected error message about untracked file not found in: {result_text}",
+                """Error executing tool codemcp: File is not tracked by git. Please add the file to git tracking first using 'git add <file>'""",
             )
 
             # Verify the file content has not changed

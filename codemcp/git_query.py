@@ -121,7 +121,7 @@ async def get_head_commit_chat_id(directory: str) -> str | None:
 
         # Use regex to find the last occurrence of codemcp-id: XXX
         # The pattern looks for "codemcp-id: " followed by any characters up to a newline or end of string
-        matches = re.findall(r"codemcp-id:\s*([^\n]*)", commit_message)
+        matches = re.findall(r"codemcp-id:\s*([a-zA-Z0-9-]+)", commit_message)
 
         # Return the last match if any matches found
         if matches:

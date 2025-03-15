@@ -28,10 +28,10 @@ class GitAmendWhitespaceTest(MCPEndToEndTestCase):
         # Commit it
         await self.git_run(["commit", "-m", "Add file for whitespace test"])
 
-        # Define a chat_id for our test
-        chat_id = "whitespace-test-123"
-
         async with self.create_client_session() as session:
+            # Define a chat_id for our test
+            chat_id = await self.get_chat_id(session)
+
             # First edit with our chat_id
             await self.call_tool_assert_success(
                 session,

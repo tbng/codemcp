@@ -63,199 +63,205 @@ async def codemcp(
       reuse_head_chat_id: If True, reuse the chat ID from the HEAD commit instead of generating a new one (for InitProject)
       ... (there are other arguments which are documented later)
     """
-    # Define expected parameters for each subtool
-    expected_params = {
-        "ReadFile": {"path", "offset", "limit", "chat_id"},
-        "WriteFile": {"path", "content", "description", "chat_id"},
-        "EditFile": {
-            "path",
-            "old_string",
-            "new_string",
-            "description",
-            "old_str",
-            "new_str",
-            "chat_id",
-        },
-        "LS": {"path", "chat_id"},
-        "InitProject": {
-            "path",
-            "user_prompt",
-            "subject_line",
-            "reuse_head_chat_id",
-        },  # chat_id is not expected for InitProject as it's generated there
-        "UserPrompt": {"user_prompt", "chat_id"},
-        "RunCommand": {"path", "command", "arguments", "chat_id"},
-        "Grep": {"pattern", "path", "include", "chat_id"},
-        "Glob": {"pattern", "path", "limit", "offset", "chat_id"},
-    }
+    try:
+        # Define expected parameters for each subtool
+        expected_params = {
+            "ReadFile": {"path", "offset", "limit", "chat_id"},
+            "WriteFile": {"path", "content", "description", "chat_id"},
+            "EditFile": {
+                "path",
+                "old_string",
+                "new_string",
+                "description",
+                "old_str",
+                "new_str",
+                "chat_id",
+            },
+            "LS": {"path", "chat_id"},
+            "InitProject": {
+                "path",
+                "user_prompt",
+                "subject_line",
+                "reuse_head_chat_id",
+            },  # chat_id is not expected for InitProject as it's generated there
+            "UserPrompt": {"user_prompt", "chat_id"},
+            "RunCommand": {"path", "command", "arguments", "chat_id"},
+            "Grep": {"pattern", "path", "include", "chat_id"},
+            "Glob": {"pattern", "path", "limit", "offset", "chat_id"},
+        }
 
-    # Check if subtool exists
-    if subtool not in expected_params:
-        raise ValueError(
-            f"Unknown subtool: {subtool}. Available subtools: {', '.join(expected_params.keys())}"
-        )
-
-    # Handle string arguments - convert to a list with one element
-    if isinstance(arguments, str):
-        arguments = [arguments]
-
-    # Get all provided non-None parameters
-    provided_params = {
-        param: value
-        for param, value in {
-            "path": path,
-            "content": content,
-            "old_string": old_string,
-            "new_string": new_string,
-            "offset": offset,
-            "limit": limit,
-            "description": description,
-            "pattern": pattern,
-            "include": include,
-            "command": command,
-            "arguments": arguments,
-            # Include backward compatibility parameters
-            "old_str": old_str,
-            "new_str": new_str,
-            # Chat ID for session identification
-            "chat_id": chat_id,
-            # InitProject commit message parameters
-            "user_prompt": user_prompt,
-            "subject_line": subject_line,
-            # Whether to reuse the chat ID from the HEAD commit
-            "reuse_head_chat_id": reuse_head_chat_id,
-        }.items()
-        if value is not None
-    }
-
-    # Check for unexpected parameters
-    unexpected_params = set(provided_params.keys()) - expected_params[subtool]
-    if unexpected_params:
-        raise ValueError(
-            f"Unexpected parameters for {subtool} subtool: {', '.join(unexpected_params)}"
-        )
-
-    # Check for required chat_id for all tools except InitProject
-    if subtool != "InitProject" and chat_id is None:
-        raise ValueError(f"chat_id is required for {subtool} subtool")
-
-    # Now handle each subtool with its expected parameters
-    if subtool == "ReadFile":
-        if path is None:
-            raise ValueError("path is required for ReadFile subtool")
-
-        return await read_file_content(path, offset, limit, chat_id)
-
-    if subtool == "WriteFile":
-        if path is None:
-            raise ValueError("path is required for WriteFile subtool")
-        if description is None:
-            raise ValueError("description is required for WriteFile subtool")
-
-        content_str = content or ""
-        return await write_file_content(path, content_str, description, chat_id)
-
-    if subtool == "EditFile":
-        if path is None:
-            raise ValueError("path is required for EditFile subtool")
-        if description is None:
-            raise ValueError("description is required for EditFile subtool")
-        if old_string is None and old_str is None:
-            # TODO: I want telemetry to tell me when this occurs.
+        # Check if subtool exists
+        if subtool not in expected_params:
             raise ValueError(
-                "Either old_string or old_str is required for EditFile subtool (use empty string for new file creation)"
+                f"Unknown subtool: {subtool}. Available subtools: {', '.join(expected_params.keys())}"
             )
 
-        # Accept either old_string or old_str (prefer old_string if both are provided)
-        old_content = old_string or old_str or ""
-        # Accept either new_string or new_str (prefer new_string if both are provided)
-        new_content = new_string or new_str or ""
-        return await edit_file_content(
-            path, old_content, new_content, None, description, chat_id
-        )
+        # Handle string arguments - convert to a list with one element
+        if isinstance(arguments, str):
+            arguments = [arguments]
 
-    if subtool == "LS":
-        if path is None:
-            raise ValueError("path is required for LS subtool")
+        # Get all provided non-None parameters
+        provided_params = {
+            param: value
+            for param, value in {
+                "path": path,
+                "content": content,
+                "old_string": old_string,
+                "new_string": new_string,
+                "offset": offset,
+                "limit": limit,
+                "description": description,
+                "pattern": pattern,
+                "include": include,
+                "command": command,
+                "arguments": arguments,
+                # Include backward compatibility parameters
+                "old_str": old_str,
+                "new_str": new_str,
+                # Chat ID for session identification
+                "chat_id": chat_id,
+                # InitProject commit message parameters
+                "user_prompt": user_prompt,
+                "subject_line": subject_line,
+                # Whether to reuse the chat ID from the HEAD commit
+                "reuse_head_chat_id": reuse_head_chat_id,
+            }.items()
+            if value is not None
+        }
 
-        return await ls_directory(path, chat_id)
-
-    if subtool == "InitProject":
-        if path is None:
-            raise ValueError("path is required for InitProject subtool")
-        if user_prompt is None:
-            raise ValueError("user_prompt is required for InitProject subtool")
-        if subject_line is None:
-            raise ValueError("subject_line is required for InitProject subtool")
-        if reuse_head_chat_id is None:
-            reuse_head_chat_id = (
-                False  # Default value in main.py only, not in the implementation
+        # Check for unexpected parameters
+        unexpected_params = set(provided_params.keys()) - expected_params[subtool]
+        if unexpected_params:
+            raise ValueError(
+                f"Unexpected parameters for {subtool} subtool: {', '.join(unexpected_params)}"
             )
 
-        return await init_project(path, user_prompt, subject_line, reuse_head_chat_id)
+        # Check for required chat_id for all tools except InitProject
+        if subtool != "InitProject" and chat_id is None:
+            raise ValueError(f"chat_id is required for {subtool} subtool")
 
-    if subtool == "RunCommand":
-        # When is something a command as opposed to a subtool?  They are
-        # basically the same thing, but commands are always USER defined.
-        # This means we shove them all in RunCommand so they are guaranteed
-        # not to conflict with codemcp's subtools.
+        # Now handle each subtool with its expected parameters
+        if subtool == "ReadFile":
+            if path is None:
+                raise ValueError("path is required for ReadFile subtool")
 
-        if path is None:
-            raise ValueError("path is required for RunCommand subtool")
-        if command is None:
-            raise ValueError("command is required for RunCommand subtool")
+            return await read_file_content(path, offset, limit, chat_id)
 
-        return await run_command(path, command, arguments, chat_id)
+        if subtool == "WriteFile":
+            if path is None:
+                raise ValueError("path is required for WriteFile subtool")
+            if description is None:
+                raise ValueError("description is required for WriteFile subtool")
 
-    if subtool == "Grep":
-        if pattern is None:
-            raise ValueError("pattern is required for Grep subtool")
+            content_str = content or ""
+            return await write_file_content(path, content_str, description, chat_id)
 
-        if path is None:
-            raise ValueError("path is required for Grep subtool")
+        if subtool == "EditFile":
+            if path is None:
+                raise ValueError("path is required for EditFile subtool")
+            if description is None:
+                raise ValueError("description is required for EditFile subtool")
+            if old_string is None and old_str is None:
+                # TODO: I want telemetry to tell me when this occurs.
+                raise ValueError(
+                    "Either old_string or old_str is required for EditFile subtool (use empty string for new file creation)"
+                )
 
-        try:
-            result = await grep_files(pattern, path, include, chat_id)
-            return result.get(
-                "resultForAssistant",
-                f"Found {result.get('numFiles', 0)} file(s)",
+            # Accept either old_string or old_str (prefer old_string if both are provided)
+            old_content = old_string or old_str or ""
+            # Accept either new_string or new_str (prefer new_string if both are provided)
+            new_content = new_string or new_str or ""
+            return await edit_file_content(
+                path, old_content, new_content, None, description, chat_id
             )
-        except Exception as e:
-            logging.warning(
-                f"Exception suppressed in grep subtool: {e!s}", exc_info=True
+
+        if subtool == "LS":
+            if path is None:
+                raise ValueError("path is required for LS subtool")
+
+            return await ls_directory(path, chat_id)
+
+        if subtool == "InitProject":
+            if path is None:
+                raise ValueError("path is required for InitProject subtool")
+            if user_prompt is None:
+                raise ValueError("user_prompt is required for InitProject subtool")
+            if subject_line is None:
+                raise ValueError("subject_line is required for InitProject subtool")
+            if reuse_head_chat_id is None:
+                reuse_head_chat_id = (
+                    False  # Default value in main.py only, not in the implementation
+                )
+
+            return await init_project(
+                path, user_prompt, subject_line, reuse_head_chat_id
             )
-            return f"Error executing grep: {e!s}"
 
-    if subtool == "Glob":
-        if pattern is None:
-            raise ValueError("pattern is required for Glob subtool")
+        if subtool == "RunCommand":
+            # When is something a command as opposed to a subtool?  They are
+            # basically the same thing, but commands are always USER defined.
+            # This means we shove them all in RunCommand so they are guaranteed
+            # not to conflict with codemcp's subtools.
 
-        if path is None:
-            raise ValueError("path is required for Glob subtool")
+            if path is None:
+                raise ValueError("path is required for RunCommand subtool")
+            if command is None:
+                raise ValueError("command is required for RunCommand subtool")
 
-        try:
-            result = await glob_files(
-                pattern,
-                path,
-                limit=limit if limit is not None else MAX_RESULTS,
-                offset=offset if offset is not None else 0,
-                chat_id=chat_id,
-            )
-            return result.get(
-                "resultForAssistant",
-                f"Found {result.get('numFiles', 0)} file(s)",
-            )
-        except Exception as e:
-            logging.warning(
-                f"Exception suppressed in glob subtool: {e!s}", exc_info=True
-            )
-            return f"Error executing glob: {e!s}"
+            return await run_command(path, command, arguments, chat_id)
 
-    if subtool == "UserPrompt":
-        if user_prompt is None:
-            raise ValueError("user_prompt is required for UserPrompt subtool")
+        if subtool == "Grep":
+            if pattern is None:
+                raise ValueError("pattern is required for Grep subtool")
 
-        return await user_prompt_tool(user_prompt, chat_id)
+            if path is None:
+                raise ValueError("path is required for Grep subtool")
+
+            try:
+                result = await grep_files(pattern, path, include, chat_id)
+                return result.get(
+                    "resultForAssistant",
+                    f"Found {result.get('numFiles', 0)} file(s)",
+                )
+            except Exception as e:
+                logging.warning(
+                    f"Exception suppressed in grep subtool: {e!s}", exc_info=True
+                )
+                return f"Error executing grep: {e!s}"
+
+        if subtool == "Glob":
+            if pattern is None:
+                raise ValueError("pattern is required for Glob subtool")
+
+            if path is None:
+                raise ValueError("path is required for Glob subtool")
+
+            try:
+                result = await glob_files(
+                    pattern,
+                    path,
+                    limit=limit if limit is not None else MAX_RESULTS,
+                    offset=offset if offset is not None else 0,
+                    chat_id=chat_id,
+                )
+                return result.get(
+                    "resultForAssistant",
+                    f"Found {result.get('numFiles', 0)} file(s)",
+                )
+            except Exception as e:
+                logging.warning(
+                    f"Exception suppressed in glob subtool: {e!s}", exc_info=True
+                )
+                return f"Error executing glob: {e!s}"
+
+        if subtool == "UserPrompt":
+            if user_prompt is None:
+                raise ValueError("user_prompt is required for UserPrompt subtool")
+
+            return await user_prompt_tool(user_prompt, chat_id)
+    except Exception:
+        logging.error("Exception", exc_info=True)
+        raise
 
 
 def configure_logging(log_file="codemcp.log"):
