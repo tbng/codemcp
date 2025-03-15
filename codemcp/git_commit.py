@@ -25,7 +25,7 @@ async def create_commit_reference(
     path: str,
     chat_id: str,
     commit_msg: str,
-) -> tuple[bool, str, str]:
+) -> tuple[str, str]:
     """Create a Git commit without advancing HEAD and store it in a reference.
 
     This function creates a commit using Git plumbing commands and stores it
@@ -38,124 +38,127 @@ async def create_commit_reference(
         commit_msg: Commit message
 
     Returns:
-        A tuple of (success, message, commit_hash)
+        A tuple of (message, commit_hash)
+
+    Raises:
+        ValueError: If the chat_id format is invalid
+        FileNotFoundError: If the path doesn't exist or isn't in a Git repository
+        subprocess.CalledProcessError: If a Git command fails
+        Exception: For other errors during the Git operations
     """
-    assert re.fullmatch(r"^[A-Za-z0-9-]+$", chat_id)
+    if not re.fullmatch(r"^[A-Za-z0-9-]+$", chat_id):
+        raise ValueError(f"Invalid chat_id format: {chat_id}")
+
     log.debug(
         "create_commit_reference(%s, %s, %s)",
         path,
         chat_id,
         commit_msg,
     )
+
+    # First, check if this is a git repository
+    if not await is_git_repository(path):
+        raise FileNotFoundError(f"Path '{path}' is not in a Git repository")
+
+    # Get absolute paths for consistency
+    abs_path = os.path.abspath(path)
+
+    # Get the directory - if path is a file, use its directory, otherwise use the path itself
+    directory = os.path.dirname(abs_path) if os.path.isfile(abs_path) else abs_path
+
+    # Try to get the git repository root for more reliable operations
     try:
-        # First, check if this is a git repository
-        if not await is_git_repository(path):
-            return False, f"Path '{path}' is not in a Git repository", ""
-
-        # Get absolute paths for consistency
-        abs_path = os.path.abspath(path)
-
-        # Get the directory - if path is a file, use its directory, otherwise use the path itself
-        directory = os.path.dirname(abs_path) if os.path.isfile(abs_path) else abs_path
-
-        # Try to get the git repository root for more reliable operations
-        try:
-            repo_root = (
-                await run_command(
-                    ["git", "rev-parse", "--show-toplevel"],
-                    cwd=directory,
-                    check=True,
-                    capture_output=True,
-                    text=True,
-                )
-            ).stdout.strip()
-
-            # Use the repo root as the working directory for git commands
-            git_cwd = repo_root
-        except (subprocess.SubprocessError, OSError):
-            # Fall back to the directory if we can't get the repo root
-            git_cwd = directory
-
-        # Create the tree object for the empty commit
-        # Get the tree from HEAD or create a new empty tree if no HEAD exists
-        tree_hash = ""
-        has_commits = False
-        rev_parse_result = await run_command(
-            ["git", "rev-parse", "--verify", "HEAD"],
-            cwd=git_cwd,
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-
-        if rev_parse_result.returncode == 0:
-            has_commits = True
-            tree_result = await run_command(
-                ["git", "show", "-s", "--format=%T", "HEAD"],
-                cwd=git_cwd,
+        repo_root = (
+            await run_command(
+                ["git", "rev-parse", "--show-toplevel"],
+                cwd=directory,
+                check=True,
                 capture_output=True,
                 text=True,
-                check=True,
             )
-            tree_hash = tree_result.stdout.strip()
-        else:
-            # Create an empty tree if no HEAD exists
-            empty_tree_result = await run_command(
-                ["git", "mktree"],
-                cwd=git_cwd,
-                input="",
-                capture_output=True,
-                text=True,
-                check=True,
-            )
-            tree_hash = empty_tree_result.stdout.strip()
+        ).stdout.strip()
 
-        commit_message = commit_msg
+        # Use the repo root as the working directory for git commands
+        git_cwd = repo_root
+    except (subprocess.SubprocessError, OSError) as e:
+        # Fall back to the directory if we can't get the repo root
+        git_cwd = directory
+        log.warning(f"Failed to get repository root, falling back to directory: {e}")
 
-        # Get parent commit if we have HEAD
-        parent_arg = []
-        if has_commits:
-            head_hash_result = await run_command(
-                ["git", "rev-parse", "HEAD"],
-                cwd=git_cwd,
-                capture_output=True,
-                text=True,
-                check=True,
-            )
-            head_hash = head_hash_result.stdout.strip()
-            parent_arg = ["-p", head_hash]
+    # Create the tree object for the empty commit
+    # Get the tree from HEAD or create a new empty tree if no HEAD exists
+    tree_hash = ""
+    has_commits = False
+    rev_parse_result = await run_command(
+        ["git", "rev-parse", "--verify", "HEAD"],
+        cwd=git_cwd,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
 
-        # Create the commit object
-        commit_result = await run_command(
-            ["git", "commit-tree", tree_hash, *parent_arg, "-m", commit_message],
+    if rev_parse_result.returncode == 0:
+        has_commits = True
+        tree_result = await run_command(
+            ["git", "show", "-s", "--format=%T", "HEAD"],
             cwd=git_cwd,
             capture_output=True,
             text=True,
             check=True,
         )
-        commit_hash = commit_result.stdout.strip()
+        tree_hash = tree_result.stdout.strip()
+    else:
+        # Create an empty tree if no HEAD exists
+        empty_tree_result = await run_command(
+            ["git", "mktree"],
+            cwd=git_cwd,
+            input="",
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        tree_hash = empty_tree_result.stdout.strip()
 
-        ref_name = f"refs/codemcp/{chat_id}"
+    commit_message = commit_msg
 
-        # Update the reference to point to the new commit
-        await run_command(
-            ["git", "update-ref", ref_name, commit_hash],
+    # Get parent commit if we have HEAD
+    parent_arg = []
+    if has_commits:
+        head_hash_result = await run_command(
+            ["git", "rev-parse", "HEAD"],
             cwd=git_cwd,
             capture_output=True,
             text=True,
             check=True,
         )
+        head_hash = head_hash_result.stdout.strip()
+        parent_arg = ["-p", head_hash]
 
-        return (
-            True,
-            f"Created commit reference {ref_name} -> {commit_hash}",
-            commit_hash,
-        )
-    except Exception as e:
-        logging.warning(
-            f"Exception when creating commit reference: {e!s}", exc_info=True
-        )
-        return False, f"Error creating commit reference: {e!s}", ""
+    # Create the commit object
+    commit_result = await run_command(
+        ["git", "commit-tree", tree_hash, *parent_arg, "-m", commit_message],
+        cwd=git_cwd,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    commit_hash = commit_result.stdout.strip()
+
+    ref_name = f"refs/codemcp/{chat_id}"
+
+    # Update the reference to point to the new commit
+    await run_command(
+        ["git", "update-ref", ref_name, commit_hash],
+        cwd=git_cwd,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+
+    return (
+        f"Created commit reference {ref_name} -> {commit_hash}",
+        commit_hash,
+    )
 
 
 async def commit_changes(
