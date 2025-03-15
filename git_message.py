@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import re
-from typing import Dict, List, Optional, Tuple
+from typing import List, Tuple
 
 # Compile regexes once at module level for better performance
 TRAILER_RE = re.compile(r"^([A-Za-z0-9_-]+)(\s*:\s*)(.*)$")
@@ -12,7 +12,7 @@ DIVIDER_RE = re.compile(r"^---")
 GIT_GENERATED_PREFIXES = ["Signed-off-by: ", "(cherry picked from commit "]
 
 
-def parse_message(message: str) -> Tuple[str, str, Dict[str, str]]:
+def parse_message(message: str) -> Tuple[str, str, str]:
     """
     Parse a Git commit message into subject, body, and trailers.
 
@@ -30,17 +30,17 @@ def parse_message(message: str) -> Tuple[str, str, Dict[str, str]]:
         A tuple containing:
             - subject: The first line of the message
             - body: The body of the message (may be empty)
-            - trailers: A dictionary mapping trailer keys to values
+            - trailers: The trailer block as a raw string (may be empty)
     """
     if not message:
-        return "", "", {}
+        return "", "", ""
 
     # Split into lines and get the subject (first line)
     lines = message.splitlines()
     subject = lines[0] if lines else ""
 
     if len(lines) <= 1:
-        return subject, "", {}
+        return subject, "", ""
 
     # Find the divider line (---) and use only the content before it
     message_end = next(
@@ -49,7 +49,7 @@ def parse_message(message: str) -> Tuple[str, str, Dict[str, str]]:
     message_lines = lines[1:message_end]
 
     if not message_lines:
-        return subject, "", {}
+        return subject, "", ""
 
     # Find where the trailer block starts
     trailer_start = find_trailer_block_start(message_lines)
@@ -57,13 +57,13 @@ def parse_message(message: str) -> Tuple[str, str, Dict[str, str]]:
     if trailer_start == -1:
         # No trailer block found, everything after subject is body
         body = "\n".join(message_lines).strip()
-        return subject, body, {}
-
-    # Parse trailers
-    trailers = parse_trailers(message_lines[trailer_start:])
+        return subject, body, ""
 
     # Body is everything between subject and trailers (with empty lines trimmed)
     body = "\n".join(message_lines[:trailer_start]).strip()
+
+    # Keep trailers as a raw string
+    trailers = "\n".join(message_lines[trailer_start:]).strip()
 
     return subject, body, trailers
 
@@ -157,68 +157,3 @@ def is_trailer_block(lines: List[str]) -> bool:
     return (trailer_lines > 0 and non_trailer_lines == 0) or (
         has_git_generated_trailer and trailer_lines * 3 >= non_trailer_lines
     )
-
-
-def parse_trailers(lines: List[str]) -> Dict[str, str]:
-    """
-    Parse trailer lines into a dictionary.
-
-    Handles continuation lines (lines starting with whitespace) as extensions
-    of the previous trailer value.
-
-    Args:
-        lines: List of trailer lines.
-
-    Returns:
-        A dictionary mapping trailer keys to values.
-    """
-    trailers: Dict[str, str] = {}
-    current_token: Optional[str] = None
-
-    for line in lines:
-        if not line.strip():
-            continue
-
-        # Handle continuation lines
-        if CONTINUATION_RE.match(line) and current_token:
-            trailers[current_token] += " " + line.strip()
-            continue
-
-        # Process git-generated trailers
-        git_trailer = False
-        for prefix in GIT_GENERATED_PREFIXES:
-            if line.startswith(prefix):
-                token = prefix.strip(": ")
-                value = line[len(prefix) :].strip()
-
-                # Update or add the trailer
-                if token in trailers:
-                    trailers[token] += f", {value}"
-                else:
-                    trailers[token] = value
-
-                current_token = token
-                git_trailer = True
-                break
-
-        if not git_trailer:
-            # Try to match a regular trailer
-            match = TRAILER_RE.match(line)
-            if match:
-                token, _, value = match.groups()
-                value = value.strip()
-
-                # Update or add the trailer
-                if token in trailers:
-                    trailers[token] += f", {value}"
-                else:
-                    trailers[token] = value
-
-                current_token = token
-            else:
-                # Not a trailer line
-                current_token = None
-
-    return trailers
-
-    return trailers

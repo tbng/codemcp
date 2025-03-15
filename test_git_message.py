@@ -12,13 +12,13 @@ class TestGitMessage(TestCase):
         subject, body, trailers = parse_message("")
         self.assertEqual(subject, "")
         self.assertEqual(body, "")
-        self.assertEqual(trailers, {})
+        self.assertEqual(trailers, "")
 
     def test_subject_only(self):
         subject, body, trailers = parse_message("Subject line")
         self.assertEqual(subject, "Subject line")
         self.assertEqual(body, "")
-        self.assertEqual(trailers, {})
+        self.assertEqual(trailers, "")
 
     def test_no_trailers(self):
         message = "Subject line\n\nThis is the body of the commit message.\nIt spans multiple lines."
@@ -31,19 +31,18 @@ class TestGitMessage(TestCase):
 This is the body of the commit message.
 It spans multiple lines.""",
         )
-        self.assertEqual(trailers, {})
+        self.assertEqual(trailers, "")
 
     def test_simple_trailers(self):
         message = "Subject line\n\nThis is the body of the commit message.\n\nSigned-off-by: Alice <alice@example.com>\nReviewed-by: Bob <bob@example.com>"
         subject, body, trailers = parse_message(message)
         self.assertEqual(subject, "Subject line")
         self.assertEqual(body, "This is the body of the commit message.")
-        self.assertEqual(
+        self.assertExpectedInline(
             trailers,
-            {
-                "Signed-off-by": "Alice <alice@example.com>",
-                "Reviewed-by": "Bob <bob@example.com>",
-            },
+            """\
+Signed-off-by: Alice <alice@example.com>
+Reviewed-by: Bob <bob@example.com>""",
         )
 
     def test_trailers_with_divider(self):
@@ -51,12 +50,11 @@ It spans multiple lines.""",
         subject, body, trailers = parse_message(message)
         self.assertEqual(subject, "Subject line")
         self.assertEqual(body, "This is the body of the commit message.")
-        self.assertEqual(
+        self.assertExpectedInline(
             trailers,
-            {
-                "Signed-off-by": "Alice <alice@example.com>",
-                "Reviewed-by": "Bob <bob@example.com>",
-            },
+            """\
+Signed-off-by: Alice <alice@example.com>
+Reviewed-by: Bob <bob@example.com>""",
         )
 
     def test_trailers_with_continuation(self):
@@ -64,12 +62,13 @@ It spans multiple lines.""",
         subject, body, trailers = parse_message(message)
         self.assertEqual(subject, "Subject line")
         self.assertEqual(body, "This is the body of the commit message.")
-        self.assertEqual(
+        self.assertExpectedInline(
             trailers,
-            {
-                "Signed-off-by": "Alice <alice@example.com>",
-                "Co-authored-by": "Bob <bob@example.com> Carol <carol@example.com> Dave <dave@example.com>",
-            },
+            """\
+Signed-off-by: Alice <alice@example.com>
+Co-authored-by: Bob <bob@example.com>
+  Carol <carol@example.com>
+  Dave <dave@example.com>""",
         )
 
     def test_mixed_trailers_non_trailers(self):
@@ -77,12 +76,13 @@ It spans multiple lines.""",
         subject, body, trailers = parse_message(message)
         self.assertEqual(subject, "Subject line")
         self.assertEqual(body, "This is the body of the commit message.")
-        self.assertEqual(
+        self.assertExpectedInline(
             trailers,
-            {
-                "Signed-off-by": "Alice <alice@example.com>",
-                "Reviewed-by": "Bob <bob@example.com>",
-            },
+            """\
+This is not a trailer line.
+Signed-off-by: Alice <alice@example.com>
+Also not a trailer.
+Reviewed-by: Bob <bob@example.com>""",
         )
 
     def test_not_enough_trailers(self):
@@ -97,16 +97,18 @@ This is the body of the commit message.
 Not-a-trailer: This is not a proper trailer
 Also not a trailer.""",
         )
-        self.assertEqual(trailers, {})
+        self.assertEqual(trailers, "")
 
     def test_duplicate_trailers(self):
         message = "Subject line\n\nThis is the body of the commit message.\n\nSigned-off-by: Alice <alice@example.com>\nSigned-off-by: Bob <bob@example.com>"
         subject, body, trailers = parse_message(message)
         self.assertEqual(subject, "Subject line")
         self.assertEqual(body, "This is the body of the commit message.")
-        self.assertEqual(
+        self.assertExpectedInline(
             trailers,
-            {"Signed-off-by": "Alice <alice@example.com>, Bob <bob@example.com>"},
+            """\
+Signed-off-by: Alice <alice@example.com>
+Signed-off-by: Bob <bob@example.com>""",
         )
 
     def test_cherry_picked_trailer(self):
@@ -114,7 +116,7 @@ Also not a trailer.""",
         subject, body, trailers = parse_message(message)
         self.assertEqual(subject, "Subject line")
         self.assertEqual(body, "This is the body of the commit message.")
-        self.assertEqual(trailers, {"(cherry picked from commit": "abcdef1234567890)"})
+        self.assertEqual(trailers, "(cherry picked from commit abcdef1234567890)")
 
 
 if __name__ == "__main__":
