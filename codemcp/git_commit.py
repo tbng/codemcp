@@ -16,16 +16,22 @@ from .git_query import (
 )
 from .shell import run_command
 
-__all__ = ["commit_changes", "create_commit_reference"]
+__all__ = ["commit_changes", "create_commit_reference", "GitError"]
 
 log = logging.getLogger(__name__)
+
+
+class GitError(Exception):
+    """Base exception class for Git operation errors."""
+
+    pass
 
 
 async def create_commit_reference(
     path: str,
     chat_id: str,
     commit_msg: str,
-) -> tuple[bool, str, str]:
+) -> tuple[str, str]:
     """Create a Git commit without advancing HEAD and store it in a reference.
 
     This function creates a commit using Git plumbing commands and stores it
@@ -38,9 +44,14 @@ async def create_commit_reference(
         commit_msg: Commit message
 
     Returns:
-        A tuple of (success, message, commit_hash)
+        A tuple of (message, commit_hash)
+
+    Raises:
+        GitError: If the operation fails for any reason
     """
-    assert re.fullmatch(r"^[A-Za-z0-9-]+$", chat_id)
+    if not re.fullmatch(r"^[A-Za-z0-9-]+$", chat_id):
+        raise GitError(f"Invalid chat_id format: {chat_id}")
+
     log.debug(
         "create_commit_reference(%s, %s, %s)",
         path,
@@ -50,7 +61,7 @@ async def create_commit_reference(
     try:
         # First, check if this is a git repository
         if not await is_git_repository(path):
-            return False, f"Path '{path}' is not in a Git repository", ""
+            raise GitError(f"Path '{path}' is not in a Git repository")
 
         # Get absolute paths for consistency
         abs_path = os.path.abspath(path)
@@ -72,9 +83,12 @@ async def create_commit_reference(
 
             # Use the repo root as the working directory for git commands
             git_cwd = repo_root
-        except (subprocess.SubprocessError, OSError):
+        except (subprocess.SubprocessError, OSError) as e:
             # Fall back to the directory if we can't get the repo root
             git_cwd = directory
+            log.warning(
+                f"Failed to get repository root, falling back to directory: {e}"
+            )
 
         # Create the tree object for the empty commit
         # Get the tree from HEAD or create a new empty tree if no HEAD exists
@@ -147,15 +161,15 @@ async def create_commit_reference(
         )
 
         return (
-            True,
             f"Created commit reference {ref_name} -> {commit_hash}",
             commit_hash,
         )
+    except subprocess.CalledProcessError as e:
+        log.warning(f"Git command failed: {e.stderr}", exc_info=True)
+        raise GitError(f"Git command failed: {e.stderr}") from e
     except Exception as e:
-        logging.warning(
-            f"Exception when creating commit reference: {e!s}", exc_info=True
-        )
-        return False, f"Error creating commit reference: {e!s}", ""
+        log.warning(f"Exception when creating commit reference: {e!s}", exc_info=True)
+        raise GitError(f"Error creating commit reference: {e!s}") from e
 
 
 async def commit_changes(

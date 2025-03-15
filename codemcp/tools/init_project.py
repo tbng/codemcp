@@ -189,7 +189,7 @@ async def init_project(
             chat_id = await _generate_chat_id(full_dir_path, subject_line)
 
         # Create an empty commit with user prompt and subject line
-        from ..git import create_commit_reference
+        from ..git import GitError, create_commit_reference
 
         # We already validated that we're in a git repository
         # Format the commit message according to the specified format
@@ -198,14 +198,14 @@ async def init_project(
 
         # Create a commit reference instead of creating a regular commit
         # This will not advance HEAD but store the commit in refs/codemcp/<chat_id>
-        success, message, commit_hash = await create_commit_reference(
-            full_dir_path,
-            chat_id=chat_id,
-            commit_msg=commit_msg,
-        )
-
-        if not success:
-            logging.warning(f"Failed to create commit reference: {message}")
+        try:
+            message, commit_hash = await create_commit_reference(
+                full_dir_path,
+                chat_id=chat_id,
+                commit_msg=commit_msg,
+            )
+        except GitError as e:
+            logging.warning(f"Failed to create commit reference: {e}")
 
         project_prompt = ""
         command_help = ""
