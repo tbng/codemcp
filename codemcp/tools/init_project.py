@@ -352,6 +352,9 @@ Remember: when making multiple file edits in a row to the same file, you should 
 Records the user's verbatim prompt text for each interaction after the initial one.
 You should call this tool with the user's exact message at the beginning of each response.
 This tool must be called in every response except for the first one where InitProject was used.
+If a slash command is detected in the user's prompt, the tool will return instructions which you 
+should IMMEDIATELY follow before continuing. Custom slash commands can be created by adding 
+Markdown files to .claude/commands/ (project-specific) or ~/.claude/commands/ (global) directories.
 
 ## LS chat_id path
 
