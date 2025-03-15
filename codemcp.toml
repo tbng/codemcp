@@ -3,6 +3,11 @@ project_prompt = '''
 - When you are done with your task, run format and lint commands, and then submit
   a PR using the 'ghstack' command.
 - We ONLY write end to end tests, do NOT use mocks.
+- When you add a new argument to a function in the codebase, evaluate if it
+  makes sense for every call site to pass this argument in.  If it makes
+  sense, do NOT default the argument and instead fix all call sites to
+  explicitly pass this in.  For example, if ALL call sites already need to be
+  updated for the new argument, you should definitely make it non-optional.
 - When you make a new tool, the prompt goes in system_prompt in
   codecmp/tools/init_project.py
 
