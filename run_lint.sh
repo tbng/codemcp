@@ -9,7 +9,7 @@ echo "Running Ruff linter..."
 
 UNSAFE_CODES="F401,F841,I"
 
-"${SCRIPT_DIR}/.venv/bin/python" -m ruff check --ignore "$UNSAFE_CODES" --fix src
+"${SCRIPT_DIR}/.venv/bin/python" -m ruff check --ignore "$UNSAFE_CODES" --fix codemcp
 
 # Less safe autofixes
 "${SCRIPT_DIR}/.venv/bin/python" -m ruff check --select "$UNSAFE_CODES" --unsafe-fixes --fix

@@ -23,28 +23,28 @@ log = logging.getLogger(__name__)
 
 async def create_commit_reference(
     path: str,
-    description: str,
     chat_id: str,
-    ref_name: str = None,
-    custom_message: str = None,
+    commit_msg: str,
 ) -> tuple[bool, str, str]:
     """Create a Git commit without advancing HEAD and store it in a reference.
 
-    This function creates a commit using Git plumbing commands and stores it in
-    a reference (refs/codemcp/<chat_id>) without changing HEAD.
+    This function creates a commit using Git plumbing commands and stores it
+    in a reference (refs/codemcp/<chat_id>) without changing HEAD.  We'll use
+    this to make the "real" commit once our first change happens.
 
     Args:
         path: The path to the file or directory to commit
-        description: Commit message describing the change
         chat_id: The unique ID of the current chat session
-        ref_name: Optional custom reference name (defaults to refs/codemcp/<chat_id>)
-        custom_message: Optional custom commit message (overrides description)
+        commit_msg: Commit message
 
     Returns:
         A tuple of (success, message, commit_hash)
     """
     log.debug(
-        "create_commit_reference(%s, %s, %s, %s)", path, description, chat_id, ref_name
+        "create_commit_reference(%s, %s, %s, %s, %s)",
+        path,
+        chat_id,
+        commit_msg,
     )
     try:
         # First, check if this is a git repository
@@ -74,10 +74,6 @@ async def create_commit_reference(
         except (subprocess.SubprocessError, OSError):
             # Fall back to the directory if we can't get the repo root
             git_cwd = directory
-
-        # Use the default reference name if none provided
-        if ref_name is None:
-            ref_name = f"refs/codemcp/{chat_id}"
 
         # Create the tree object for the empty commit
         # Get the tree from HEAD or create a new empty tree if no HEAD exists
@@ -113,21 +109,12 @@ async def create_commit_reference(
             )
             tree_hash = empty_tree_result.stdout.strip()
 
-        # Prepare the commit message with metadata
-        if custom_message:
-            # Use our updated function to prepare the message
-            commit_message = update_commit_message_with_description(
-                current_commit_message=custom_message,
-                description="",  # Empty because we're not adding a description
-                chat_id=chat_id,
-            )
-        else:
-            # Start with the description and add chat_id
-            commit_message = description
-            if chat_id:
-                commit_message = append_metadata_to_message(
-                    commit_message, {"codemcp-id": chat_id}
-                )
+        # Use our updated function to prepare the message
+        commit_message = update_commit_message_with_description(
+            current_commit_message=commit_msg,
+            description="",  # Empty because we're not adding a description
+            chat_id=chat_id,
+        )
 
         # Get parent commit if we have HEAD
         parent_arg = []
@@ -152,6 +139,8 @@ async def create_commit_reference(
         )
         commit_hash = commit_result.stdout.strip()
 
+        ref_name = f"refs/codemcp/{chat_id}"
+
         # Update the reference to point to the new commit
         await run_command(
             ["git", "update-ref", ref_name, commit_hash],
@@ -174,7 +163,7 @@ async def create_commit_reference(
 
 
 async def commit_changes(
-    path: str = None,
+    path: str,
     description: str = "",
     chat_id: str = None,
     allow_empty: bool = False,
@@ -183,18 +172,19 @@ async def commit_changes(
 ) -> tuple[bool, str]:
     """Commit changes to a file, directory, or all files in Git.
 
-    This function will either create a new commit with the chat_id metadata,
-    or amend the HEAD commit if it belongs to the same chat session.
+    This function is a slight misnomer, as we may not actually create a new
+    commit; we may merely amend the current commit.  The life cycle looks like this:
 
-    If HEAD doesn't have the right chat_id but there's a commit reference for this
-    chat_id, it will cherry-pick that reference first to create the initial commit
-    and then proceed with the changes.
+    1. On first write, when no commit exists: we'll cherry-pick that reference
+       first to create the initial commit and then proceed with the changes.
+
+    2. On later writes, we'll directly amend the existing commit.
 
     If commit_all is True, all changes in the repository will be committed.
     When commit_all is True, path can be None.
 
     Args:
-        path: The path to the file or directory to commit (optional if commit_all is True)
+        path: The path to the file or directory to commit
         description: Commit message describing the change
         chat_id: The unique ID of the current chat session
         allow_empty: Whether to allow empty commits (no changes)
@@ -213,35 +203,23 @@ async def commit_changes(
         commit_all,
     )
     try:
-        # Need either a path or commit_all=True
-        if path is None and not commit_all:
-            return False, "Either path must be provided or commit_all must be True"
-
         # Determine working directory for git operations
         working_dir = None
-        if path is not None:
-            # First, check if this is a git repository
-            if not await is_git_repository(path):
-                return False, f"Path '{path}' is not in a Git repository"
+        # First, check if this is a git repository
+        if not await is_git_repository(path):
+            return False, f"Path '{path}' is not in a Git repository"
 
-            # Get absolute paths for consistency
-            abs_path = os.path.abspath(path)
+        # Get absolute paths for consistency
+        abs_path = os.path.abspath(path)
 
-            # Get the directory - if path is a file, use its directory, otherwise use the path itself
-            working_dir = (
-                os.path.dirname(abs_path) if os.path.isfile(abs_path) else abs_path
-            )
+        # Get the directory - if path is a file, use its directory, otherwise use the path itself
+        working_dir = (
+            os.path.dirname(abs_path) if os.path.isfile(abs_path) else abs_path
+        )
 
-            # If it's a file, check if it exists (only if not commit_all mode)
-            if (
-                not commit_all
-                and os.path.isfile(abs_path)
-                and not os.path.exists(abs_path)
-            ):
-                return False, f"File does not exist: {abs_path}"
-        else:
-            # If no path is provided, use the current directory
-            working_dir = os.getcwd()
+        # If it's a file, check if it exists (only if not commit_all mode)
+        if not commit_all and os.path.isfile(abs_path) and not os.path.exists(abs_path):
+            return False, f"File does not exist: {abs_path}"
 
         # Try to get the git repository root for more reliable operations
         try:

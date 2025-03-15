@@ -78,8 +78,8 @@ async def check_git_tracking_for_existing_file(
 
         # If there are other uncommitted changes, commit them
         commit_success, commit_message = await commit_changes(
+            file_path,
             description="Snapshot before codemcp change",
-            commit_all=True,
         )
 
         if not commit_success:
