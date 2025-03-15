@@ -5,7 +5,6 @@ import os
 import subprocess
 
 from .git_message import (
-    append_metadata_to_message,
     update_commit_message_with_description,
 )
 from .git_query import (

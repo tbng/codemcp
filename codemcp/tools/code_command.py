@@ -143,8 +143,10 @@ async def run_code_command(
         if is_git_repo:
             logging.info(f"Committing any pending changes before {command_name}")
             commit_result = await commit_changes(
-                full_dir_path, f"Snapshot before auto-{command_name}", chat_id,
-                commit_all=True
+                full_dir_path,
+                f"Snapshot before auto-{command_name}",
+                chat_id,
+                commit_all=True,
             )
             if not commit_result[0]:
                 logging.warning(f"Failed to commit pending changes: {commit_result[1]}")
@@ -170,8 +172,7 @@ async def run_code_command(
                 if has_changes:
                     logging.info(f"Changes detected after {command_name}, committing")
                     success, commit_result_message = await commit_changes(
-                        full_dir_path, commit_message, chat_id,
-                        commit_all=True
+                        full_dir_path, commit_message, chat_id, commit_all=True
                     )
 
                     if success:
