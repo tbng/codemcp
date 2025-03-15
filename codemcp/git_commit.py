@@ -26,7 +26,7 @@ async def create_commit_reference(
     description: str,
     chat_id: str,
     ref_name: str = None,
-    custom_message: str = None,
+    custom_message: str = "",
 ) -> tuple[bool, str, str]:
     """Create a Git commit without advancing HEAD and store it in a reference.
 
@@ -38,13 +38,18 @@ async def create_commit_reference(
         description: Commit message describing the change
         chat_id: The unique ID of the current chat session
         ref_name: Optional custom reference name (defaults to refs/codemcp/<chat_id>)
-        custom_message: Optional custom commit message (overrides description)
+        custom_message: Custom commit message (if empty, will use description)
 
     Returns:
         A tuple of (success, message, commit_hash)
     """
     log.debug(
-        "create_commit_reference(%s, %s, %s, %s)", path, description, chat_id, ref_name
+        "create_commit_reference(%s, %s, %s, %s, %s)",
+        path,
+        description,
+        chat_id,
+        ref_name,
+        custom_message,
     )
     try:
         # First, check if this is a git repository
