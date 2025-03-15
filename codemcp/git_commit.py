@@ -38,7 +38,7 @@ async def create_commit_reference(
         description: Commit message describing the change
         chat_id: The unique ID of the current chat session
         ref_name: Optional custom reference name (defaults to refs/codemcp/<chat_id>)
-        custom_message: Custom commit message (if empty, will use description)
+        custom_message: Custom commit message (defaults to empty string)
 
     Returns:
         A tuple of (success, message, commit_hash)
@@ -120,19 +120,16 @@ async def create_commit_reference(
 
         # Prepare the commit message with metadata
         if custom_message:
-            # Use our updated function to prepare the message
             commit_message = update_commit_message_with_description(
                 current_commit_message=custom_message,
                 description="",  # Empty because we're not adding a description
                 chat_id=chat_id,
             )
         else:
-            # Start with the description and add chat_id
-            commit_message = description
-            if chat_id:
-                commit_message = append_metadata_to_message(
-                    commit_message, {"codemcp-id": chat_id}
-                )
+            # Use description and add chat_id metadata
+            commit_message = append_metadata_to_message(
+                description, {"codemcp-id": chat_id} if chat_id else {}
+            )
 
         # Get parent commit if we have HEAD
         parent_arg = []
