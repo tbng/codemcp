@@ -67,7 +67,7 @@ class SecurityTest(MCPEndToEndTestCase):
 
                 # Try to write to a file outside the repository
                 # Using call_tool_assert_success since the operation is actually succeeding
-                result_text = await self.call_tool_assert_success(
+                result_text = await self.call_tool_assert_error(
                     session,
                     "codemcp",
                     {
