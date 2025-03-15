@@ -198,14 +198,11 @@ async def init_project(
 
         # Create a commit reference instead of creating a regular commit
         # This will not advance HEAD but store the commit in refs/codemcp/<chat_id>
-        success, message, commit_hash = await create_commit_reference(
+        message, commit_hash = await create_commit_reference(
             full_dir_path,
             chat_id=chat_id,
             commit_msg=commit_msg,
         )
-
-        if not success:
-            logging.warning(f"Failed to create commit reference: {message}")
 
         project_prompt = ""
         command_help = ""
