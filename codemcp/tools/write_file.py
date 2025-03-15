@@ -110,7 +110,9 @@ async def write_file_content(
             raise ValueError(error_message)
 
         # Check git tracking for existing files
-        is_tracked, track_error = await check_git_tracking_for_existing_file(file_path)
+        is_tracked, track_error = await check_git_tracking_for_existing_file(
+            file_path, chat_id
+        )
         if not is_tracked:
             raise ValueError(track_error)
 

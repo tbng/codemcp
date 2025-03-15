@@ -661,6 +661,7 @@ async def edit_file_content(
             # Only check commit_pending_changes for existing files
             is_tracked, track_error = await check_git_tracking_for_existing_file(
                 full_file_path,
+                chat_id=chat_id,
             )
             if not is_tracked:
                 raise ValueError(track_error)
