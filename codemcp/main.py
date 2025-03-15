@@ -54,6 +54,11 @@ async def codemcp(
     In each response after the first one, you must call the UserPrompt tool
     with the user's verbatim message text.
 
+    If a slash command is detected in the user's prompt, the UserPrompt tool will return
+    instructions which you should IMMEDIATELY follow before continuing. Custom slash commands
+    can be created by adding Markdown files to .claude/commands/ (project-specific) or
+    ~/.claude/commands/ (global) directories.
+
     Arguments:
       subtool: The subtool to run (InitProject, UserPrompt, ...)
       path: The path to the file or directory to operate on
