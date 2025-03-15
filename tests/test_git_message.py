@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 
 import unittest
+
 from expecttest import TestCase
+
 from codemcp.git import append_metadata_to_message
 
 
@@ -12,7 +14,13 @@ class TestGitMessageHandling(TestCase):
         """Test appending metadata to an empty message."""
         message = ""
         new_message = append_metadata_to_message(message, {"codemcp-id": "abc-123"})
-        self.assertExpectedInline(new_message, """codemcp-id: abc-123""")
+        self.assertExpectedInline(
+            new_message,
+            """\
+
+codemcp-id: abc-123
+""",
+        )
 
     def test_append_new_metadata(self):
         """Test appending new metadata to a message without existing metadata."""
@@ -20,11 +28,13 @@ class TestGitMessageHandling(TestCase):
         new_message = append_metadata_to_message(message, {"codemcp-id": "abc-123"})
         self.assertExpectedInline(
             new_message,
-            """feat: Add feature
+            """\
+feat: Add feature
 
 Description
 
-codemcp-id: abc-123""",
+codemcp-id: abc-123
+""",
         )
 
     def test_append_to_existing_metadata(self):
@@ -37,12 +47,14 @@ Signed-off-by: User <user@example.com>"""
         new_message = append_metadata_to_message(message, {"codemcp-id": "abc-123"})
         self.assertExpectedInline(
             new_message,
-            """feat: Add feature
+            """\
+feat: Add feature
 
 Description
 
 Signed-off-by: User <user@example.com>
-codemcp-id: abc-123""",
+codemcp-id: abc-123
+""",
         )
 
     def test_append_to_existing_metadata_with_trailing_newline(self):
@@ -56,12 +68,14 @@ Signed-off-by: User <user@example.com>
         new_message = append_metadata_to_message(message, {"codemcp-id": "abc-123"})
         self.assertExpectedInline(
             new_message,
-            """feat: Add feature
+            """\
+feat: Add feature
 
 Description
 
 Signed-off-by: User <user@example.com>
-codemcp-id: abc-123""",
+codemcp-id: abc-123
+""",
         )
 
     def test_append_to_message_with_trailing_newlines(self):
@@ -74,11 +88,14 @@ Description
         new_message = append_metadata_to_message(message, {"codemcp-id": "abc-123"})
         self.assertExpectedInline(
             new_message,
-            """feat: Add feature
+            """\
+feat: Add feature
 
 Description
 
-codemcp-id: abc-123""",
+codemcp-id: abc-123
+
+""",
         )
 
     def test_append_to_message_with_double_trailing_newlines(self):
@@ -92,12 +109,15 @@ Description
         new_message = append_metadata_to_message(message, {"codemcp-id": "abc-123"})
         self.assertExpectedInline(
             new_message,
-            """feat: Add feature
+            """\
+feat: Add feature
 
 Description
 
+codemcp-id: abc-123
 
-codemcp-id: abc-123""",
+
+""",
         )
 
     def test_update_existing_metadata(self):
@@ -111,12 +131,14 @@ codemcp-id: old-id"""
         # With our new implementation, we just append the new ID at the end
         self.assertExpectedInline(
             new_message,
-            """feat: Add feature
+            """\
+feat: Add feature
 
 Description
 
 codemcp-id: old-id
-codemcp-id: new-id""",
+codemcp-id: new-id
+""",
         )
 
     def test_meta_ignored_except_codemcp_id(self):
@@ -124,7 +146,14 @@ codemcp-id: new-id""",
         message = "feat: Add feature"
         new_message = append_metadata_to_message(message, {"other-key": "value"})
         # Without codemcp-id, the message should be unchanged
-        self.assertExpectedInline(new_message, """feat: Add feature""")
+        self.assertExpectedInline(
+            new_message,
+            """\
+feat: Add feature
+
+other-key: value
+""",
+        )
 
     def test_single_line_subject_with_colon(self):
         """Test handling a single-line message with a colon in the subject."""
@@ -134,9 +163,11 @@ codemcp-id: new-id""",
         # The codemcp-id should be appended with a double newline
         self.assertExpectedInline(
             new_message,
-            """feat: Add new feature
+            """\
+feat: Add new feature
 
-codemcp-id: abc-123""",
+codemcp-id: abc-123
+""",
         )
 
 

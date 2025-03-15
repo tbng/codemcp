@@ -9,10 +9,10 @@ echo "Running Ruff linter..."
 
 UNSAFE_CODES="F401,F841,I"
 
-"${SCRIPT_DIR}/.venv/bin/python" -m ruff check --ignore "$UNSAFE_CODES" --fix codemcp/ test/
+"${SCRIPT_DIR}/.venv/bin/python" -m ruff check --ignore "$UNSAFE_CODES" --fix src
 
 # Less safe autofixes
-"${SCRIPT_DIR}/.venv/bin/python" -m ruff check --select "$UNSAFE_CODES" --unsafe-fixes --fix codemcp/ test/
+"${SCRIPT_DIR}/.venv/bin/python" -m ruff check --select "$UNSAFE_CODES" --unsafe-fixes --fix
 
 # Check for direct uses of session.call_tool in e2e tests
 echo "Checking for direct use of session.call_tool in e2e tests..."

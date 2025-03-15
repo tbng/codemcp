@@ -3,7 +3,6 @@
 """Tests for the RunCommand with format."""
 
 import os
-import subprocess
 import unittest
 
 from codemcp.testing import MCPEndToEndTestCase

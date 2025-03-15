@@ -3,7 +3,6 @@
 """Tests for the RunCommand with test."""
 
 import os
-import subprocess
 import sys
 import unittest
 

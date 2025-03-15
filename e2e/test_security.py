@@ -3,7 +3,6 @@
 """Tests for security aspects of codemcp."""
 
 import os
-import subprocess
 import unittest
 
 from codemcp.testing import MCPEndToEndTestCase

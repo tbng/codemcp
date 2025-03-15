@@ -3,8 +3,6 @@
 """Tests for the output limitation in RunCommand."""
 
 import os
-import subprocess
-import sys
 import unittest
 
 from codemcp.common import MAX_LINES_TO_READ, START_CONTEXT_LINES

@@ -3,7 +3,6 @@
 """Tests for the Grep subtool."""
 
 import os
-import subprocess
 import unittest
 
 from codemcp.testing import MCPEndToEndTestCase

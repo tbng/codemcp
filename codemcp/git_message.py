@@ -2,6 +2,7 @@
 
 import logging
 import re
+import subprocess
 
 __all__ = [
     "append_metadata_to_message",
@@ -12,53 +13,24 @@ log = logging.getLogger(__name__)
 
 
 def append_metadata_to_message(message: str, metadata: dict) -> str:
-    """Append codemcp-id to a Git commit message.
-
-    This function adds the codemcp-id to the end of a commit message with:
-    - A double newline separator for single-line messages (even if they contain a colon)
-    - A double newline separator for regular message content
-    - A single newline separator if the line above is a metadata line of the form key: value
+    """Append trailers to Git commit message
 
     Args:
         message: The original Git commit message
-        metadata: Dictionary containing metadata; only codemcp-id is used
+        metadata: Dictionary containing trailers; only codemcp-id is used
 
     Returns:
-        The updated commit message with codemcp-id appended
+        The updated commit message with trailers added
     """
-    if not metadata or "codemcp-id" not in metadata:
-        return message
 
-    codemcp_id = metadata["codemcp-id"]
-
-    # If the message is empty, just return the codemcp-id
-    if not message:
-        return f"codemcp-id: {codemcp_id}"
-
-    # Split the message into lines to analyze the last line
-    lines = message.splitlines()
-
-    # For single-line messages (subject only), always use double newline regardless of colon
-    if len(lines) == 1:
-        if message.endswith("\n"):
-            return f"{message}\ncodemcp-id: {codemcp_id}"
-        else:
-            return f"{message}\n\ncodemcp-id: {codemcp_id}"
-    # For multi-line messages, check if the last line looks like a metadata line (key: value)
-    elif lines and ":" in lines[-1] and not lines[-1].startswith(" "):
-        # If the last line looks like metadata, append without double newline
-        if message.endswith("\n"):
-            return f"{message}codemcp-id: {codemcp_id}"
-        else:
-            return f"{message}\ncodemcp-id: {codemcp_id}"
-    else:
-        # Otherwise, append with double newline
-        if message.endswith("\n\n"):
-            return f"{message}codemcp-id: {codemcp_id}"
-        elif message.endswith("\n"):
-            return f"{message}\ncodemcp-id: {codemcp_id}"
-        else:
-            return f"{message}\n\ncodemcp-id: {codemcp_id}"
+    return subprocess.check_output(
+        [
+            "git",
+            "interpret-trailers",
+            *[f"--trailer={k}: {v}" for k, v in metadata.items()],
+        ],
+        input=message.encode("utf-8"),
+    ).decode("utf-8")
 
 
 def update_commit_message_with_description(

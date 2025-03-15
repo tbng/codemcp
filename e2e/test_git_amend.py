@@ -3,7 +3,6 @@
 """Tests for the Git amend functionality."""
 
 import os
-import subprocess
 import unittest
 
 from codemcp.testing import MCPEndToEndTestCase
@@ -568,7 +567,7 @@ class GitAmendTest(MCPEndToEndTestCase):
             self.assertIn("Successfully edited", result1_text)
 
             # Get the commit hash for the first edit
-            first_commit_hash = await self.git_run(
+            await self.git_run(
                 ["rev-parse", "--short", "HEAD"], capture_output=True, text=True
             )
 
@@ -616,7 +615,7 @@ class GitAmendTest(MCPEndToEndTestCase):
             )
 
             # Third edit to check multiple hash entries
-            result3_text = await self.call_tool_assert_success(
+            await self.call_tool_assert_success(
                 session,
                 "codemcp",
                 {
@@ -630,7 +629,7 @@ class GitAmendTest(MCPEndToEndTestCase):
             )
 
             # Get the second commit hash
-            second_commit_hash = await self.git_run(
+            await self.git_run(
                 ["rev-parse", "--short", "HEAD"], capture_output=True, text=True
             )
 

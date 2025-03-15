@@ -3,7 +3,6 @@
 """Tests for the WriteFile subtool."""
 
 import os
-import subprocess
 import unittest
 
 from codemcp.testing import MCPEndToEndTestCase
@@ -339,7 +338,7 @@ codemcp-id: test-chat-id""",
             chat_id = self.extract_chat_id_from_text(init_result_text)
 
             # Try to write a new file in the untracked directory
-            result_text = await self.call_tool_assert_success(
+            await self.call_tool_assert_success(
                 session,
                 "codemcp",
                 {

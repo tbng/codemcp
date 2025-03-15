@@ -126,7 +126,7 @@ nothing to commit, working tree clean""",
             new_content = "Modified untracked content"
 
             # Using call_tool_assert_success since the tool is actually succeeding
-            result_text = await self.call_tool_assert_success(
+            await self.call_tool_assert_success(
                 session,
                 "codemcp",
                 {

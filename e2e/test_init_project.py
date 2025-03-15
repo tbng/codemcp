@@ -14,11 +14,10 @@ class InitProjectTest(MCPEndToEndTestCase):
     async def test_reuse_head_chat_id(self):
         """Test that reuse_head_chat_id=True reuses the chat ID from the HEAD commit."""
         # Set up a git repository in the temp dir
-        import subprocess
         from codemcp.git import (
+            commit_changes,
             get_head_commit_chat_id,
             get_ref_commit_chat_id,
-            commit_changes,
         )
 
         # Create a simple codemcp.toml file
@@ -203,7 +202,6 @@ format = ["./run_format.sh"]
 
     async def test_allow_empty_commit_flag(self):
         """Test that allow_empty=True flag is properly honored in git.commit_changes."""
-        import subprocess
         from codemcp.git import commit_changes
 
         # Set up a git repository in the temp dir
@@ -270,7 +268,6 @@ test = ["./run_test.sh"]
 """)
 
         # Set up a git repository
-        import subprocess
         from codemcp.git import get_head_commit_hash, get_ref_commit_chat_id
 
         await self.git_run(["init"])
@@ -332,7 +329,6 @@ test = ["./run_test.sh"]
 
     async def test_cherry_pick_reference_commit(self):
         """Test that commit_changes cherry-picks the reference commit when needed."""
-        import subprocess
         from codemcp.git import (
             commit_changes,
             get_head_commit_chat_id,

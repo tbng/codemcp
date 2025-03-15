@@ -3,9 +3,8 @@
 """Tests for whitespace alignment in Git commit messages when amending."""
 
 import os
-import subprocess
-import unittest
 import re
+import unittest
 
 from codemcp.testing import MCPEndToEndTestCase
 
@@ -34,7 +33,7 @@ class GitAmendWhitespaceTest(MCPEndToEndTestCase):
 
         async with self.create_client_session() as session:
             # First edit with our chat_id
-            result_text1 = await self.call_tool_assert_success(
+            await self.call_tool_assert_success(
                 session,
                 "codemcp",
                 {
@@ -53,7 +52,7 @@ class GitAmendWhitespaceTest(MCPEndToEndTestCase):
             )
 
             # Second edit with the same chat_id
-            result_text2 = await self.call_tool_assert_success(
+            await self.call_tool_assert_success(
                 session,
                 "codemcp",
                 {
@@ -120,7 +119,7 @@ class GitAmendWhitespaceTest(MCPEndToEndTestCase):
             )
 
             # Third edit to check multiple aligned entries
-            result_text3 = await self.call_tool_assert_success(
+            await self.call_tool_assert_success(
                 session,
                 "codemcp",
                 {
@@ -134,7 +133,7 @@ class GitAmendWhitespaceTest(MCPEndToEndTestCase):
             )
 
             # Get the second commit hash
-            second_commit_hash = await self.git_run(
+            await self.git_run(
                 ["rev-parse", "--short", "HEAD"], capture_output=True, text=True
             )
 
