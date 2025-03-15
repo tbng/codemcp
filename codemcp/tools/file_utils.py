@@ -40,7 +40,6 @@ async def check_file_path_and_permissions(file_path: str) -> tuple[bool, str | N
 
 async def check_git_tracking_for_existing_file(
     file_path: str,
-    chat_id: str,
 ) -> tuple[bool, str | None]:
     """Check if an existing file is tracked by git. Skips check for non-existent files.
 
@@ -81,7 +80,6 @@ async def check_git_tracking_for_existing_file(
         commit_success, commit_message = await commit_changes(
             file_path,
             description="Snapshot before codemcp change",
-            chat_id=chat_id,
         )
 
         if not commit_success:

@@ -164,8 +164,10 @@ async def create_commit_reference(
 
 async def commit_changes(
     path: str,
-    description: str,
-    chat_id: str,
+    description: str = "",
+    chat_id: str = None,
+    allow_empty: bool = False,
+    custom_message: str = None,
     commit_all: bool = False,
 ) -> tuple[bool, str]:
     """Commit changes to a file, directory, or all files in Git.
@@ -185,6 +187,8 @@ async def commit_changes(
         path: The path to the file or directory to commit
         description: Commit message describing the change
         chat_id: The unique ID of the current chat session
+        allow_empty: Whether to allow empty commits (no changes)
+        custom_message: Optional custom commit message (overrides description)
         commit_all: Whether to commit all changes in the repository
 
     Returns:
@@ -217,7 +221,23 @@ async def commit_changes(
         if not commit_all and os.path.isfile(abs_path) and not os.path.exists(abs_path):
             return False, f"File does not exist: {abs_path}"
 
-        git_cwd = working_dir
+        # Try to get the git repository root for more reliable operations
+        try:
+            repo_root = (
+                await run_command(
+                    ["git", "rev-parse", "--show-toplevel"],
+                    cwd=working_dir,
+                    check=True,
+                    capture_output=True,
+                    text=True,
+                )
+            ).stdout.strip()
+
+            # Use the repo root as the working directory for git commands
+            git_cwd = repo_root
+        except (subprocess.SubprocessError, OSError):
+            # Fall back to the directory if we can't get the repo root
+            git_cwd = working_dir
 
         # Handle commit_all mode
         if commit_all:
@@ -247,7 +267,11 @@ async def commit_changes(
             # Add the path to git - could be a file or directory
             try:
                 # If path is a directory, do git add .
-                add_command = ["git", "add", abs_path]
+                add_command = (
+                    ["git", "add", "."]
+                    if os.path.isdir(abs_path)
+                    else ["git", "add", abs_path]
+                )
 
                 add_result = await run_command(
                     add_command,
@@ -262,35 +286,47 @@ async def commit_changes(
             if add_result.returncode != 0:
                 return False, f"Failed to add to Git: {add_result.stderr}"
 
-        # Check if there are any changes to commit after git add
-        diff_result = await run_command(
-            ["git", "diff-index", "--cached", "--quiet", "HEAD"],
+        # First check if there's already a commit in the repository
+        has_commits = False
+        rev_parse_result = await run_command(
+            ["git", "rev-parse", "--verify", "HEAD"],
             cwd=git_cwd,
             capture_output=True,
             text=True,
             check=False,
         )
 
-        # If diff-index returns 0, there are no changes to commit
-        if diff_result.returncode == 0:
-            return (
-                True,
-                "No changes to commit (changes already committed or no changes detected)",
+        has_commits = rev_parse_result.returncode == 0
+
+        # Check if there are any staged changes to commit
+        if has_commits:
+            # Check if there are any changes to commit after git add
+            diff_result = await run_command(
+                ["git", "diff-index", "--cached", "--quiet", "HEAD"],
+                cwd=git_cwd,
+                capture_output=True,
+                text=True,
+                check=False,
             )
 
+            # If diff-index returns 0, there are no changes to commit
+            if diff_result.returncode == 0 and not allow_empty:
+                return (
+                    True,
+                    "No changes to commit (changes already committed or no changes detected)",
+                )
+
         # Determine whether to amend or create a new commit
-        head_chat_id = await get_head_commit_chat_id(git_cwd)
+        head_chat_id = await get_head_commit_chat_id(git_cwd) if has_commits else None
         logging.debug(
-            "commit_changes: head_chat_id = %s",
+            "commit_changes: has_commits = %r, head_chat_id = %s",
+            has_commits,
             head_chat_id,
         )
 
-        verb = "amended"
-
         # If HEAD exists but doesn't have the right chat_id, check if we have a
         # commit reference for this chat_id that we need to cherry-pick first
-        if head_chat_id != chat_id:
-            verb = "committed"
+        if has_commits and chat_id and head_chat_id != chat_id:
             ref_name = f"refs/codemcp/{chat_id}"
             ref_exists = False
 
@@ -365,45 +401,103 @@ async def commit_changes(
                 # After applying, the HEAD commit should have the right chat_id
                 head_chat_id = await get_head_commit_chat_id(git_cwd)
 
-        assert head_chat_id == chat_id
+        should_amend = has_commits and head_chat_id == chat_id
 
-        # Get the current commit hash before amending
-        commit_hash = await get_head_commit_hash(git_cwd)
+        should_amend = has_commits and head_chat_id == chat_id
 
-        # Get the current commit message
-        current_commit_message = await get_head_commit_message(git_cwd)
-        if not current_commit_message:
-            current_commit_message = ""
+        # Prepare the commit message with metadata
+        if custom_message:
+            # Use the custom message and add chat_id if needed
+            commit_message = custom_message
 
-        # Verify the commit has our codemcp-id
-        if chat_id and "codemcp-id: " not in current_commit_message:
-            logging.warning("Expected codemcp-id in current commit but not found")
+            # Make sure it has the chat_id metadata
+            if chat_id:
+                commit_message = append_metadata_to_message(
+                    commit_message, {"codemcp-id": chat_id}
+                )
+        else:
+            commit_message = f"wip: {description}"
 
-        # Use the update function for subsequent edits
-        commit_message = update_commit_message_with_description(
-            current_commit_message=current_commit_message,
-            description=description,
-            commit_hash=commit_hash,
-            chat_id=chat_id,
-        )
+        if should_amend:
+            # Get the current commit hash before amending
+            commit_hash = await get_head_commit_hash(git_cwd)
 
-        # Amend the previous commit
-        commit_result = await run_command(
-            ["git", "commit", "--amend", "-m", commit_message],
-            cwd=git_cwd,
-            capture_output=True,
-            text=True,
-            check=False,
-        )
+            # Get the current commit message
+            current_commit_message = await get_head_commit_message(git_cwd)
+            if not current_commit_message:
+                current_commit_message = ""
+
+            # Verify the commit has our codemcp-id
+            if chat_id and "codemcp-id: " not in current_commit_message:
+                logging.warning("Expected codemcp-id in current commit but not found")
+
+            # Check if message already has base revision
+            has_base_revision = "(Base revision)" in current_commit_message
+
+            # Prepare the commit message for amending
+            if not has_base_revision:
+                # Add base revision marker for the first edit
+                main_message = current_commit_message.replace(
+                    "\ncodemcp-id: " + chat_id, ""
+                )
+                main_message += f"\n\n{commit_hash}  (Base revision)"
+                commit_message = (
+                    main_message + f"\nHEAD     {description}\n\ncodemcp-id: {chat_id}"
+                )
+            else:
+                # Use the update function for subsequent edits
+                commit_message = update_commit_message_with_description(
+                    current_commit_message=current_commit_message,
+                    description=description,
+                    commit_hash=commit_hash,
+                    chat_id=chat_id,
+                )
+
+            # Amend the previous commit
+            commit_result = await run_command(
+                ["git", "commit", "--amend", "-m", commit_message],
+                cwd=git_cwd,
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+        else:
+            # For new commits, ensure chat ID is added to the message
+            if chat_id:
+                # Add the codemcp-id to the message
+                commit_message = append_metadata_to_message(
+                    commit_message, {"codemcp-id": chat_id}
+                )
+
+            # Create a new commit
+            commit_cmd = ["git", "commit", "-m", commit_message]
+            if allow_empty:
+                commit_cmd.append("--allow-empty")
+
+            commit_result = await run_command(
+                commit_cmd,
+                cwd=git_cwd,
+                capture_output=True,
+                text=True,
+                check=False,
+            )
 
         if commit_result.returncode != 0:
             return False, f"Failed to commit changes: {commit_result.stderr}"
 
+        # Get the new commit hash
+        await get_head_commit_hash(git_cwd)
+
+        verb = "amended" if should_amend else "committed"
+
         # If this was an amended commit, include the original hash in the message
-        return (
-            True,
-            f"Changes {verb} successfully (previous commit was {commit_hash})",
-        )
+        if should_amend and commit_hash:
+            return (
+                True,
+                f"Changes {verb} successfully (previous commit was {commit_hash})",
+            )
+        else:
+            return True, f"Changes {verb} successfully"
     except Exception as e:
         logging.warning(
             f"Exception suppressed when committing changes: {e!s}", exc_info=True
