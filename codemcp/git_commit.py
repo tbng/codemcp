@@ -23,20 +23,19 @@ log = logging.getLogger(__name__)
 
 async def create_commit_reference(
     path: str,
-    description: str,
     chat_id: str,
-    custom_message: str,
+    commit_msg: str,
 ) -> tuple[bool, str, str]:
     """Create a Git commit without advancing HEAD and store it in a reference.
 
-    This function creates a commit using Git plumbing commands and stores it in
-    a reference (refs/codemcp/<chat_id>) without changing HEAD.
+    This function creates a commit using Git plumbing commands and stores it
+    in a reference (refs/codemcp/<chat_id>) without changing HEAD.  We'll use
+    this to make the "real" commit once our first change happens.
 
     Args:
         path: The path to the file or directory to commit
-        description: Commit message describing the change
         chat_id: The unique ID of the current chat session
-        custom_message: Custom commit message (if empty, will use description)
+        commit_msg: Commit message
 
     Returns:
         A tuple of (success, message, commit_hash)
@@ -44,9 +43,8 @@ async def create_commit_reference(
     log.debug(
         "create_commit_reference(%s, %s, %s, %s, %s)",
         path,
-        description,
         chat_id,
-        custom_message,
+        commit_msg,
     )
     try:
         # First, check if this is a git repository
@@ -113,7 +111,7 @@ async def create_commit_reference(
 
         # Use our updated function to prepare the message
         commit_message = update_commit_message_with_description(
-            current_commit_message=custom_message,
+            current_commit_message=commit_msg,
             description="",  # Empty because we're not adding a description
             chat_id=chat_id,
         )
