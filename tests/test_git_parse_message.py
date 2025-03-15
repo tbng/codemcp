@@ -4,7 +4,7 @@ import unittest
 
 from expecttest import TestCase
 
-from git_message import parse_message
+from codemcp.git_parse_message import parse_message
 
 
 class TestGitMessage(TestCase):
