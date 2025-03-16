@@ -9,6 +9,7 @@ from ..common import (
     MAX_LINES_TO_READ,
     MAX_OUTPUT_SIZE,
     normalize_file_path,
+    find_git_root,
 )
 from ..rules import find_applicable_rules, Rule
 
