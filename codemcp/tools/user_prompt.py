@@ -4,7 +4,7 @@ import logging
 import os
 
 from ..git_query import find_git_root
-from ..rules import find_applicable_rules
+from ..rules import get_applicable_rules_content
 
 __all__ = [
     "user_prompt",
@@ -34,22 +34,8 @@ async def user_prompt(user_text: str, chat_id: str | None = None) -> str:
 
         # If we're in a git repo, look for applicable rules
         if repo_root:
-            # Find applicable rules (no file path for UserPrompt)
-            applicable_rules, suggested_rules = find_applicable_rules(repo_root)
-
-            # If we have applicable rules, add them to the result
-            if applicable_rules or suggested_rules:
-                result += "\n\n// .cursor/rules results:"
-
-                # Add directly applicable rules (alwaysApply=true)
-                for rule in applicable_rules:
-                    rule_content = f"\n\n// Rule from {os.path.relpath(rule.file_path, repo_root)}:\n{rule.payload}"
-                    result += rule_content
-
-                # Add suggestions for rules with descriptions
-                for description, rule_path in suggested_rules:
-                    rel_path = os.path.relpath(rule_path, repo_root)
-                    result += f"\n\n// If {description} applies, load {rel_path}"
+            # Add applicable rules (no file path for UserPrompt)
+            result += get_applicable_rules_content(repo_root)
 
         return result
     except Exception as e:
