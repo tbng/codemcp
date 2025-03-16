@@ -386,14 +386,16 @@ codemcp-id: test-chat-id""",
 
         # User prompt with Markdown code block
         user_prompt_with_code_block = """Please create a file with this Python code:
-```python
-def hello_world():
-    print("Hello, world!")
-    return True
 
-if __name__ == "__main__":
-    hello_world()
 ```
+---
+description: Description of when the rule is useful for the LLM
+globs: *.js,*.ts
+alwaysApply: false
+---
+Markdown to send to LLM
+```
+
 And make sure it runs correctly."""
 
         async with self.create_client_session() as session:
@@ -449,22 +451,13 @@ And make sure it runs correctly."""
 test: user prompt with markdown code block
 
 Please create a file with this Python code:
-```python
-def hello_world():
-    print("Hello, world!")
-    return True
 
-if __name__ == "__main__":
-    hello_world()
 ```
-And make sure it runs correctly.
 
 ```git-revs
-b2574a0  (Base revision)
+6350984  (Base revision)
 HEAD     Write file from prompt with code block
-```
-
-codemcp-id: test-chat-id""",
+```""",
             )
 
             # Now do a second write operation with the same chat_id
@@ -506,23 +499,13 @@ codemcp-id: test-chat-id""",
 test: user prompt with markdown code block
 
 Please create a file with this Python code:
-```python
-def hello_world():
-    print("Hello, world!")
-    return True
 
-if __name__ == "__main__":
-    hello_world()
 ```
-And make sure it runs correctly.
 
 ```git-revs
-b2574a0  (Base revision)
-60e1de9  Write file from prompt with code block
+783dc2d  (Base revision)
 HEAD     Update file with second write
-```
-
-codemcp-id: test-chat-id""",
+```""",
             )
 
 
