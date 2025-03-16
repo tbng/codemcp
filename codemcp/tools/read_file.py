@@ -1,13 +1,17 @@
 #!/usr/bin/env python3
 
 import os
+import logging
+from typing import List, Tuple
 
 from ..common import (
     MAX_LINE_LENGTH,
     MAX_LINES_TO_READ,
     MAX_OUTPUT_SIZE,
     normalize_file_path,
+    find_git_root,
 )
+from ..rules import find_applicable_rules, Rule
 
 __all__ = [
     "read_file_content",
@@ -94,6 +98,37 @@ async def read_file_content(
         # Add a message if we truncated the file
         if line_offset + len(processed_lines) < total_lines:
             content += f"\n... (file truncated, showing {len(processed_lines)} of {total_lines} lines)"
+
+        # Apply relevant cursor rules
+        try:
+            repo_root = os.path.dirname(full_file_path)
+            while repo_root and not os.path.isdir(os.path.join(repo_root, ".git")):
+                parent = os.path.dirname(repo_root)
+                if parent == repo_root:  # Reached filesystem root
+                    repo_root = None
+                    break
+                repo_root = parent
+            
+            if repo_root:
+                # Find applicable rules
+                applicable_rules, suggested_rules = find_applicable_rules(repo_root, full_file_path)
+                
+                # If we have applicable rules, add them to the output
+                if applicable_rules or suggested_rules:
+                    content += "\n\n// .cursor/rules results:"
+                    
+                    # Add directly applicable rules
+                    for rule in applicable_rules:
+                        rule_content = f"\n\n// Rule from {os.path.relpath(rule.file_path, repo_root)}:\n{rule.payload}"
+                        content += rule_content
+                    
+                    # Add suggestions for rules with descriptions
+                    for description, rule_path in suggested_rules:
+                        rel_path = os.path.relpath(rule_path, repo_root)
+                        content += f"\n\n// If {description} applies, load {rel_path}"
+        except Exception as e:
+            logging.warning(f"Error applying cursor rules: {e!s}", exc_info=True)
+            # Don't fail the entire file read operation if rules can't be applied
 
         return content
     except Exception as e:
