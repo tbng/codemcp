@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import fnmatch
+import logging
 import os
 import re
 from dataclasses import dataclass
@@ -97,30 +98,56 @@ def match_file_with_glob(file_path: str, glob_pattern: str) -> bool:
     path = Path(file_path)
     file_name = path.name
 
+    logging.debug(
+        f"match_file_with_glob: checking if '{file_path}' matches pattern '{glob_pattern}'"
+    )
+
     # Simple case: direct file extension matching (*.js)
     if glob_pattern.startswith("*."):
-        return file_name.endswith(glob_pattern[1:])
+        result = file_name.endswith(glob_pattern[1:])
+        logging.debug(
+            f"Extension match (*.ext): pattern={glob_pattern}, file={file_name}, result={result}"
+        )
+        return result
 
     # Handle "**/*.js" pattern (match any file with .js extension in any directory)
     if glob_pattern == "**/*.js" or glob_pattern == "**/*.jsx":
         ext = glob_pattern.split(".")[-1]
-        return file_name.endswith("." + ext)
+        result = file_name.endswith("." + ext)
+        logging.debug(
+            f"Any dir with extension (**/*.ext): pattern={glob_pattern}, ext=.{ext}, result={result}"
+        )
+        return result
 
     # Handle patterns like "src/**/*.jsx" (match files in src directory or subdirectories)
     if "/" in glob_pattern and "**" in glob_pattern:
         dir_part, file_part = glob_pattern.split("/**/")
+        logging.debug(
+            f"Directory + file pattern: dir_part='{dir_part}', file_part='{file_part}'"
+        )
 
         # Check if the file has the right extension
         if file_part.startswith("*"):
             ext = file_part[1:]  # *.jsx -> .jsx
             if not file_name.endswith(ext):
+                logging.debug(
+                    f"Extension mismatch: expected '{ext}', file='{file_name}', result=False"
+                )
                 return False
 
         # Check if it's in the right directory
-        return dir_part in str(path)
+        result = dir_part in str(path)
+        logging.debug(
+            f"Directory match: checking if '{dir_part}' is in '{str(path)}', result={result}"
+        )
+        return result
 
     # Default to fnmatch for other patterns
-    return fnmatch.fnmatch(file_name, glob_pattern)
+    result = fnmatch.fnmatch(file_name, glob_pattern)
+    logging.debug(
+        f"Default fnmatch: pattern='{glob_pattern}', file='{file_name}', result={result}"
+    )
+    return result
 
 
 def find_applicable_rules(
@@ -146,52 +173,93 @@ def find_applicable_rules(
 
     # Normalize paths
     repo_root = os.path.abspath(repo_root)
+    logging.debug(
+        f"Finding applicable rules for repo_root={repo_root}, file_path={file_path}"
+    )
 
     # If file_path is provided, walk up from its directory to repo_root
     # Otherwise, just check repo_root
     start_dir = os.path.dirname(os.path.abspath(file_path)) if file_path else repo_root
     current_dir = start_dir
+    logging.debug(f"Starting directory search at: {current_dir}")
 
     # Ensure we don't go beyond repo_root
     while current_dir.startswith(repo_root):
         # Look for .cursor/rules directory
         rules_dir = os.path.join(current_dir, ".cursor", "rules")
+        logging.debug(f"Checking for rules directory: {rules_dir}")
+
         if os.path.isdir(rules_dir):
+            logging.debug(f"Found rules directory: {rules_dir}")
+
             # Find all MDC files in this directory
             for root, _, files in os.walk(rules_dir):
                 for filename in files:
                     if filename.endswith(".mdc"):
                         rule_file_path = os.path.join(root, filename)
+                        logging.debug(f"Considering rule file: {rule_file_path}")
 
                         # Skip if we've already processed this file
                         if rule_file_path in processed_rule_files:
+                            logging.debug(
+                                f"Skipping already processed rule file: {rule_file_path}"
+                            )
                             continue
                         processed_rule_files.add(rule_file_path)
 
                         # Load the rule
                         rule = load_rule_from_file(rule_file_path)
                         if rule is None:
+                            logging.debug(
+                                f"Failed to load rule from file: {rule_file_path}"
+                            )
                             continue
 
                         # Check if this rule applies
                         if rule.always_apply:
+                            logging.debug(f"Rule always applies: {rule_file_path}")
                             applicable_rules.append(rule)
                         elif file_path and rule.globs:
                             # Check if any glob pattern matches the file
+                            logging.debug(
+                                f"Checking glob patterns for rule: {rule_file_path}"
+                            )
                             for glob_pattern in rule.globs:
+                                logging.debug(
+                                    f"Testing glob pattern: {glob_pattern} against file: {file_path}"
+                                )
                                 if match_file_with_glob(file_path, glob_pattern):
+                                    logging.debug(
+                                        f"Glob pattern matched: {glob_pattern}"
+                                    )
                                     applicable_rules.append(rule)
                                     break
+                                else:
+                                    logging.debug(
+                                        f"Glob pattern did not match: {glob_pattern}"
+                                    )
                         elif rule.description:
                             # Add to suggested rules if it has a description
+                            logging.debug(
+                                f"Adding rule to suggested rules: {rule_file_path}"
+                            )
                             suggested_rules.append((rule.description, rule_file_path))
+                        else:
+                            logging.debug(
+                                f"Rule not applicable (no globs match or missing description): {rule_file_path}"
+                            )
 
         # Move up one directory
         parent_dir = os.path.dirname(current_dir)
         if parent_dir == current_dir:  # We've reached the root
+            logging.debug("Reached filesystem root, stopping directory traversal")
             break
         current_dir = parent_dir
+        logging.debug(f"Moving up to parent directory: {current_dir}")
 
+    logging.debug(
+        f"Found {len(applicable_rules)} applicable rules and {len(suggested_rules)} suggested rules"
+    )
     return applicable_rules, suggested_rules
 
 
@@ -211,26 +279,44 @@ def get_applicable_rules_content(
         A formatted string containing all applicable rules, or an empty string if no rules apply
     """
     try:
+        logging.debug(
+            f"get_applicable_rules_content called with repo_root={repo_root}, file_path={file_path}"
+        )
         result = ""
 
         # Find applicable rules
         applicable_rules, suggested_rules = find_applicable_rules(repo_root, file_path)
+        logging.debug(
+            f"Retrieved {len(applicable_rules)} applicable rules and {len(suggested_rules)} suggested rules"
+        )
 
         # If we have applicable rules, add them to the output
         if applicable_rules or suggested_rules:
             result += "\n\n// .cursor/rules results:"
+            logging.debug("Adding rule results to output")
 
             # Add directly applicable rules
-            for rule in applicable_rules:
-                rule_content = f"\n\n// Rule from {os.path.relpath(rule.file_path, repo_root)}:\n{rule.payload}"
+            for i, rule in enumerate(applicable_rules):
+                rel_path = os.path.relpath(rule.file_path, repo_root)
+                logging.debug(
+                    f"Adding applicable rule {i + 1}/{len(applicable_rules)}: {rel_path}"
+                )
+                rule_content = f"\n\n// Rule from {rel_path}:\n{rule.payload}"
                 result += rule_content
 
             # Add suggestions for rules with descriptions
-            for description, rule_path in suggested_rules:
+            for i, (description, rule_path) in enumerate(suggested_rules):
                 rel_path = os.path.relpath(rule_path, repo_root)
+                logging.debug(
+                    f"Adding suggested rule {i + 1}/{len(suggested_rules)}: {rel_path} ('{description}')"
+                )
                 result += f"\n\n// If {description} applies, load {rel_path}"
+        else:
+            logging.debug("No applicable or suggested rules found")
 
+        logging.debug(f"Returning {len(result)} characters of rule content")
         return result
-    except Exception:
-        # Don't propagate exceptions from rule processing
+    except Exception as e:
+        # Log the exception but don't propagate it
+        logging.error(f"Error generating applicable rules content: {e}", exc_info=True)
         return ""
