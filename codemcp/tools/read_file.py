@@ -1,17 +1,16 @@
 #!/usr/bin/env python3
 
-import os
 import logging
-from typing import List, Tuple
+import os
 
 from ..common import (
     MAX_LINE_LENGTH,
     MAX_LINES_TO_READ,
     MAX_OUTPUT_SIZE,
-    normalize_file_path,
     find_git_root,
+    normalize_file_path,
 )
-from ..rules import find_applicable_rules, Rule
+from ..rules import find_applicable_rules
 
 __all__ = [
     "read_file_content",
