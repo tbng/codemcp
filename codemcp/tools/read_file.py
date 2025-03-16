@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
 import os
+import logging
+from typing import List, Tuple
 
 from ..common import (
     MAX_LINE_LENGTH,
@@ -8,6 +10,7 @@ from ..common import (
     MAX_OUTPUT_SIZE,
     normalize_file_path,
 )
+from ..rules import find_applicable_rules, Rule
 
 __all__ = [
     "read_file_content",
