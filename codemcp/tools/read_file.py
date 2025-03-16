@@ -7,9 +7,9 @@ from ..common import (
     MAX_LINE_LENGTH,
     MAX_LINES_TO_READ,
     MAX_OUTPUT_SIZE,
-    find_git_root,
     normalize_file_path,
 )
+from ..git_query import find_git_root
 from ..rules import find_applicable_rules
 
 __all__ = [
