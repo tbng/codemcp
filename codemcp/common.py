@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import os
+from typing import Optional
 
 # Constants
 MAX_LINES_TO_READ = 1000
@@ -18,6 +19,7 @@ __all__ = [
     "normalize_file_path",
     "get_edit_snippet",
     "truncate_output_content",
+    "find_git_root",
 ]
 
 
