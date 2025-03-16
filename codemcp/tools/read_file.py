@@ -101,13 +101,8 @@ async def read_file_content(
 
         # Apply relevant cursor rules
         try:
-            repo_root = os.path.dirname(full_file_path)
-            while repo_root and not os.path.isdir(os.path.join(repo_root, ".git")):
-                parent = os.path.dirname(repo_root)
-                if parent == repo_root:  # Reached filesystem root
-                    repo_root = None
-                    break
-                repo_root = parent
+            # Find git repository root
+            repo_root = find_git_root(os.path.dirname(full_file_path))
             
             if repo_root:
                 # Find applicable rules
