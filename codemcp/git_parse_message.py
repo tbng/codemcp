@@ -71,6 +71,7 @@ def parse_message(message: str) -> Tuple[str, str, str]:
 def find_trailer_block_start(lines: List[str]) -> int:
     """
     Find the start index of the trailer block in a list of lines.
+    Only the last block can be a trailer block, as per Git's conventions.
 
     Args:
         lines: List of message lines (without subject and divider).
@@ -87,20 +88,13 @@ def find_trailer_block_start(lines: List[str]) -> int:
     # Find the last non-empty block
     block_indices = [-1] + [i for i, line in enumerate(lines) if not line.strip()]
 
-    # Try blocks from last to first
-    for i in range(len(block_indices) - 1, -1, -1):
-        start_idx = block_indices[i] + 1
-        # If we're at the beginning or checking the whole message
-        if i == 0 or start_idx == 0:
-            # Check if the whole remaining content is a trailer block
-            if is_trailer_block(lines[start_idx:]):
-                return start_idx
-            # No more blocks to check
-            return -1
+    # Only check the last block
+    if len(block_indices) > 0:
+        # Get the start of the last block
+        start_idx = block_indices[-1] + 1
 
-        # Check if the block after this blank line is a trailer block
-        end_idx = block_indices[i + 1] if i + 1 < len(block_indices) else len(lines)
-        if is_trailer_block(lines[start_idx:end_idx]):
+        # Check if the last block is a trailer block
+        if start_idx < len(lines) and is_trailer_block(lines[start_idx:]):
             return start_idx
 
     return -1
