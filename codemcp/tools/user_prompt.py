@@ -28,15 +28,7 @@ async def user_prompt(user_text: str, chat_id: str | None = None) -> str:
         
         # Get the current working directory to find repo root
         cwd = os.getcwd()
-        repo_root = cwd
-        
-        # Find git repo root
-        while repo_root and not os.path.isdir(os.path.join(repo_root, ".git")):
-            parent = os.path.dirname(repo_root)
-            if parent == repo_root:  # Reached filesystem root
-                repo_root = None
-                break
-            repo_root = parent
+        repo_root = find_git_root(cwd)
         
         result = "User prompt received"
         
