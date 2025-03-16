@@ -89,6 +89,18 @@ This is a glob test rule
         self.assertFalse(match_file_with_glob("/path/to/test.ts", "*.js"))
         self.assertFalse(match_file_with_glob("/path/to/lib/test.jsx", "src/**/*.jsx"))
 
+    def test_match_file_with_trailing_double_star(self):
+        # Test glob patterns ending with /**
+        self.assertTrue(match_file_with_glob("/path/to/abc/file.txt", "abc/**"))
+        self.assertTrue(match_file_with_glob("/path/to/abc/subdir/file.txt", "abc/**"))
+        self.assertTrue(
+            match_file_with_glob("/path/to/abc/deep/nested/file.js", "abc/**")
+        )
+
+        # Test non-matching paths for trailing /**
+        self.assertFalse(match_file_with_glob("/path/to/xyz/file.txt", "abc/**"))
+        self.assertFalse(match_file_with_glob("/abc-other/file.txt", "abc/**"))
+
 
 if __name__ == "__main__":
     unittest.main()

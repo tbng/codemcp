@@ -121,6 +121,23 @@ def match_file_with_glob(file_path: str, glob_pattern: str) -> bool:
 
     # Handle patterns like "src/**/*.jsx" (match files in src directory or subdirectories)
     if "/" in glob_pattern and "**" in glob_pattern:
+        # Handle trailing /** (matches all files in a directory with infinite depth)
+        if glob_pattern.endswith("/**"):
+            dir_part = glob_pattern[:-3]  # Remove trailing "/**"
+            logging.debug(f"Trailing ** pattern: dir_part='{dir_part}'")
+
+            # Convert path to string for comparison
+            path_str = str(path)
+
+            # Simply check if dir_part appears in the path
+            # This is a simplification that matches the semantics described in the requirements
+            result = dir_part in path_str.split("/")
+            logging.debug(
+                f"Directory match for trailing **: checking if '{dir_part}' is in path parts of '{path_str}', result={result}"
+            )
+            return result
+
+        # Handle patterns with directory and file parts like "src/**/*.jsx"
         dir_part, file_part = glob_pattern.split("/**/")
         logging.debug(
             f"Directory + file pattern: dir_part='{dir_part}', file_part='{file_part}'"
