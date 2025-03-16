@@ -14,6 +14,7 @@ __all__ = [
     "find_applicable_rules",
     "load_rule_from_file",
     "match_file_with_glob",
+    "get_applicable_rules_content",
 ]
 
 
@@ -182,3 +183,44 @@ def find_applicable_rules(
         current_dir = parent_dir
 
     return applicable_rules, suggested_rules
+
+
+def get_applicable_rules_content(
+    repo_root: str, file_path: Optional[str] = None
+) -> str:
+    """Generate a string with all applicable rules for a file or the current directory.
+
+    This is a helper function used by multiple tools to format rule content
+    in a consistent way.
+
+    Args:
+        repo_root: Root of the repository
+        file_path: Optional path to a file to match against rules
+
+    Returns:
+        A formatted string containing all applicable rules, or an empty string if no rules apply
+    """
+    try:
+        result = ""
+
+        # Find applicable rules
+        applicable_rules, suggested_rules = find_applicable_rules(repo_root, file_path)
+
+        # If we have applicable rules, add them to the output
+        if applicable_rules or suggested_rules:
+            result += "\n\n// .cursor/rules results:"
+
+            # Add directly applicable rules
+            for rule in applicable_rules:
+                rule_content = f"\n\n// Rule from {os.path.relpath(rule.file_path, repo_root)}:\n{rule.payload}"
+                result += rule_content
+
+            # Add suggestions for rules with descriptions
+            for description, rule_path in suggested_rules:
+                rel_path = os.path.relpath(rule_path, repo_root)
+                result += f"\n\n// If {description} applies, load {rel_path}"
+
+        return result
+    except Exception:
+        # Don't propagate exceptions from rule processing
+        return ""
