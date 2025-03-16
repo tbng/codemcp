@@ -162,9 +162,8 @@ Consider time and space complexity when writing algorithms.
             # Verify that the suggested rule appears
             self.assertIn("If For code that needs optimization applies", js_result)
 
-            # The JavaScript rule may not be applied in the E2E test due to rule matching differences
-            # Commenting out this check for now
-            # self.assertIn("Use camelCase for variable names in JavaScript", js_result)
+            self.assertIn("Use camelCase for variable names in JavaScript", js_result)
+            self.assertNotIn("Use snake_case for variable names in Python", js_result)
 
             # Test reading a Python file
             py_result = await self.call_tool_assert_success(
@@ -183,9 +182,8 @@ Consider time and space complexity when writing algorithms.
             # Verify that the always-apply rule was applied
             self.assertIn("Follow PEP 8 guidelines", py_result)
 
-            # The Python rule may not be applied in the E2E test due to rule matching differences
-            # Commenting out this check for now
-            # self.assertIn("Use snake_case for variable names in Python", py_result)
+            self.assertNotIn("Use camelCase for variable names in JavaScript", py_result)
+            self.assertIn("Use snake_case for variable names in Python", py_result)
 
     async def test_user_prompt_with_rules(self):
         """Test user prompt with cursor rules applied."""
