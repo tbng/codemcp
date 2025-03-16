@@ -453,11 +453,22 @@ test: user prompt with markdown code block
 Please create a file with this Python code:
 
 ```
+---
+description: Description of when the rule is useful for the LLM
+globs: *.js,*.ts
+alwaysApply: false
+---
+Markdown to send to LLM
+```
+
+And make sure it runs correctly.
 
 ```git-revs
 6350984  (Base revision)
 HEAD     Write file from prompt with code block
-```""",
+```
+
+codemcp-id: test-chat-id""",
             )
 
             # Now do a second write operation with the same chat_id
@@ -501,11 +512,23 @@ test: user prompt with markdown code block
 Please create a file with this Python code:
 
 ```
+---
+description: Description of when the rule is useful for the LLM
+globs: *.js,*.ts
+alwaysApply: false
+---
+Markdown to send to LLM
+```
+
+And make sure it runs correctly.
 
 ```git-revs
-783dc2d  (Base revision)
+6350984  (Base revision)
+9071fd5  Write file from prompt with code block
 HEAD     Update file with second write
-```""",
+```
+
+codemcp-id: test-chat-id""",
             )
 
 
