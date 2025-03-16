@@ -467,6 +467,64 @@ HEAD     Write file from prompt with code block
 codemcp-id: test-chat-id""",
             )
 
+            # Now do a second write operation with the same chat_id
+            updated_content = content + "\nSecond write with code block in user_prompt"
+
+            # Call the WriteFile tool again with updated content
+            result_text = await self.call_tool_assert_success(
+                session,
+                "codemcp",
+                {
+                    "subtool": "WriteFile",
+                    "path": test_file_path,
+                    "content": updated_content,
+                    "description": "Update file with second write",
+                    "chat_id": chat_id,
+                },
+            )
+
+            # Verify the success message
+            self.assertIn("Successfully wrote to", result_text)
+
+            # Verify the file was updated with the correct content
+            with open(test_file_path) as f:
+                file_content = f.read()
+            self.assertEqual(file_content, updated_content)
+
+            # Get the commit message after second write
+            commit_message = await self.git_run(
+                ["log", "-1", "--pretty=%B"], capture_output=True, text=True
+            )
+
+            # Normalize the chat_id for expect test
+            normalized_commit_message = commit_message.replace(chat_id, "test-chat-id")
+
+            # Verify that the commit message still contains the code block with triple backticks
+            self.assertExpectedInline(
+                normalized_commit_message,
+                """\
+test: user prompt with markdown code block
+
+Please create a file with this Python code:
+```python
+def hello_world():
+    print("Hello, world!")
+    return True
+
+if __name__ == "__main__":
+    hello_world()
+```
+And make sure it runs correctly.
+
+```git-revs
+b2574a0  (Base revision)
+60e1de9  Write file from prompt with code block
+HEAD     Update file with second write
+```
+
+codemcp-id: test-chat-id""",
+            )
+
 
 if __name__ == "__main__":
     unittest.main()
