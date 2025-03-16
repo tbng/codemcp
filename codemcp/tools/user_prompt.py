@@ -3,6 +3,7 @@
 import logging
 import os
 
+from ..common import find_git_root
 from ..rules import find_applicable_rules
 
 __all__ = [
