@@ -7,8 +7,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Optional, Set, Tuple
 
-import yaml
-
 __all__ = [
     "Rule",
     "find_applicable_rules",
@@ -23,7 +21,7 @@ class Rule:
     """Represents a cursor rule loaded from an MDC file."""
 
     description: Optional[str]  # Description of when the rule is useful
-    globs: Optional[List[str]]  # List of glob patterns to match files
+    globs: List[str]  # List of glob patterns to match files
     always_apply: bool  # Whether the rule should always be applied
     payload: str  # The markdown content of the rule
     file_path: str  # Path to the MDC file
@@ -50,24 +48,27 @@ def load_rule_from_file(file_path: str) -> Optional[Rule]:
         frontmatter_text = frontmatter_match.group(1)
         payload = frontmatter_match.group(2).strip()
 
-        # Parse YAML frontmatter
-        frontmatter = yaml.safe_load(frontmatter_text)
-        if not isinstance(frontmatter, dict):
-            return None
+        # We need to manually parse the frontmatter to handle unquoted glob patterns
+        frontmatter = {}
+        for line in frontmatter_text.strip().split("\n"):
+            if ":" in line:
+                key, value = line.split(":", 1)
+                key = key.strip()
+                value = value.strip()
+                frontmatter[key] = value
 
         # Extract rule properties
         description = frontmatter.get("description")
 
         # Handle globs - can be comma-separated string or a list
+        globs: List[str] = []
         globs_value = frontmatter.get("globs")
-        globs: Optional[List[str]] = None
         if globs_value:
-            if isinstance(globs_value, str):
-                globs = [g.strip() for g in globs_value.split(",")]
-            elif isinstance(globs_value, list):
-                globs = globs_value
+            globs = [g.strip() for g in globs_value.split(",")]
 
-        always_apply = frontmatter.get("alwaysApply", False)
+        # Convert alwaysApply string to boolean
+        always_apply_value = frontmatter.get("alwaysApply", "false")
+        always_apply = always_apply_value.lower() == "true"
 
         return Rule(
             description=description,
@@ -76,8 +77,9 @@ def load_rule_from_file(file_path: str) -> Optional[Rule]:
             payload=payload,
             file_path=file_path,
         )
-    except Exception:
+    except Exception as e:
         # If there's any error parsing the file, return None
+        print(f"Error loading rule from {file_path}: {e}")
         return None
 
 
@@ -93,24 +95,32 @@ def match_file_with_glob(file_path: str, glob_pattern: str) -> bool:
     """
     # Convert to Path object for consistent handling
     path = Path(file_path)
+    file_name = path.name
 
-    # Handle ** pattern (recursive wildcard)
-    if "**" in glob_pattern:
-        # Split the pattern into parts for matching
-        parts = glob_pattern.split("**")
-        if len(parts) != 2:
-            # We only support simple patterns with one ** for now
-            return False
+    # Simple case: direct file extension matching (*.js)
+    if glob_pattern.startswith("*."):
+        return file_name.endswith(glob_pattern[1:])
 
-        prefix, suffix = parts
+    # Handle "**/*.js" pattern (match any file with .js extension in any directory)
+    if glob_pattern == "**/*.js" or glob_pattern == "**/*.jsx":
+        ext = glob_pattern.split(".")[-1]
+        return file_name.endswith("." + ext)
 
-        # Check if the file path starts with the prefix and ends with the suffix
-        return (prefix == "" or str(path).startswith(prefix)) and (
-            suffix == "" or str(path).endswith(suffix)
-        )
+    # Handle patterns like "src/**/*.jsx" (match files in src directory or subdirectories)
+    if "/" in glob_pattern and "**" in glob_pattern:
+        dir_part, file_part = glob_pattern.split("/**/")
 
-    # Use fnmatch for simple glob patterns
-    return fnmatch.fnmatch(str(path), glob_pattern)
+        # Check if the file has the right extension
+        if file_part.startswith("*"):
+            ext = file_part[1:]  # *.jsx -> .jsx
+            if not file_name.endswith(ext):
+                return False
+
+        # Check if it's in the right directory
+        return dir_part in str(path)
+
+    # Default to fnmatch for other patterns
+    return fnmatch.fnmatch(file_name, glob_pattern)
 
 
 def find_applicable_rules(
