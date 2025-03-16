@@ -115,6 +115,31 @@ class GrepTest(MCPEndToEndTestCase):
             self.assertNotIn("file1.js", result_text)
             self.assertNotIn("file2.js", result_text)
 
+    async def test_grep_no_matches(self):
+        """Test the Grep subtool when no matches are found."""
+        async with self.create_client_session() as session:
+            # Get a valid chat_id
+            chat_id = await self.get_chat_id(session)
+
+            # Call the Grep tool with a pattern that doesn't exist in any file
+            result_text = await self.call_tool_assert_success(
+                session,
+                "codemcp",
+                {
+                    "subtool": "Grep",
+                    "path": self.temp_dir.name,
+                    "pattern": "nonexistentpattern",
+                    "chat_id": chat_id,
+                },
+            )
+
+            # Verify results
+            self.assertIn("No files found", result_text)
+            self.assertNotIn("Found", result_text)
+            self.assertNotIn("file1.js", result_text)
+            self.assertNotIn("file2.js", result_text)
+            self.assertNotIn("script.py", result_text)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -182,7 +182,9 @@ Consider time and space complexity when writing algorithms.
             # Verify that the always-apply rule was applied
             self.assertIn("Follow PEP 8 guidelines", py_result)
 
-            self.assertNotIn("Use camelCase for variable names in JavaScript", py_result)
+            self.assertNotIn(
+                "Use camelCase for variable names in JavaScript", py_result
+            )
             self.assertIn("Use snake_case for variable names in Python", py_result)
 
     async def test_user_prompt_with_rules(self):
