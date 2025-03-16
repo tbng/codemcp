@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 
+import fnmatch
 import os
 import re
-import fnmatch
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Optional, Set, Tuple
+from typing import List, Optional, Set, Tuple
 
 import yaml
 

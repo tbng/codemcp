@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 
-import os
 import tempfile
 import unittest
 from pathlib import Path
 
-from codemcp.rules import Rule, load_rule_from_file, match_file_with_glob
+from codemcp.rules import load_rule_from_file, match_file_with_glob
 
 
 class TestRules(unittest.TestCase):
