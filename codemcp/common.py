@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import os
+from typing import Optional
 
 # Constants
 MAX_LINES_TO_READ = 1000
@@ -18,6 +19,7 @@ __all__ = [
     "normalize_file_path",
     "get_edit_snippet",
     "truncate_output_content",
+    "find_git_root",
 ]
 
 
@@ -139,3 +141,27 @@ def truncate_output_content(content: str, prefer_end: bool = True) -> str:
             truncated_content += f"\n... (output truncated, showing {MAX_LINES_TO_READ} of {total_lines} lines)"
 
     return truncated_content
+
+
+def find_git_root(start_path: str) -> Optional[str]:
+    """Find the root of the Git repository starting from the given path.
+
+    Args:
+        start_path: The path to start searching from
+
+    Returns:
+        The absolute path to the Git repository root, or None if not found
+    """
+    path = os.path.abspath(start_path)
+
+    while path:
+        if os.path.isdir(os.path.join(path, ".git")):
+            return path
+
+        parent = os.path.dirname(path)
+        if parent == path:  # Reached filesystem root
+            return None
+
+        path = parent
+
+    return None
