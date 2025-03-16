@@ -155,13 +155,13 @@ Consider time and space complexity when writing algorithms.
 
             # Verify that cursor rules section exists
             self.assertIn("// .cursor/rules results:", js_result)
-            
+
             # Verify that the always-apply rule was applied
             self.assertIn("Follow PEP 8 guidelines", js_result)
 
             # Verify that the suggested rule appears
             self.assertIn("If For code that needs optimization applies", js_result)
-            
+
             # The JavaScript rule may not be applied in the E2E test due to rule matching differences
             # Commenting out this check for now
             # self.assertIn("Use camelCase for variable names in JavaScript", js_result)
@@ -179,10 +179,10 @@ Consider time and space complexity when writing algorithms.
 
             # Verify that cursor rules section exists
             self.assertIn("// .cursor/rules results:", py_result)
-            
+
             # Verify that the always-apply rule was applied
             self.assertIn("Follow PEP 8 guidelines", py_result)
-            
+
             # The Python rule may not be applied in the E2E test due to rule matching differences
             # Commenting out this check for now
             # self.assertIn("Use snake_case for variable names in Python", py_result)
@@ -219,7 +219,7 @@ Consider time and space complexity when writing algorithms.
 
             # For UserPrompt, based on the actual output format, we only verify it receives the prompt
             self.assertIn("User prompt received", result)
-            
+
             # The cursor rules might be handled differently in the UserPrompt E2E flow
             # So we're not checking for specific rule text
 
