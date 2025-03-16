@@ -81,8 +81,10 @@ This is a glob test rule
         self.assertTrue(match_file_with_glob("test.js", "*.js"))
         self.assertTrue(match_file_with_glob("/path/to/test.js", "*.js"))
         self.assertTrue(match_file_with_glob("/path/to/test.js", "**/*.js"))
-        self.assertTrue(match_file_with_glob("/path/to/src/components/Button.jsx", "src/**/*.jsx"))
-        
+        self.assertTrue(
+            match_file_with_glob("/path/to/src/components/Button.jsx", "src/**/*.jsx")
+        )
+
         # Test non-matching paths
         self.assertFalse(match_file_with_glob("test.py", "*.js"))
         self.assertFalse(match_file_with_glob("/path/to/test.ts", "*.js"))

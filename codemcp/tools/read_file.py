@@ -103,20 +103,22 @@ async def read_file_content(
         try:
             # Find git repository root
             repo_root = find_git_root(os.path.dirname(full_file_path))
-            
+
             if repo_root:
                 # Find applicable rules
-                applicable_rules, suggested_rules = find_applicable_rules(repo_root, full_file_path)
-                
+                applicable_rules, suggested_rules = find_applicable_rules(
+                    repo_root, full_file_path
+                )
+
                 # If we have applicable rules, add them to the output
                 if applicable_rules or suggested_rules:
                     content += "\n\n// .cursor/rules results:"
-                    
+
                     # Add directly applicable rules
                     for rule in applicable_rules:
                         rule_content = f"\n\n// Rule from {os.path.relpath(rule.file_path, repo_root)}:\n{rule.payload}"
                         content += rule_content
-                    
+
                     # Add suggestions for rules with descriptions
                     for description, rule_path in suggested_rules:
                         rel_path = os.path.relpath(rule_path, repo_root)

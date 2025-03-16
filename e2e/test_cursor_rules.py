@@ -99,10 +99,10 @@ Consider time and space complexity when writing algorithms.
         # Verify that the JavaScript rule was applied
         self.assertIn("// .cursor/rules results:", result)
         self.assertIn("Use camelCase for variable names in JavaScript", result)
-        
+
         # Verify that the always-apply rule was applied
         self.assertIn("Follow PEP 8 guidelines", result)
-        
+
         # Verify that the suggested rule appears
         self.assertIn("If For code that needs optimization applies", result)
 
@@ -113,7 +113,7 @@ Consider time and space complexity when writing algorithms.
         # Verify that the Python rule was applied
         self.assertIn("// .cursor/rules results:", result)
         self.assertIn("Use snake_case for variable names in Python", result)
-        
+
         # Verify that the always-apply rule was applied
         self.assertIn("Follow PEP 8 guidelines", result)
 
@@ -124,7 +124,7 @@ Consider time and space complexity when writing algorithms.
         # Verify that the always-apply rule was applied
         self.assertIn("// .cursor/rules results:", result)
         self.assertIn("Follow PEP 8 guidelines", result)
-        
+
         # Verify that the suggested rule appears
         self.assertIn("If For code that needs optimization applies", result)
 
