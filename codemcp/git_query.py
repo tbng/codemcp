@@ -166,7 +166,7 @@ async def is_git_repository(path: str) -> bool:
         # Try to get the repository root - this handles path existence checks
         # and directory traversal internally
         await get_repository_root(path)
-        
+
         # If we get here, we found a valid git repository
         return True
     except (subprocess.SubprocessError, OSError, ValueError):
