@@ -17,6 +17,7 @@ __all__ = [
 
 
 async def read_file_content(
+    git_root: str,
     file_path: str,
     offset: int | None = None,
     limit: int | None = None,
@@ -25,6 +26,7 @@ async def read_file_content(
     """Read a file's content with optional offset and limit.
 
     Args:
+        git_root: The root directory of the Git repository
         file_path: The absolute path to the file to read
         offset: The line number to start reading from (1-indexed)
         limit: The number of lines to read
@@ -97,11 +99,9 @@ async def read_file_content(
         content += f"\n... (file truncated, showing {len(processed_lines)} of {total_lines} lines)"
 
     # Apply relevant cursor rules
-    # Find git repository root
-    repo_root = find_git_root(os.path.dirname(full_file_path))
-
-    if repo_root:
+    # Use the provided git root
+    if git_root:
         # Add applicable rules content
-        content += get_applicable_rules_content(repo_root, full_file_path)
+        content += get_applicable_rules_content(git_root, full_file_path)
 
     return content

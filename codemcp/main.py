@@ -5,6 +5,7 @@ import os
 
 from mcp.server.fastmcp import Context, FastMCP
 
+from .git_query import get_repository_root
 from .tools.edit_file import edit_file_content
 from .tools.glob import MAX_RESULTS, glob_files
 from .tools.grep import grep_files
@@ -144,8 +145,11 @@ async def codemcp(
         if subtool == "ReadFile":
             if path is None:
                 raise ValueError("path is required for ReadFile subtool")
+                
+            # Get the git repository root
+            git_root = await get_repository_root(path)
 
-            return await read_file_content(path, offset, limit, chat_id)
+            return await read_file_content(git_root, path, offset, limit, chat_id)
 
         if subtool == "WriteFile":
             if path is None:
@@ -153,8 +157,11 @@ async def codemcp(
             if description is None:
                 raise ValueError("description is required for WriteFile subtool")
 
+            # Get the git repository root
+            git_root = await get_repository_root(path)
+
             content_str = content or ""
-            return await write_file_content(path, content_str, description, chat_id)
+            return await write_file_content(git_root, path, content_str, description, chat_id)
 
         if subtool == "EditFile":
             if path is None:
@@ -167,19 +174,25 @@ async def codemcp(
                     "Either old_string or old_str is required for EditFile subtool (use empty string for new file creation)"
                 )
 
+            # Get the git repository root
+            git_root = await get_repository_root(path)
+
             # Accept either old_string or old_str (prefer old_string if both are provided)
             old_content = old_string or old_str or ""
             # Accept either new_string or new_str (prefer new_string if both are provided)
             new_content = new_string or new_str or ""
             return await edit_file_content(
-                path, old_content, new_content, None, description, chat_id
+                git_root, path, old_content, new_content, None, description, chat_id
             )
 
         if subtool == "LS":
             if path is None:
                 raise ValueError("path is required for LS subtool")
 
-            return await ls_directory(path, chat_id)
+            # Get the git repository root
+            git_root = await get_repository_root(path)
+
+            return await ls_directory(git_root, path, chat_id)
 
         if subtool == "InitProject":
             if path is None:
@@ -193,6 +206,8 @@ async def codemcp(
                     False  # Default value in main.py only, not in the implementation
                 )
 
+            # For InitProject, we can't calculate the git_root in advance
+            # since it might not be a git repository yet, so we'll compute it inside the tool
             return await init_project(
                 path, user_prompt, subject_line, reuse_head_chat_id
             )
@@ -208,7 +223,10 @@ async def codemcp(
             if command is None:
                 raise ValueError("command is required for RunCommand subtool")
 
-            return await run_command(path, command, arguments, chat_id)
+            # Get the git repository root
+            git_root = await get_repository_root(path)
+
+            return await run_command(git_root, path, command, arguments, chat_id)
 
         if subtool == "Grep":
             if pattern is None:
@@ -218,7 +236,10 @@ async def codemcp(
                 raise ValueError("path is required for Grep subtool")
 
             try:
-                result = await grep_files(pattern, path, include, chat_id)
+                # Get the git repository root
+                git_root = await get_repository_root(path)
+
+                result = await grep_files(git_root, pattern, path, include, chat_id)
                 return result.get(
                     "resultForAssistant",
                     f"Found {result.get('numFiles', 0)} file(s)",
@@ -237,7 +258,11 @@ async def codemcp(
                 raise ValueError("path is required for Glob subtool")
 
             try:
+                # Get the git repository root
+                git_root = await get_repository_root(path)
+
                 result = await glob_files(
+                    git_root,
                     pattern,
                     path,
                     limit=limit if limit is not None else MAX_RESULTS,
@@ -258,6 +283,7 @@ async def codemcp(
             if user_prompt is None:
                 raise ValueError("user_prompt is required for UserPrompt subtool")
 
+            # UserPrompt doesn't need git_root as it doesn't interact with the filesystem
             return await user_prompt_tool(user_prompt, chat_id)
     except Exception:
         logging.error("Exception", exc_info=True)
