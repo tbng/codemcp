@@ -156,6 +156,10 @@ async def get_repository_root(path: str) -> str:
 async def is_git_repository(path: str) -> bool:
     """Check if the path is within a Git repository.
 
+    This is a convenience wrapper around get_repository_root that returns a boolean
+    instead of raising an exception. All callers should prefer to use get_repository_root
+    directly and handle exceptions as needed.
+
     Args:
         path: The file path to check
 
@@ -166,7 +170,7 @@ async def is_git_repository(path: str) -> bool:
         # Try to get the repository root - this handles path existence checks
         # and directory traversal internally
         await get_repository_root(path)
-        
+
         # If we get here, we found a valid git repository
         return True
     except (subprocess.SubprocessError, OSError, ValueError):

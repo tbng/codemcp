@@ -4,6 +4,7 @@ import asyncio
 import logging
 import os
 import re
+import subprocess
 
 import tomli
 
@@ -70,14 +71,14 @@ async def _generate_chat_id(directory: str, description: str = None) -> str:
     human_readable_part = _slugify(description) if description else "untitled"
 
     try:
-        # Check if we're in a git repository
-        if not await is_git_repository(directory):
-            logging.warning(f"Not in a git repository: {directory}")
+        # Try to get the repository root
+        repo_root = None
+        try:
+            repo_root = await get_repository_root(directory)
+        except (subprocess.SubprocessError, OSError, ValueError) as e:
+            logging.warning(f"Not in a git repository: {directory}, error: {e}")
             # Return a fallback ID if not in a git repository
             return f"0-{human_readable_part}"
-
-        # Get the repository root
-        repo_root = await get_repository_root(directory)
 
         # Create .git/codemcp directory if it doesn't exist
         codemcp_dir = os.path.join(repo_root, ".git", "codemcp")
