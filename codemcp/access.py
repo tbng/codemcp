@@ -4,7 +4,7 @@ import logging
 import os
 import subprocess
 
-from .shell import run_command
+from .git_query import get_repository_root
 
 __all__ = [
     "get_git_base_dir",
@@ -20,61 +20,13 @@ async def get_git_base_dir(file_path: str) -> str | None:
 
     Returns:
         The base directory of the git repository, or None if not in a git repository
-
     """
     try:
         # First normalize the path to resolve any .. or symlinks
         normalized_path = os.path.normpath(os.path.abspath(file_path))
 
-        # Get the directory containing the file - handle non-existent files
-        if os.path.exists(normalized_path):
-            directory = (
-                os.path.dirname(normalized_path)
-                if os.path.isfile(normalized_path)
-                else normalized_path
-            )
-        else:
-            # For non-existent files, get the parent directory
-            directory = os.path.dirname(normalized_path)
-
-            # If trying to access a directory outside of the repo via path traversal,
-            # we should detect it by checking if the directory exists after normalization
-            if not os.path.exists(directory):
-                # Store the original parent for security check
-                os.path.dirname(normalized_path)
-
-                # Walk up the directory tree until we find an existing directory
-                while directory and not os.path.exists(directory):
-                    logging.debug(f"Directory doesn't exist, walking up: {directory}")
-                    parent = os.path.dirname(directory)
-                    # If we've reached the root directory and it doesn't exist, stop
-                    if parent == directory:
-                        logging.debug(
-                            f"Reached root directory and it doesn't exist: {directory}"
-                        )
-                        return None
-                    directory = parent
-
-                # If we couldn't find an existing parent directory, stop
-                if not directory or not os.path.exists(directory):
-                    logging.debug(
-                        f"Could not find an existing parent directory for: {normalized_path}"
-                    )
-                    return None
-
-                logging.debug(f"Found existing parent directory: {directory}")
-
-        # Run git command to get the top-level directory of the repository
-        result = await run_command(
-            ["git", "rev-parse", "--show-toplevel"],
-            cwd=directory,
-            capture_output=True,
-            check=True,
-            text=True,
-        )
-
-        # Return the path
-        git_base_dir = result.stdout.strip()
+        # Use get_repository_root which handles non-existent paths and walks up directories
+        git_base_dir = await get_repository_root(normalized_path)
         logging.debug(f"Git base directory: {git_base_dir}")
 
         # SECURITY CHECK: Ensure file_path is within the git repository
@@ -116,7 +68,7 @@ async def get_git_base_dir(file_path: str) -> str | None:
             return None
 
         return git_base_dir
-    except (subprocess.SubprocessError, OSError) as e:
+    except (subprocess.SubprocessError, OSError, ValueError) as e:
         logging.debug(f"Error finding git base directory: {e!s}")
         return None
 
