@@ -3,7 +3,7 @@
 import logging
 import os
 
-from mcp.server.fastmcp import Context, FastMCP
+from mcp.server.fastmcp import FastMCP
 
 from .tools.edit_file import edit_file_content
 from .tools.glob import MAX_RESULTS, glob_files
