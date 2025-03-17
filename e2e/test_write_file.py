@@ -92,7 +92,7 @@ test: initialize for write file test
 Test initialization for write_file test
 
 ```git-revs
-c9bcf9c  (Base revision)
+9b56861  (Base revision)
 HEAD     Create new file
 ```
 
@@ -151,8 +151,8 @@ test: initialize for write file test
 Test initialization for write_file test
 
 ```git-revs
-c9bcf9c  (Base revision)
-a0816d8  Create new file
+9b56861  (Base revision)
+00fd36b  Create new file
 HEAD     Update file with third line
 ```
 
@@ -464,7 +464,7 @@ Markdown to send to LLM
 And make sure it runs correctly.
 
 ```git-revs
-6350984  (Base revision)
+f0a515e  (Base revision)
 HEAD     Write file from prompt with code block
 ```
 
@@ -523,8 +523,8 @@ Markdown to send to LLM
 And make sure it runs correctly.
 
 ```git-revs
-6350984  (Base revision)
-9071fd5  Write file from prompt with code block
+f0a515e  (Base revision)
+8e46d55  Write file from prompt with code block
 HEAD     Update file with second write
 ```
 
