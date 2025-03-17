@@ -39,13 +39,16 @@ async def check_file_path_and_permissions(file_path: str) -> tuple[bool, str | N
 
 
 async def check_git_tracking_for_existing_file(
+    git_root: str,
     file_path: str,
     chat_id: str,
 ) -> tuple[bool, str | None]:
     """Check if an existing file is tracked by git. Skips check for non-existent files.
 
     Args:
+        git_root: The root directory of the Git repository
         file_path: The absolute path to the file
+        chat_id: The unique ID of the current chat session
 
     Returns:
         A tuple of (success, error_message)
@@ -79,6 +82,7 @@ async def check_git_tracking_for_existing_file(
 
         # If there are other uncommitted changes, commit them
         commit_success, commit_message = await commit_changes(
+            git_root,
             file_path,
             description="Snapshot before codemcp change",
             chat_id=chat_id,
