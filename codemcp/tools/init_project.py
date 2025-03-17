@@ -9,7 +9,7 @@ import subprocess
 import tomli
 
 from ..common import MAX_LINE_LENGTH, MAX_LINES_TO_READ, normalize_file_path
-from ..git import get_repository_root
+from ..git import get_repository_root, is_git_repository
 
 __all__ = [
     "init_project",
@@ -71,7 +71,8 @@ async def _generate_chat_id(directory: str, description: str = None) -> str:
     human_readable_part = _slugify(description) if description else "untitled"
 
     try:
-        # Try to get the repository root, which will throw an error if not in a git repository
+        # Try to get the repository root
+        repo_root = None
         try:
             repo_root = await get_repository_root(directory)
         except (subprocess.SubprocessError, OSError, ValueError) as e:
@@ -151,12 +152,8 @@ async def init_project(
         if not os.path.isdir(full_dir_path):
             raise NotADirectoryError(f"Path is not a directory: {directory}")
 
-        # Check if the directory is a Git repository by trying to get the repository root
-        is_git_repo = True
-        try:
-            await get_repository_root(full_dir_path)
-        except (subprocess.SubprocessError, OSError, ValueError):
-            is_git_repo = False
+        # Check if the directory is a Git repository
+        is_git_repo = await is_git_repository(full_dir_path)
 
         # Build path to codemcp.toml file
         rules_file_path = os.path.join(full_dir_path, "codemcp.toml")
