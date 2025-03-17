@@ -58,11 +58,6 @@ C:\\Users\\<username>\\.local\\bin\\uvx.exe
 If the MCP successfully loaded, a hammer icon will appear and when you click
 it "codemcp" will be visible.
 
-Pro tip: in general, it is supported to specify only `uvx` as the command, but
-uvx must be in your global PATH (not just added via a shell profile); on OS X,
-this is typically not the case if you used the self installer (unless you
-installed into a system location like `/usr/local/bin`).
-
 Pro tip: If the server fails to load, go to Settings > Developer > codemcp >
 Logs to look at the MCP logs, they're very helpful for debugging.
 
@@ -71,6 +66,14 @@ Git is installed and available", and you *just* installed Git, reboot your
 machine (the PATH update hasn't propagated.)  If this still doesn't work, open
 System Properties > Environment Variables > System variables > Path and ensure
 there is an entry for Git.
+
+Pro tip: if you like to live dangerously, you can change `prod` to `main`.  If
+you want to pin to a specific release, replace it with `0.3.0` or similar.
+
+Pro tip: it is supported to specify only `uvx` as the command, but uvx must be
+in your global PATH (not just added via a shell profile); on OS X, this is
+typically not the case if you used the self installer (unless you installed
+into a system location like `/usr/local/bin`).
 
 ## Usage
 
