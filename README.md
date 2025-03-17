@@ -53,7 +53,6 @@ Then, in `claude_desktop_config.json`:
 On Windows, double backslashes are necessary for the path:
 
 ```
-# Windows (double backslashes necessary in JSOM)
 C:\\Users\\<username>\\.local\\bin\\uvx.exe
 ```
 
