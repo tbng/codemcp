@@ -5,6 +5,7 @@ import os
 import re
 import subprocess
 
+from .regex import COMMIT_CHAT_ID_REGEX
 from .shell import run_command
 
 __all__ = [
@@ -92,8 +93,8 @@ async def get_head_commit_chat_id(directory: str) -> str | None:
     commit_message = await get_head_commit_message(directory)
 
     # Use regex to find the last occurrence of codemcp-id: XXX
-    # The pattern looks for "codemcp-id: " followed by any characters up to a newline or end of string
-    matches = re.findall(r"codemcp-id:\s*([a-zA-Z0-9-]+)", commit_message)
+    # The pattern looks for "codemcp-id: " followed by valid chat ID characters
+    matches = re.findall(COMMIT_CHAT_ID_REGEX, commit_message)
 
     # Return the last match if any matches found
     if matches:
@@ -166,7 +167,7 @@ async def is_git_repository(path: str) -> bool:
         # Try to get the repository root - this handles path existence checks
         # and directory traversal internally
         await get_repository_root(path)
-        
+
         # If we get here, we found a valid git repository
         return True
     except (subprocess.SubprocessError, OSError, ValueError):
@@ -210,8 +211,8 @@ async def get_ref_commit_chat_id(directory: str, ref_name: str) -> str | None:
         commit_message = message_result.stdout.strip()
 
         # Use regex to find the last occurrence of codemcp-id: XXX
-        # The pattern looks for "codemcp-id: " followed by any characters up to a newline or end of string
-        matches = re.findall(r"codemcp-id:\s*([^\n]*)", commit_message)
+        # The pattern looks for "codemcp-id: " followed by valid chat ID characters
+        matches = re.findall(COMMIT_CHAT_ID_REGEX, commit_message)
 
         # Return the last match if any matches found
         if matches:

@@ -27,7 +27,8 @@ def _slugify(text: str) -> str:
     # Convert to lowercase
     text = text.lower()
     # Replace spaces and non-alphanumeric characters with hyphens
-    text = re.sub(r"[^a-z0-9]+", "-", text)
+    # Use only characters from CHAT_ID_REGEX (which is a-zA-Z0-9- but at lowercase level it's a-z0-9-)
+    text = re.sub(r"[^a-z0-9-]+", "-", text)
     # Remove leading and trailing hyphens
     text = text.strip("-")
     # If empty after processing, return a default value
