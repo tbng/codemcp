@@ -104,6 +104,9 @@ async def get_head_commit_chat_id(directory: str) -> str | None:
 async def get_repository_root(path: str) -> str:
     """Get the root directory of the Git repository containing the path.
 
+    This function is robust to non-existent paths. It will walk up the directory tree
+    until it finds an existing directory, and then attempt to find the git repository root.
+
     Args:
         path: The file path to get the repository root for
 
@@ -111,27 +114,43 @@ async def get_repository_root(path: str) -> str:
         The absolute path to the repository root
 
     Raises:
+        subprocess.SubprocessError: If a git command fails
+        OSError: If there are file system related errors
         ValueError: If the path is not in a Git repository
     """
-    try:
-        # Get the directory containing the file or use the path itself if it's a directory
-        directory = os.path.dirname(path) if os.path.isfile(path) else path
+    # Get the absolute path to ensure consistency
+    abs_path = os.path.abspath(path)
 
-        # Get the absolute path to ensure consistency
-        directory = os.path.abspath(directory)
+    # Get the directory containing the file or use the path itself if it's a directory
+    directory = os.path.dirname(abs_path) if os.path.isfile(abs_path) else abs_path
 
-        # Get the repository root
-        result = await run_command(
-            ["git", "rev-parse", "--show-toplevel"],
-            cwd=directory,
-            check=True,
-            capture_output=True,
-            text=True,
-        )
+    # Handle non-existent paths by walking up the directory tree
+    # until we find an existing directory
+    original_directory = directory
+    while directory and not os.path.exists(directory):
+        logging.debug(f"Directory doesn't exist, walking up: {directory}")
+        parent = os.path.dirname(directory)
+        # If we've reached the root directory and it doesn't exist, stop
+        if parent == directory:
+            logging.debug(f"Reached root directory and it doesn't exist: {directory}")
+            raise ValueError(
+                f"No existing parent directory found for path: {original_directory}"
+            )
+        directory = parent
 
-        return result.stdout.strip()
-    except (subprocess.SubprocessError, OSError) as e:
-        raise ValueError(f"Path is not in a git repository: {str(e)}")
+    # At this point, directory exists and is the closest existing parent of the original path
+    logging.debug(f"Using existing directory for git operation: {directory}")
+
+    # Get the repository root
+    result = await run_command(
+        ["git", "rev-parse", "--show-toplevel"],
+        cwd=directory,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    return result.stdout.strip()
 
 
 async def is_git_repository(path: str) -> bool:
@@ -142,42 +161,17 @@ async def is_git_repository(path: str) -> bool:
 
     Returns:
         True if path is in a Git repository, False otherwise
-
     """
     try:
-        # Get the directory containing the file or use the path itself if it's a directory
-        directory = os.path.dirname(path) if os.path.isfile(path) else path
-
-        # Get the absolute path to ensure consistency
-        directory = os.path.abspath(directory)
-
-        # Run git command to verify this is a git repository
-        await run_command(
-            ["git", "rev-parse", "--is-inside-work-tree"],
-            cwd=directory,
-            check=True,
-            capture_output=True,
-            text=True,
-        )
-
-        # Also get the repository root to use for all git operations
-        try:
-            await run_command(
-                ["git", "rev-parse", "--show-toplevel"],
-                cwd=directory,
-                check=True,
-                capture_output=True,
-                text=True,
-            )
-
-            # Store the repository root in a global or class variable if needed
-            # This could be used to ensure all git operations use the same root
-
-            return True
-        except (subprocess.SubprocessError, OSError):
-            # If we can't get the repo root, it's not a proper git repository
-            return False
-    except (subprocess.SubprocessError, OSError):
+        # Try to get the repository root - this handles path existence checks
+        # and directory traversal internally
+        await get_repository_root(path)
+        
+        # If we get here, we found a valid git repository
+        return True
+    except (subprocess.SubprocessError, OSError, ValueError):
+        # If we can't get the repo root, it's not a proper git repository
+        # or the path doesn't exist or isn't in a repo
         return False
 
 
