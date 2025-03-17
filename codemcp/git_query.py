@@ -20,44 +20,29 @@ __all__ = [
 log = logging.getLogger(__name__)
 
 
-async def get_head_commit_message(directory: str) -> str | None:
+async def get_head_commit_message(directory: str) -> str:
     """Get the full commit message from HEAD.
 
     Args:
         directory: The directory to check
 
     Returns:
-        The commit message if available, None otherwise
+        The commit message
+
+    Raises:
+        subprocess.SubprocessError: If HEAD does not exist or another git error occurs
+        Exception: For any other errors during the operation
     """
-    try:
-        # Check if HEAD exists
-        result = await run_command(
-            ["git", "rev-parse", "--verify", "HEAD"],
-            cwd=directory,
-            check=False,
-            capture_output=True,
-            text=True,
-        )
+    # Get the commit message - this will fail if HEAD doesn't exist
+    result = await run_command(
+        ["git", "log", "-1", "--pretty=%B"],
+        cwd=directory,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
 
-        if result.returncode != 0:
-            # No commits yet
-            return None
-
-        # Get the commit message
-        result = await run_command(
-            ["git", "log", "-1", "--pretty=%B"],
-            cwd=directory,
-            check=True,
-            capture_output=True,
-            text=True,
-        )
-
-        return result.stdout.strip()
-    except Exception as e:
-        logging.warning(
-            f"Exception when getting HEAD commit message: {e!s}", exc_info=True
-        )
-        return None
+    return result.stdout.strip()
 
 
 async def get_head_commit_hash(directory: str, short: bool = True) -> str | None:
@@ -117,8 +102,6 @@ async def get_head_commit_chat_id(directory: str) -> str | None:
     """
     try:
         commit_message = await get_head_commit_message(directory)
-        if not commit_message:
-            return None
 
         # Use regex to find the last occurrence of codemcp-id: XXX
         # The pattern looks for "codemcp-id: " followed by any characters up to a newline or end of string
