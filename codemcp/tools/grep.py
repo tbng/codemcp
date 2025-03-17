@@ -7,7 +7,7 @@ import time
 from typing import Any
 
 from ..common import normalize_file_path
-from ..git import is_git_repository
+from ..git import get_repository_root
 from ..shell import run_command
 
 __all__ = [
@@ -57,9 +57,11 @@ async def git_grep(
     # Normalize the directory path
     absolute_path = normalize_file_path(path)
 
-    # Verify this is a git repository - this check uses the mocked version in tests
-    if not await is_git_repository(absolute_path):
-        raise ValueError(f"The provided path is not in a git repository: {path}")
+    # Verify this is a git repository by attempting to get the repository root
+    try:
+        await get_repository_root(absolute_path)
+    except (subprocess.SubprocessError, OSError, ValueError) as e:
+        raise ValueError(f"The provided path is not in a git repository: {path}") from e
 
     # In non-test environment, verify the path exists
     if not os.environ.get("DESKAID_TESTING"):

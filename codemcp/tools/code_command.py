@@ -8,7 +8,7 @@ from typing import List, Optional
 import tomli
 
 from ..common import normalize_file_path, truncate_output_content
-from ..git import commit_changes, get_repository_root, is_git_repository
+from ..git import commit_changes, get_repository_root
 from ..shell import run_command
 
 __all__ = [
@@ -125,11 +125,9 @@ async def run_code_command(
 
             raise ValueError(f"No {command_key} command configured in codemcp.toml")
 
-        # Check if directory is in a git repository
-        is_git_repo = await is_git_repository(full_dir_path)
-
-        # If it's a git repo, commit any pending changes before running the command
-        if is_git_repo:
+        # Try to commit any pending changes before running the command
+        # commit_changes will fail appropriately if not in a git repository
+        try:
             logging.info(f"Committing any pending changes before {command_name}")
             commit_result = await commit_changes(
                 full_dir_path,
@@ -139,6 +137,10 @@ async def run_code_command(
             )
             if not commit_result[0]:
                 logging.warning(f"Failed to commit pending changes: {commit_result[1]}")
+            is_git_repo = True
+        except (subprocess.SubprocessError, OSError, ValueError) as e:
+            logging.warning(f"Unable to commit changes (not a git repository?): {e}")
+            is_git_repo = False
 
         # Run the command
         try:
