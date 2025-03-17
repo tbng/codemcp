@@ -7,7 +7,6 @@ import time
 from typing import Any
 
 from ..common import normalize_file_path
-from ..git import is_git_repository
 from ..shell import run_command
 
 __all__ = [
@@ -34,6 +33,7 @@ Example:
 
 
 async def git_grep(
+    git_root: str,
     pattern: str,
     path: str | None = None,
     include: str | None = None,
@@ -42,6 +42,7 @@ async def git_grep(
     """Execute git grep to search for pattern in files.
 
     Args:
+        git_root: The root directory of the Git repository
         pattern: The regular expression pattern to search for
         path: The directory or file to search in (must be in a git repository)
         include: Optional file pattern to filter the search
@@ -57,9 +58,7 @@ async def git_grep(
     # Normalize the directory path
     absolute_path = normalize_file_path(path)
 
-    # Verify this is a git repository - this check uses the mocked version in tests
-    if not await is_git_repository(absolute_path):
-        raise ValueError(f"The provided path is not in a git repository: {path}")
+    # No need to verify if this is a git repository since we already have git_root
 
     # In non-test environment, verify the path exists
     if not os.environ.get("DESKAID_TESTING"):
@@ -157,6 +156,7 @@ def render_result_for_assistant(output: dict[str, Any]) -> str:
 
 
 async def grep_files(
+    git_root: str,
     pattern: str,
     path: str | None = None,
     include: str | None = None,
@@ -166,6 +166,7 @@ async def grep_files(
     """Search for a pattern in files within a directory or in a specific file.
 
     Args:
+        git_root: The root directory of the Git repository
         pattern: The regular expression pattern to search for
         path: The directory or file to search in (must be in a git repository)
         include: Optional file pattern to filter the search
@@ -179,7 +180,7 @@ async def grep_files(
     start_time = time.time()
 
     # Execute git grep asynchronously
-    matches = await git_grep(pattern, path, include, signal)
+    matches = await git_grep(git_root, pattern, path, include, signal)
 
     # Sort matches
     try:

@@ -84,7 +84,11 @@ def detect_repo_line_endings(directory: str) -> str:
 
 
 async def write_file_content(
-    git_root: str, file_path: str, content: str, description: str = "", chat_id: str = None
+    git_root: str,
+    file_path: str,
+    content: str,
+    description: str = "",
+    chat_id: str = None,
 ) -> str:
     """Write content to a file.
 
