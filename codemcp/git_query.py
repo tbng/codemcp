@@ -163,38 +163,15 @@ async def is_git_repository(path: str) -> bool:
         True if path is in a Git repository, False otherwise
     """
     try:
-        # Get the absolute path to ensure consistency
-        abs_path = os.path.abspath(path)
-
-        # Get the directory containing the file or use the path itself if it's a directory
-        directory = os.path.dirname(abs_path) if os.path.isfile(abs_path) else abs_path
-
-        # Handle non-existent paths by walking up the directory tree
-        # until we find an existing directory
-        while directory and not os.path.exists(directory):
-            parent = os.path.dirname(directory)
-            # If we've reached the root directory and it doesn't exist, stop
-            if parent == directory:
-                return False
-            directory = parent
-
-        # Run git command to verify this is a git repository
-        await run_command(
-            ["git", "rev-parse", "--is-inside-work-tree"],
-            cwd=directory,
-            check=True,
-            capture_output=True,
-            text=True,
-        )
-
-        # Also get the repository root to verify it's a proper git repository
-        try:
-            await get_repository_root(directory)
-            return True
-        except (subprocess.SubprocessError, OSError, ValueError):
-            # If we can't get the repo root, it's not a proper git repository
-            return False
-    except (subprocess.SubprocessError, OSError):
+        # Try to get the repository root - this handles path existence checks
+        # and directory traversal internally
+        await get_repository_root(path)
+        
+        # If we get here, we found a valid git repository
+        return True
+    except (subprocess.SubprocessError, OSError, ValueError):
+        # If we can't get the repo root, it's not a proper git repository
+        # or the path doesn't exist or isn't in a repo
         return False
 
 
