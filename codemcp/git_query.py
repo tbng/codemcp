@@ -84,23 +84,21 @@ async def get_head_commit_chat_id(directory: str) -> str | None:
 
     Returns:
         The chat ID if found, None otherwise
+
+    Raises:
+        subprocess.SubprocessError: If HEAD does not exist or another git error occurs
+        Exception: For any other errors during the operation
     """
-    try:
-        commit_message = await get_head_commit_message(directory)
+    commit_message = await get_head_commit_message(directory)
 
-        # Use regex to find the last occurrence of codemcp-id: XXX
-        # The pattern looks for "codemcp-id: " followed by any characters up to a newline or end of string
-        matches = re.findall(r"codemcp-id:\s*([a-zA-Z0-9-]+)", commit_message)
+    # Use regex to find the last occurrence of codemcp-id: XXX
+    # The pattern looks for "codemcp-id: " followed by any characters up to a newline or end of string
+    matches = re.findall(r"codemcp-id:\s*([a-zA-Z0-9-]+)", commit_message)
 
-        # Return the last match if any matches found
-        if matches:
-            return matches[-1].strip()
-        return None
-    except Exception as e:
-        logging.warning(
-            f"Exception when getting HEAD commit chat ID: {e!s}", exc_info=True
-        )
-        return None
+    # Return the last match if any matches found
+    if matches:
+        return matches[-1].strip()
+    return None
 
 
 async def get_repository_root(path: str) -> str:
