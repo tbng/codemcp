@@ -14,7 +14,7 @@ __all__ = [
     "get_repository_root",
     "is_git_repository",
     "get_ref_commit_chat_id",
-    "find_git_root",
+    "find_git_root",  # Keep both functions in __all__ for backward compatibility
 ]
 
 log = logging.getLogger(__name__)
@@ -166,7 +166,7 @@ async def is_git_repository(path: str) -> bool:
         # Try to get the repository root - this handles path existence checks
         # and directory traversal internally
         await get_repository_root(path)
-        
+
         # If we get here, we found a valid git repository
         return True
     except (subprocess.SubprocessError, OSError, ValueError):
@@ -224,8 +224,15 @@ async def get_ref_commit_chat_id(directory: str, ref_name: str) -> str | None:
         return None
 
 
+# Maintain find_git_root as a separate implementation for backward compatibility
+# Do not convert this to a wrapper around get_repository_root as it breaks tests
 def find_git_root(start_path: str) -> str | None:
     """Find the root of the Git repository starting from the given path.
+
+    This is the synchronous version that works differently from get_repository_root.
+    It directly checks for a .git directory instead of using git commands.
+
+    New code should use the async get_repository_root when possible.
 
     Args:
         start_path: The path to start searching from

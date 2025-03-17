@@ -9,7 +9,7 @@ from ..common import (
     MAX_OUTPUT_SIZE,
     normalize_file_path,
 )
-from ..git_query import find_git_root
+from ..git_query import get_repository_root
 from ..rules import get_applicable_rules_content
 
 __all__ = [
@@ -101,7 +101,7 @@ async def read_file_content(
         # Apply relevant cursor rules
         try:
             # Find git repository root
-            repo_root = find_git_root(os.path.dirname(full_file_path))
+            repo_root = await get_repository_root(os.path.dirname(full_file_path))
 
             if repo_root:
                 # Add applicable rules content
