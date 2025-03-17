@@ -208,15 +208,11 @@ class MCPEndToEndTestCase(TestCase, unittest.IsolatedAsyncioTestCase):
         subtool = tool_params.get("subtool")
         kwargs = {k: v for k, v in tool_params.items() if k != "subtool"}
 
-        try:
-            # Call codemcp.main.codemcp directly instead of using the client session
-            result = await codemcp.main.codemcp(subtool, **kwargs)
-            # Return the normalized, extracted text result
-            normalized_result = self.normalize_path(result)
-            return self.extract_text_from_result(normalized_result)
-        except Exception as e:
-            # The call failed - but we expected it to succeed
-            self.fail(f"Tool call to {tool_name} failed with error: {str(e)}")
+        # Call codemcp.main.codemcp directly instead of using the client session
+        result = await codemcp.main.codemcp(subtool, **kwargs)
+        # Return the normalized, extracted text result
+        normalized_result = self.normalize_path(result)
+        return self.extract_text_from_result(normalized_result)
 
     async def get_chat_id(self, session):
         """Initialize project and get chat_id.
