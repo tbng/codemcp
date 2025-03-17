@@ -13,6 +13,7 @@ from .git_query import (
     get_head_commit_message,
     is_git_repository,
 )
+from .regex import CHAT_ID_VALIDATION_REGEX
 from .shell import run_command
 
 __all__ = ["commit_changes", "create_commit_reference"]
@@ -45,7 +46,7 @@ async def create_commit_reference(
         subprocess.CalledProcessError: If a Git command fails
         Exception: For other errors during the Git operations
     """
-    if not re.fullmatch(r"^[A-Za-z0-9-]+$", chat_id):
+    if not re.fullmatch(CHAT_ID_VALIDATION_REGEX, chat_id):
         raise ValueError(f"Invalid chat_id format: {chat_id}")
 
     log.debug(
