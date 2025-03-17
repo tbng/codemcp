@@ -33,16 +33,7 @@ async def get_head_commit_message(directory: str) -> str:
         subprocess.SubprocessError: If HEAD does not exist or another git error occurs
         Exception: For any other errors during the operation
     """
-    # Check if HEAD exists
-    result = await run_command(
-        ["git", "rev-parse", "--verify", "HEAD"],
-        cwd=directory,
-        check=True,  # Will raise exception if HEAD doesn't exist
-        capture_output=True,
-        text=True,
-    )
-
-    # Get the commit message
+    # Get the commit message - this will fail if HEAD doesn't exist
     result = await run_command(
         ["git", "log", "-1", "--pretty=%B"],
         cwd=directory,
