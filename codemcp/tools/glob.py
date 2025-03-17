@@ -20,6 +20,7 @@ MAX_RESULTS = 100
 
 
 async def glob(
+    git_root: str,
     pattern: str,
     path: str,
     options: Optional[Dict[str, Any]] = None,
@@ -28,6 +29,7 @@ async def glob(
     """Find files matching a glob pattern.
 
     Args:
+        git_root: The root directory of the Git repository
         pattern: The glob pattern to match files against
         path: The directory to search in
         options: Optional parameters for pagination (limit, offset)
@@ -151,6 +153,7 @@ def render_result_for_assistant(output: Dict[str, Any]) -> str:
 
 
 async def glob_files(
+    git_root: str,
     pattern: str,
     path: str | None = None,
     limit: int = MAX_RESULTS,
@@ -161,6 +164,7 @@ async def glob_files(
     """Search for files matching a glob pattern.
 
     Args:
+        git_root: The root directory of the Git repository
         pattern: The glob pattern to match files against
         path: The directory to search in (defaults to current working directory)
         limit: Maximum number of results to return
@@ -184,7 +188,7 @@ async def glob_files(
     }
 
     # Execute glob
-    result = await glob(pattern, path, options, signal)
+    result = await glob(git_root, pattern, path, options, signal)
 
     # Calculate execution time
     execution_time = int((time.time() - start_time) * 1000)  # Convert to milliseconds

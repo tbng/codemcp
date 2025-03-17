@@ -5,7 +5,6 @@ import os
 
 from ..access import check_edit_permission
 from ..common import normalize_file_path
-from ..git import is_git_repository
 
 __all__ = [
     "ls_directory",
@@ -21,10 +20,13 @@ MAX_FILES = 1000
 TRUNCATED_MESSAGE = f"There are more than {MAX_FILES} files in the directory. Use more specific paths to explore nested directories. The first {MAX_FILES} files and directories are included below:\n\n"
 
 
-async def ls_directory(directory_path: str, chat_id: str | None = None) -> str:
+async def ls_directory(
+    git_root: str, directory_path: str, chat_id: str | None = None
+) -> str:
     """List the contents of a directory.
 
     Args:
+        git_root: The root directory of the Git repository
         directory_path: The absolute path to the directory to list
         chat_id: The unique ID of the current chat session
 
@@ -32,39 +34,42 @@ async def ls_directory(directory_path: str, chat_id: str | None = None) -> str:
         A formatted string representation of the directory contents
 
     """
-    # Normalize the directory path
-    full_directory_path = normalize_file_path(directory_path)
+    try:
+        # Normalize the directory path
+        full_directory_path = normalize_file_path(directory_path)
 
-    # Validate the directory path
-    if not os.path.exists(full_directory_path):
-        raise FileNotFoundError(f"Directory does not exist: {directory_path}")
+        # Validate the directory path
+        if not os.path.exists(full_directory_path):
+            raise FileNotFoundError(f"Directory does not exist: {directory_path}")
 
-    if not os.path.isdir(full_directory_path):
-        raise NotADirectoryError(f"Path is not a directory: {directory_path}")
+        if not os.path.isdir(full_directory_path):
+            raise NotADirectoryError(f"Path is not a directory: {directory_path}")
 
-    # Safety check: Verify the directory is within a git repository with codemcp.toml
-    if not await is_git_repository(full_directory_path):
-        raise ValueError(f"Directory is not in a Git repository: {directory_path}")
+        # No need to verify if directory is within a git repository since we already have git_root
 
-    # Check edit permission (which verifies codemcp.toml exists)
-    is_permitted, permission_message = await check_edit_permission(full_directory_path)
-    if not is_permitted:
-        raise ValueError(permission_message)
+        # Check edit permission (which verifies codemcp.toml exists)
+        is_permitted, permission_message = await check_edit_permission(
+            full_directory_path
+        )
+        if not is_permitted:
+            raise ValueError(permission_message)
 
-    # Get the directory contents asynchronously
-    results = await list_directory(full_directory_path)
+        # Get the directory contents asynchronously
+        results = await list_directory(full_directory_path)
 
-    # Sort the results
-    results.sort()
+        # Sort the results
+        results.sort()
 
-    # Create a file tree and print it
-    tree = create_file_tree(results)
-    tree_output = print_tree(tree, cwd=full_directory_path)
+        # Create a file tree and print it
+        tree = create_file_tree(results)
+        tree_output = print_tree(tree, cwd=full_directory_path)
 
-    # Return the result with truncation message if needed
-    if len(results) < MAX_FILES:
-        return tree_output
-    return f"{TRUNCATED_MESSAGE}{tree_output}"
+        # Return the result with truncation message if needed
+        if len(results) < MAX_FILES:
+            return tree_output
+        return f"{TRUNCATED_MESSAGE}{tree_output}"
+    except Exception as e:
+        return f"Error listing directory {directory_path}: {str(e)}"
 
 
 async def list_directory(initial_path: str) -> list[str]:

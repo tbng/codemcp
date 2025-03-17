@@ -145,7 +145,7 @@ async def codemcp(
         if subtool == "ReadFile":
             if path is None:
                 raise ValueError("path is required for ReadFile subtool")
-                
+
             # Get the git repository root
             git_root = await get_repository_root(path)
 
@@ -161,7 +161,9 @@ async def codemcp(
             git_root = await get_repository_root(path)
 
             content_str = content or ""
-            return await write_file_content(git_root, path, content_str, description, chat_id)
+            return await write_file_content(
+                git_root, path, content_str, description, chat_id
+            )
 
         if subtool == "EditFile":
             if path is None:

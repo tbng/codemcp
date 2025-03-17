@@ -8,7 +8,6 @@ from ..common import (
     MAX_OUTPUT_SIZE,
     normalize_file_path,
 )
-from ..git_query import find_git_root
 from ..rules import get_applicable_rules_content
 
 __all__ = [
