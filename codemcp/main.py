@@ -3,7 +3,7 @@
 import logging
 import os
 
-from mcp.server.fastmcp import Context, FastMCP
+from mcp.server.fastmcp import FastMCP
 
 from .tools.edit_file import edit_file_content
 from .tools.glob import MAX_RESULTS, glob_files
@@ -22,7 +22,6 @@ mcp = FastMCP("codemcp")
 # NB: If you edit this, also edit codemcp/tools/init_project.py
 @mcp.tool()
 async def codemcp(
-    ctx: Context,
     subtool: str,
     *,
     path: str | None = None,
