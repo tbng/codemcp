@@ -3,7 +3,7 @@
 import logging
 import os
 
-from ..git_query import find_git_root
+from ..git_query import get_repository_root
 from ..rules import get_applicable_rules_content
 
 __all__ = [
@@ -28,7 +28,7 @@ async def user_prompt(user_text: str, chat_id: str | None = None) -> str:
 
         # Get the current working directory to find repo root
         cwd = os.getcwd()
-        repo_root = find_git_root(cwd)
+        repo_root = await get_repository_root(cwd)
 
         result = "User prompt received"
 
