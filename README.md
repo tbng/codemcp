@@ -30,8 +30,7 @@ First, [install uv](https://docs.astral.sh/uv/getting-started/installation/)
 and [install
 git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git), if they
 are not installed already (on Windows, if you installed Git, I recommend
-rebooting).  They must be available on the PATH (NB: OS X users, keep reading)
-that Claude Desktop sees when launched.
+rebooting).
 
 Then, in `claude_desktop_config.json`:
 
