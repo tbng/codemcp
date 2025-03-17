@@ -45,7 +45,7 @@ async def get_head_commit_message(directory: str) -> str:
     return result.stdout.strip()
 
 
-async def get_head_commit_hash(directory: str, short: bool = True) -> str | None:
+async def get_head_commit_hash(directory: str, short: bool = True) -> str:
     """Get the commit hash from HEAD.
 
     Args:
@@ -53,42 +53,27 @@ async def get_head_commit_hash(directory: str, short: bool = True) -> str | None
         short: Whether to get short hash (default) or full hash
 
     Returns:
-        The commit hash if available, None otherwise
+        The commit hash
+
+    Raises:
+        subprocess.SubprocessError: If HEAD does not exist or another git error occurs
+        Exception: For any other errors during the operation
     """
-    try:
-        # Check if HEAD exists
-        result = await run_command(
-            ["git", "rev-parse", "--verify", "HEAD"],
-            cwd=directory,
-            check=False,
-            capture_output=True,
-            text=True,
-        )
+    # Get the commit hash (short or full)
+    cmd = ["git", "rev-parse"]
+    if short:
+        cmd.append("--short")
+    cmd.append("HEAD")
 
-        if result.returncode != 0:
-            # No commits yet
-            return None
+    result = await run_command(
+        cmd,
+        cwd=directory,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
 
-        # Get the commit hash (short or full)
-        cmd = ["git", "rev-parse"]
-        if short:
-            cmd.append("--short")
-        cmd.append("HEAD")
-
-        result = await run_command(
-            cmd,
-            cwd=directory,
-            check=True,
-            capture_output=True,
-            text=True,
-        )
-
-        return result.stdout.strip()
-    except Exception as e:
-        logging.warning(
-            f"Exception when getting HEAD commit hash: {e!s}", exc_info=True
-        )
-        return None
+    return result.stdout.strip()
 
 
 async def get_head_commit_chat_id(directory: str) -> str | None:
