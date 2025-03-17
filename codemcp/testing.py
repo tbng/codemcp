@@ -8,6 +8,7 @@ import tempfile
 import unittest
 from contextlib import asynccontextmanager
 from typing import Any, List, Union
+from unittest import mock
 
 from expecttest import TestCase
 from mcp import ClientSession, StdioServerParameters
@@ -42,11 +43,19 @@ class MCPEndToEndTestCase(TestCase, unittest.IsolatedAsyncioTestCase):
         self.env.setdefault("GIT_COMMITTER_DATE", f"{self.testing_time} -0700")
         self.env.setdefault("GIT_AUTHOR_DATE", f"{self.testing_time} -0700")
 
+        # Patch get_subprocess_env to use the test environment
+        self.env_patcher = mock.patch(
+            "codemcp.shell.get_subprocess_env", return_value=self.env
+        )
+        self.env_patcher.start()
+
         # Initialize a git repository in the temp directory
         self.init_git_repo()
 
     async def asyncTearDown(self):
         """Async teardown to clean up after the test."""
+        # Stop the environment patcher
+        self.env_patcher.stop()
         self.temp_dir.cleanup()
 
     def init_git_repo(self):
