@@ -357,8 +357,6 @@ async def commit_changes(
 
         # Get the current commit message
         current_commit_message = await get_head_commit_message(git_cwd)
-        if not current_commit_message:
-            current_commit_message = ""
 
         # Verify the commit has our codemcp-id
         if chat_id and "codemcp-id: " not in current_commit_message:
