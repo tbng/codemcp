@@ -4,6 +4,7 @@ import logging
 import os
 import re
 
+from .config import get_prevent_head_updates
 from .git_message import (
     update_commit_message_with_description,
 )
@@ -332,14 +333,17 @@ async def commit_changes(
             )
             new_commit_hash = new_commit_result.stdout.strip()
 
-            # Update HEAD to point to the new commit
-            await run_command(
-                ["git", "update-ref", "HEAD", new_commit_hash],
-                cwd=git_cwd,
-                capture_output=True,
-                text=True,
-                check=True,
-            )
+            # Check if we should prevent updating HEAD
+            prevent_head_updates = get_prevent_head_updates()
+            if not prevent_head_updates:
+                # Update HEAD to point to the new commit
+                await run_command(
+                    ["git", "update-ref", "HEAD", new_commit_hash],
+                    cwd=git_cwd,
+                    capture_output=True,
+                    text=True,
+                    check=True,
+                )
 
             logging.info(f"Successfully applied reference commit for chat ID {chat_id}")
             # After applying, the HEAD commit should have the right chat_id
@@ -366,20 +370,75 @@ async def commit_changes(
         commit_hash=commit_hash,
     )
 
-    # Amend the previous commit
-    commit_result = await run_command(
-        ["git", "commit", "--amend", "-m", commit_message],
-        cwd=git_cwd,
-        capture_output=True,
-        text=True,
-        check=False,
-    )
+    # Check if we should prevent updating HEAD
+    prevent_head_updates = get_prevent_head_updates()
+
+    if prevent_head_updates:
+        # Create a new commit object without updating HEAD
+        # First, get the current tree
+        tree_result = await run_command(
+            ["git", "write-tree"],
+            cwd=git_cwd,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        tree_hash = tree_result.stdout.strip()
+
+        # Get parent (current HEAD)
+        head_hash_result = await run_command(
+            ["git", "rev-parse", "HEAD"],
+            cwd=git_cwd,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        head_hash = head_hash_result.stdout.strip()
+
+        # Create a new commit without changing HEAD
+        commit_result = await run_command(
+            ["git", "commit-tree", tree_hash, "-p", head_hash, "-m", commit_message],
+            cwd=git_cwd,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    else:
+        # Amend the previous commit normally
+        commit_result = await run_command(
+            ["git", "commit", "--amend", "-m", commit_message],
+            cwd=git_cwd,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
 
     if commit_result.returncode != 0:
         return False, f"Failed to commit changes: {commit_result.stderr}"
 
-    # If this was an amended commit, include the original hash in the message
-    return (
-        True,
-        f"Changes {verb} successfully (previous commit was {commit_hash})",
-    )
+    new_commit_hash = ""
+    if prevent_head_updates:
+        # When using commit-tree, the output is the new commit hash
+        new_commit_hash = commit_result.stdout.strip()
+
+        # Store the commit in the reference for this chat_id
+        ref_name = f"refs/codemcp/{chat_id}"
+        await run_command(
+            ["git", "update-ref", ref_name, new_commit_hash],
+            cwd=git_cwd,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+
+        # Modified success message for prevent_head_updates mode
+        return (
+            True,
+            f"Changes {verb} successfully without updating HEAD (previous commit was {commit_hash}, new commit is {new_commit_hash})",
+        )
+    else:
+        # If this was a normal amended commit, include the original hash in the message
+        return (
+            True,
+            f"Changes {verb} successfully (previous commit was {commit_hash})",
+        )
