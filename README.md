@@ -138,7 +138,7 @@ format = ["./run_format.sh"]
 test = ["./run_test.sh"]
 
 [git]
-prevent_head_updates = false  # Whether to prevent updating HEAD when committing changes
+disable_git_commit = false  # Whether to disable git commit and only record changes
 ```
 
 The `project_prompt` will be loaded when you initialize the project in chats.
@@ -169,7 +169,7 @@ Logs are written to `~/.codemcp/codemcp.log`. The log level can be set in a glob
 verbosity = "INFO"  # Can be DEBUG, INFO, WARNING, ERROR, or CRITICAL
 
 [git]
-prevent_head_updates = false  # Whether to prevent updating HEAD when committing
+disable_git_commit = false  # Whether to disable git commit and only record changes
 ```
 
 Logging is not configurable on a per project basis, but this shouldn't matter

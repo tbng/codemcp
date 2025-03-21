@@ -19,7 +19,7 @@ __all__ = [
     "load_config",
     "get_logger_verbosity",
     "get_logger_path",
-    "get_prevent_head_updates",
+    "get_disable_git_commit",
 ]
 
 # Default configuration values
@@ -29,7 +29,7 @@ DEFAULT_CONFIG = {
         "path": str(Path.home() / ".codemcp"),  # Default logger path
     },
     "git": {
-        "prevent_head_updates": False,  # Whether to prevent updating HEAD when committing
+        "disable_git_commit": False,  # Whether to disable git commit and only record changes
     },
 }
 
@@ -125,12 +125,12 @@ def get_logger_path() -> str:
     return config["logger"]["path"]
 
 
-def get_prevent_head_updates() -> bool:
-    """Get whether to prevent updating HEAD when committing.
+def get_disable_git_commit() -> bool:
+    """Get whether to disable git commit and only record changes.
 
     Returns:
-        Boolean indicating whether to prevent updating HEAD when committing.
+        Boolean indicating whether to disable git commit and only record changes.
 
     """
     config = load_config()
-    return config["git"]["prevent_head_updates"]
+    return config["git"]["disable_git_commit"]

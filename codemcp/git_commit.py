@@ -4,7 +4,7 @@ import logging
 import os
 import re
 
-from .config import get_prevent_head_updates
+from .config import get_disable_git_commit
 from .git_message import (
     update_commit_message_with_description,
 )
@@ -333,9 +333,9 @@ async def commit_changes(
             )
             new_commit_hash = new_commit_result.stdout.strip()
 
-            # Check if we should prevent updating HEAD
-            prevent_head_updates = get_prevent_head_updates()
-            if not prevent_head_updates:
+            # Check if git commit is disabled
+            disable_git_commit = get_disable_git_commit()
+            if not disable_git_commit:
                 # Update HEAD to point to the new commit
                 await run_command(
                     ["git", "update-ref", "HEAD", new_commit_hash],
@@ -370,10 +370,10 @@ async def commit_changes(
         commit_hash=commit_hash,
     )
 
-    # Check if we should prevent updating HEAD
-    prevent_head_updates = get_prevent_head_updates()
+    # Check if git commit is disabled
+    disable_git_commit = get_disable_git_commit()
 
-    if prevent_head_updates:
+    if disable_git_commit:
         # Create a new commit object without updating HEAD
         # First, get the current tree
         tree_result = await run_command(
@@ -417,7 +417,7 @@ async def commit_changes(
         return False, f"Failed to commit changes: {commit_result.stderr}"
 
     new_commit_hash = ""
-    if prevent_head_updates:
+    if disable_git_commit:
         # When using commit-tree, the output is the new commit hash
         new_commit_hash = commit_result.stdout.strip()
 
@@ -431,10 +431,10 @@ async def commit_changes(
             check=True,
         )
 
-        # Modified success message for prevent_head_updates mode
+        # Modified success message for disable_git_commit mode
         return (
             True,
-            f"Changes {verb} successfully without updating HEAD (previous commit was {commit_hash}, new commit is {new_commit_hash})",
+            f"Changes {verb} successfully without updating working tree (previous commit was {commit_hash}, new commit is {new_commit_hash})",
         )
     else:
         # If this was a normal amended commit, include the original hash in the message
