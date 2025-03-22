@@ -5,7 +5,7 @@ import functools
 import logging
 import os
 import sys
-from contextlib import asynccontextmanager
+from contextlib import AsyncExitStack, asynccontextmanager
 from typing import AsyncGenerator, Optional
 
 from mcp import ClientSession, StdioServerParameters
@@ -23,50 +23,16 @@ from codemcp.main import (
 # Initialize FastMCP server with the same name
 mcp = FastMCP("codemcp")
 
-# Global cache for composed context manager
-_client_cm = None
+# Global cache for exit stack and session
+_exit_stack: Optional[AsyncExitStack] = None
+_session: Optional[ClientSession] = None
 _cached_server_params: Optional[StdioServerParameters] = None
-
-
-class ComposedStdioClientSession:
-    """A class that composes stdio_client and ClientSession context managers."""
-
-    def __init__(self, server_params: StdioServerParameters):
-        self.server_params = server_params
-        self.stdio_cm = None
-        self.session = None
-        self.read = None
-        self.write = None
-
-    async def __aenter__(self):
-        # Enter the stdio_client context manager
-        self.stdio_cm = stdio_client(self.server_params)
-        self.read, self.write = await self.stdio_cm.__aenter__()
-
-        # Enter the ClientSession context manager
-        self.session = ClientSession(self.read, self.write)
-        await self.session.__aenter__()
-
-        # Initialize the session
-        await self.session.initialize()
-
-        return self.session
-
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
-        # Exit the context managers in reverse order
-        if self.session:
-            await self.session.__aexit__(exc_type, exc_val, exc_tb)
-            self.session = None
-
-        if self.stdio_cm:
-            await self.stdio_cm.__aexit__(exc_type, exc_val, exc_tb)
-            self.stdio_cm = None
 
 
 @asynccontextmanager
 async def get_cached_client_session() -> AsyncGenerator[ClientSession, None]:
     """Get a cached ClientSession or create a new one if not available."""
-    global _client_cm, _cached_server_params
+    global _exit_stack, _session, _cached_server_params
 
     # Create server parameters for stdio connection to main.py
     server_params = StdioServerParameters(
@@ -76,27 +42,42 @@ async def get_cached_client_session() -> AsyncGenerator[ClientSession, None]:
     )
 
     # Check if we need to initialize a new connection
-    if _client_cm is None or _cached_server_params != server_params:
-        # Clean up any existing connection before creating a new one
-        if _client_cm is not None:
+    if (
+        _exit_stack is None
+        or _session is None
+        or _cached_server_params != server_params
+    ):
+        # Clean up any existing stack before creating a new one
+        if _exit_stack is not None:
             try:
                 logging.info("Closing previous client session")
-                await _client_cm.__aexit__(None, None, None)
+                await _exit_stack.aclose()
             except Exception:
                 logging.warning("Error closing previous client session", exc_info=True)
-            _client_cm = None
+            _exit_stack = None
+            _session = None
 
-        # Create new composed context manager
+        # Create new exit stack and setup context managers
         logging.info("Creating new client session")
-        _client_cm = ComposedStdioClientSession(server_params)
+        stack = AsyncExitStack()
+        _exit_stack = stack
+
+        # Enter the stdio_client context and get read/write streams
+        read, write = await stack.enter_async_context(stdio_client(server_params))
+
+        # Enter the ClientSession context
+        session = await stack.enter_async_context(ClientSession(read, write))
+
+        # Initialize the session
+        await session.initialize()
+
+        # Store the session and params for reuse
+        _session = session
         _cached_server_params = server_params
 
-    # Use the cached context manager
-    session = await _client_cm.__aenter__()
-
     try:
-        # Yield the session from the context manager
-        yield session
+        # Yield the cached session
+        yield _session
     except Exception:
         # Log the exception but don't close the connection on errors
         logging.error("Error using cached client session", exc_info=True)
@@ -133,16 +114,16 @@ def configure_logging():
 
 async def cleanup_client_session():
     """Cleanup cached client session when shutting down."""
-    global _client_cm
+    global _exit_stack, _session
 
-    # Clean up composed context manager if it exists
-    if _client_cm is not None:
+    if _exit_stack is not None:
         try:
             logging.info("Closing cached client session")
-            await _client_cm.__aexit__(None, None, None)
+            await _exit_stack.aclose()
         except Exception:
             logging.warning("Error during client session cleanup", exc_info=True)
-        _client_cm = None
+        _exit_stack = None
+        _session = None
 
 
 def run():
