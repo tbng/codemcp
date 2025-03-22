@@ -1,41 +1,24 @@
 #!/usr/bin/env python3
 
+import functools
 import logging
 import os
 import sys
-from typing import List, Union
 
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 from mcp.server.fastmcp import FastMCP
+
+# Import the original codemcp function from main to clone its signature
+from .main import codemcp as original_codemcp
 
 # Initialize FastMCP server with the same name
 mcp = FastMCP("codemcp")
 
 
 @mcp.tool()
-async def codemcp(
-    subtool: str,
-    *,
-    path: str | None = None,
-    content: str | None = None,
-    old_string: str | None = None,
-    new_string: str | None = None,
-    offset: int | None = None,
-    limit: int | None = None,
-    description: str | None = None,
-    pattern: str | None = None,
-    include: str | None = None,
-    command: str | None = None,
-    arguments: Union[List[str], str, None] = None,
-    old_str: str | None = None,  # Added for backward compatibility
-    new_str: str | None = None,  # Added for backward compatibility
-    chat_id: str | None = None,  # Added for chat identification
-    user_prompt: str | None = None,  # Added for InitProject commit message
-    subject_line: str | None = None,  # Added for InitProject commit message
-    reuse_head_chat_id: bool
-    | None = None,  # Whether to reuse the chat ID from the HEAD commit
-) -> str:
+@functools.wraps(original_codemcp)  # This copies the signature and docstring
+async def codemcp(**kwargs) -> str:
     """This is a wrapper that forwards all tool calls to the codemcp/main.py process.
     This allows for hot-reloading as main.py will be reloaded on each call.
 
@@ -53,9 +36,9 @@ async def codemcp(
             env=os.environ.copy(),  # Pass current environment variables
         )
 
-        # Normalize string arguments - convert to a list with one element
-        if isinstance(arguments, str):
-            arguments = [arguments]
+        # Normalize string arguments if present - convert to a list with one element
+        if "arguments" in kwargs and isinstance(kwargs["arguments"], str):
+            kwargs["arguments"] = [kwargs["arguments"]]
 
         # Forward the tool call to the main.py subprocess
         async with stdio_client(server_params) as (read, write):
@@ -71,31 +54,8 @@ async def codemcp(
                         "The codemcp tool is not available in the subprocess"
                     )
 
-                # Call the same tool in the subprocess with all parameters
-                tool_args = {}
-                # Add all non-None parameters
-                for param_name, param_value in {
-                    "subtool": subtool,
-                    "path": path,
-                    "content": content,
-                    "old_string": old_string,
-                    "new_string": new_string,
-                    "offset": offset,
-                    "limit": limit,
-                    "description": description,
-                    "pattern": pattern,
-                    "include": include,
-                    "command": command,
-                    "arguments": arguments,
-                    "old_str": old_str,
-                    "new_str": new_str,
-                    "chat_id": chat_id,
-                    "user_prompt": user_prompt,
-                    "subject_line": subject_line,
-                    "reuse_head_chat_id": reuse_head_chat_id,
-                }.items():
-                    if param_value is not None:
-                        tool_args[param_name] = param_value
+                # Create a dictionary of non-None parameters to pass to the subprocess
+                tool_args = {k: v for k, v in kwargs.items() if v is not None}
 
                 # Call the codemcp tool in the subprocess
                 result = await session.call_tool("codemcp", arguments=tool_args)
