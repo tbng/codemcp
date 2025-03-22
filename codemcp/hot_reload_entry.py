@@ -26,27 +26,15 @@ mcp = FastMCP("codemcp")
 # Global cache for exit stack and session
 _exit_stack: Optional[AsyncExitStack] = None
 _session: Optional[ClientSession] = None
-_cached_server_params: Optional[StdioServerParameters] = None
 
 
 @asynccontextmanager
 async def get_cached_client_session() -> AsyncGenerator[ClientSession, None]:
     """Get a cached ClientSession or create a new one if not available."""
-    global _exit_stack, _session, _cached_server_params
-
-    # Create server parameters for stdio connection to main.py
-    server_params = StdioServerParameters(
-        command=sys.executable,  # Use the same Python interpreter
-        args=[os.path.join(os.path.dirname(__file__), "__main__.py")],  # Use __main__
-        env=os.environ.copy(),  # Pass current environment variables
-    )
+    global _exit_stack, _session
 
     # Check if we need to initialize a new connection
-    if (
-        _exit_stack is None
-        or _session is None
-        or _cached_server_params != server_params
-    ):
+    if _exit_stack is None or _session is None:
         # Clean up any existing stack before creating a new one
         if _exit_stack is not None:
             try:
@@ -56,6 +44,15 @@ async def get_cached_client_session() -> AsyncGenerator[ClientSession, None]:
                 logging.warning("Error closing previous client session", exc_info=True)
             _exit_stack = None
             _session = None
+
+        # Create server parameters for stdio connection to main.py
+        server_params = StdioServerParameters(
+            command=sys.executable,  # Use the same Python interpreter
+            args=[
+                os.path.join(os.path.dirname(__file__), "__main__.py")
+            ],  # Use __main__
+            env=os.environ.copy(),  # Pass current environment variables
+        )
 
         # Create new exit stack and setup context managers
         logging.info("Creating new client session")
@@ -71,9 +68,8 @@ async def get_cached_client_session() -> AsyncGenerator[ClientSession, None]:
         # Initialize the session
         await session.initialize()
 
-        # Store the session and params for reuse
+        # Store the session for reuse
         _session = session
-        _cached_server_params = server_params
 
     try:
         # Yield the cached session
