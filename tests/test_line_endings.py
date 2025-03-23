@@ -366,6 +366,297 @@ line_endings = "CRLF"
         result = debug_check_gitattributes(test_file, gitattributes_content)
         self.assertEqual(result, "LF")
 
+    def test_editorconfig_complex_patterns(self):
+        """Test more complex .editorconfig pattern matching."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # Create a mock directory structure
+            project_dir = Path(temp_dir) / "project"
+            src_dir = project_dir / "src"
+            src_dir.mkdir(parents=True, exist_ok=True)
+
+            # Create test files
+            py_file = src_dir / "test.py"
+            js_file = src_dir / "test.js"
+            md_file = src_dir / "README.md"
+            html_file = src_dir / "index.html"
+
+            py_file.touch()
+            js_file.touch()
+            md_file.touch()
+            html_file.touch()
+
+            # Create .editorconfig with complex pattern matching
+            editorconfig_content = """
+root = true
+
+# Default settings for all files
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 4
+
+# JavaScript files
+[*.js]
+indent_size = 2
+end_of_line = crlf
+
+# Python files
+[*.py]
+end_of_line = lf
+
+# Markdown files get special treatment
+[*.md]
+trim_trailing_whitespace = false
+            """
+            with open(project_dir / ".editorconfig", "w") as f:
+                f.write(editorconfig_content)
+
+            # Test each file type gets the right setting
+            result = check_editorconfig(str(py_file))
+            self.assertEqual(result, "LF", "Python files should use LF line endings")
+
+            result = check_editorconfig(str(js_file))
+            self.assertEqual(
+                result, "CRLF", "JavaScript files should use CRLF line endings"
+            )
+
+            # HTML files should use default LF since they're not specified
+            result = check_editorconfig(str(html_file))
+            self.assertEqual(
+                result, "LF", "HTML files should use default LF line endings"
+            )
+
+            # Test that the most specific pattern takes precedence
+            # Default is LF, but *.js specifies CRLF
+            more_specific_editorconfig = """
+root = true
+
+[*]
+end_of_line = lf
+
+[*.js]
+end_of_line = crlf
+            """
+            with open(project_dir / ".editorconfig", "w") as f:
+                f.write(more_specific_editorconfig)
+
+            result = check_editorconfig(str(py_file))
+            self.assertEqual(result, "LF", "Python files should use the default LF")
+
+            result = check_editorconfig(str(js_file))
+            self.assertEqual(
+                result, "CRLF", "JavaScript files should use specific CRLF"
+            )
+
+            # Test a completely different pattern format
+            glob_pattern_editorconfig = """
+root = true
+
+[*.py]
+end_of_line = lf
+
+[Makefile]
+end_of_line = lf
+indent_style = tab
+
+[package.json]
+end_of_line = crlf
+indent_style = space
+indent_size = 2
+            """
+            with open(project_dir / ".editorconfig", "w") as f:
+                f.write(glob_pattern_editorconfig)
+
+            # Create the special files
+            make_file = project_dir / "Makefile"
+            pkg_file = project_dir / "package.json"
+            make_file.touch()
+            pkg_file.touch()
+
+            result = check_editorconfig(str(make_file))
+            self.assertEqual(result, "LF", "Makefile should use LF")
+
+            result = check_editorconfig(str(pkg_file))
+            self.assertEqual(result, "CRLF", "package.json should use CRLF")
+
+    def test_nested_config_files(self):
+        """Test handling of nested configuration files in subdirectories."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # Create a nested directory structure
+            root_dir = Path(temp_dir)
+            project_dir = root_dir / "project"
+            frontend_dir = project_dir / "frontend"
+            backend_dir = project_dir / "backend"
+
+            # Make directories
+            frontend_dir.mkdir(parents=True, exist_ok=True)
+            backend_dir.mkdir(parents=True, exist_ok=True)
+
+            # Create test files in each directory
+            root_file = project_dir / "root.py"
+            frontend_file = frontend_dir / "app.js"
+            backend_file = backend_dir / "server.py"
+
+            root_file.touch()
+            frontend_file.touch()
+            backend_file.touch()
+
+            # Create root .editorconfig with default LF
+            with open(project_dir / ".editorconfig", "w") as f:
+                f.write("""
+root = true
+
+[*]
+end_of_line = lf
+                """)
+
+            # Create frontend .editorconfig with CRLF
+            with open(frontend_dir / ".editorconfig", "w") as f:
+                f.write("""
+root = false
+
+[*]
+end_of_line = crlf
+                """)
+
+            # Create backend .gitattributes with explicit LF
+            with open(backend_dir / ".gitattributes", "w") as f:
+                f.write("""
+*.py text eol=lf
+                """)
+
+            # Test that each file gets the right setting from the nearest config
+            result = check_editorconfig(str(root_file))
+            self.assertEqual(result, "LF", "Root files should use root .editorconfig")
+
+            result = check_editorconfig(str(frontend_file))
+            self.assertEqual(
+                result, "CRLF", "Frontend files should use frontend .editorconfig"
+            )
+
+            result = check_editorconfig(str(backend_file))
+            self.assertEqual(
+                result, "LF", "Backend files should use root .editorconfig"
+            )
+
+            # Test combined preference from all sources
+            result = get_line_ending_preference(str(root_file))
+            self.assertEqual(
+                result, "\n", "Root files should use LF from root .editorconfig"
+            )
+
+            result = get_line_ending_preference(str(frontend_file))
+            self.assertEqual(
+                result,
+                "\r\n",
+                "Frontend files should use CRLF from frontend .editorconfig",
+            )
+
+            result = get_line_ending_preference(str(backend_file))
+            self.assertEqual(
+                result,
+                "\n",
+                "Backend files should use LF from either .editorconfig or .gitattributes",
+            )
+
+            # Create a codemcp.toml in the root directory with explicit CRLF
+            with open(project_dir / "codemcp.toml", "w") as f:
+                f.write("""
+[files]
+line_endings = "CRLF"
+                """)
+
+            # Test .editorconfig still takes precedence
+            result = get_line_ending_preference(str(root_file))
+            self.assertEqual(
+                result, "\n", ".editorconfig should take precedence over codemcp.toml"
+            )
+
+            # Test precedence by removing .editorconfig files
+            (project_dir / ".editorconfig").unlink()
+            (frontend_dir / ".editorconfig").unlink()
+
+            # Now .gitattributes should take precedence for backend files
+            result = get_line_ending_preference(str(backend_file))
+            self.assertEqual(
+                result, "\n", "Backend files should use LF from .gitattributes"
+            )
+
+            # And codemcp.toml should be used for other files
+            result = get_line_ending_preference(str(root_file))
+            self.assertEqual(
+                result,
+                "\r\n",
+                "Root files should use CRLF from codemcp.toml when no .editorconfig",
+            )
+
+            result = get_line_ending_preference(str(frontend_file))
+            self.assertEqual(
+                result,
+                "\r\n",
+                "Frontend files should use CRLF from codemcp.toml when no .editorconfig",
+            )
+
+    def test_error_handling(self):
+        """Test that error handling in line_endings functions is robust."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            test_dir = Path(temp_dir)
+            test_file = test_dir / "test.py"
+            test_file.touch()
+
+            # Test with an invalid .editorconfig file
+            with open(test_dir / ".editorconfig", "w") as f:
+                f.write("""
+root = true
+[*]
+# Missing the value part in this line
+end_of_line
+                """)
+
+            # Should not raise an exception, just return None
+            result = check_editorconfig(str(test_file))
+            self.assertIsNone(
+                result, "Invalid .editorconfig should be handled gracefully"
+            )
+
+            # Test with an invalid .gitattributes file
+            with open(test_dir / ".gitattributes", "w") as f:
+                f.write("""
+# This is malformed and missing attributes
+*.py
+                """)
+
+            # Should not raise an exception, just return None
+            result = check_gitattributes(str(test_file))
+            self.assertIsNone(
+                result, "Invalid .gitattributes should be handled gracefully"
+            )
+
+            # Test with an invalid codemcp.toml file
+            with open(test_dir / "codemcp.toml", "w") as f:
+                f.write("""
+[files]
+# This is invalid TOML (missing quotes)
+line_endings = CRLF
+                """)
+
+            # Should not raise an exception, just return None
+            result = check_codemcp_toml(str(test_file))
+            self.assertIsNone(
+                result, "Invalid codemcp.toml should be handled gracefully"
+            )
+
+            # Test with all configuration files present but invalid
+            result = get_line_ending_preference(str(test_file))
+            self.assertEqual(
+                result,
+                os.linesep,
+                "Should fallback to OS line endings when all configs are invalid",
+            )
+
 
 if __name__ == "__main__":
     unittest.main()
