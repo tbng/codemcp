@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import asyncio
 import difflib
 import hashlib
 import logging
@@ -11,6 +10,7 @@ from difflib import SequenceMatcher
 
 from ..common import get_edit_snippet
 from ..git import commit_changes
+from ..line_endings import detect_line_endings
 from .file_utils import (
     async_open_text,
     check_file_path_and_permissions,
@@ -24,7 +24,6 @@ logger = logging.getLogger(__name__)
 __all__ = [
     "edit_file_content",
     "detect_file_encoding",
-    "detect_line_endings",
     "find_similar_file",
 ]
 
@@ -49,37 +48,6 @@ async def detect_file_encoding(file_path: str) -> str:
     except UnicodeDecodeError:
         # If utf-8 fails, default to a more permissive encoding
         return "latin-1"
-
-
-async def detect_line_endings(file_path: str) -> str:
-    """Detect the line endings of a file.
-
-    Args:
-        file_path: The path to the file
-
-    Returns:
-        'CRLF' or 'LF'
-
-    """
-    from ..line_endings import get_line_ending_preference
-
-    if not os.path.exists(file_path):
-        return get_line_ending_preference(file_path)
-
-    # Read file in binary mode to detect line endings
-    try:
-        loop = asyncio.get_event_loop()
-
-        def read_and_detect():
-            with open(file_path, "rb") as f:
-                content = f.read(4096)  # Read a sample chunk
-                if b"\r\n" in content:
-                    return "CRLF"
-                return "LF"
-
-        return await loop.run_in_executor(None, read_and_detect)
-    except Exception:
-        return "LF" if get_line_ending_preference(file_path) == "\n" else "CRLF"
 
 
 def find_similar_file(file_path: str) -> str | None:
@@ -753,7 +721,7 @@ async def edit_file_content(
 
     # Detect encoding and line endings
     encoding = await detect_file_encoding(full_file_path)
-    line_endings = await detect_line_endings(full_file_path)
+    line_endings = await detect_line_endings(full_file_path, return_format="format")
 
     # Read the original file
     content = await async_open_text(full_file_path, encoding=encoding)
