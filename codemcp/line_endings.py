@@ -10,6 +10,8 @@ from typing import Literal, Optional
 
 import tomli
 
+from .glob import match as glob_match
+
 __all__ = [
     "get_line_ending_preference",
     "normalize_to_lf",
@@ -82,6 +84,7 @@ def check_editorconfig(file_path: str) -> Optional[str]:
         # Use the Path object to navigate up the directory tree
         path = Path(file_path)
         file_dir = path.parent
+        file_name = path.name
 
         # Iterate up through parent directories looking for .editorconfig
         current_dir = file_dir
@@ -93,16 +96,19 @@ def check_editorconfig(file_path: str) -> Optional[str]:
                     ec_content = f.read()
 
                 # Parse the .editorconfig file
-                file_name = Path(file_path).name
-
                 # Find the most specific section that applies to this file
                 sections = []
                 for match in re.finditer(r"^\[(.+?)\]", ec_content, re.MULTILINE):
                     pattern = match.group(1)
 
-                    # Convert .editorconfig glob pattern to regex pattern
-                    regex_pattern = pattern.replace(".", r"\.").replace("*", ".*")
-                    if re.match(regex_pattern, file_name):
+                    # Use glob.match with editorconfig features enabled
+                    if glob_match(
+                        pattern,
+                        file_name,
+                        editorconfig_braces=True,
+                        editorconfig_asterisk=True,
+                        editorconfig_double_asterisk=True,
+                    ):
                         # Extract section content
                         section_start = match.end()
                         next_section = re.search(
@@ -158,7 +164,7 @@ def check_gitattributes(file_path: str) -> Optional[str]:
         # Use the Path object to navigate up the directory tree
         path = Path(file_path)
         file_dir = path.parent
-        relative_path = Path(file_path).name
+        relative_path = path.name
 
         # Iterate up through parent directories looking for .gitattributes
         current_dir = file_dir
@@ -181,15 +187,9 @@ def check_gitattributes(file_path: str) -> Optional[str]:
 
                     pattern, attrs = parts[0], parts[1:]
 
-                    # Convert git pattern to regex
-                    if pattern == "*":  # Match all files
-                        is_match = True
-                    else:
-                        # Convert .gitattributes pattern to regex pattern
-                        regex_pattern = pattern.replace(".", r"\.").replace("*", ".*")
-                        is_match = bool(re.match(regex_pattern, relative_path))
-
-                    if is_match:
+                    # Use glob.match to check if the pattern matches the file
+                    # Git patterns behave like gitignore patterns, so we don't enable editorconfig features
+                    if pattern == "*" or glob_match(pattern, relative_path):
                         # Check for text/eol attributes
                         for attr in attrs:
                             if attr == "text=auto":
