@@ -10,7 +10,9 @@ from difflib import SequenceMatcher
 
 from ..common import get_edit_snippet
 from ..git import commit_changes
+from ..line_endings import detect_line_endings
 from .file_utils import (
+    async_open_text,
     check_file_path_and_permissions,
     check_git_tracking_for_existing_file,
     write_text_content,
@@ -21,40 +23,8 @@ logger = logging.getLogger(__name__)
 
 __all__ = [
     "edit_file_content",
-    "detect_file_encoding",
-    "detect_line_endings",
     "find_similar_file",
 ]
-
-
-async def detect_file_encoding(file_path: str) -> str:
-    """Detect the encoding of a file.
-
-    Args:
-        file_path: The path to the file
-
-    Returns:
-        The encoding of the file, defaults to 'utf-8'
-
-    """
-    from .async_file_utils import async_detect_encoding
-
-    return await async_detect_encoding(file_path)
-
-
-async def detect_line_endings(file_path: str) -> str:
-    """Detect the line endings of a file.
-
-    Args:
-        file_path: The path to the file
-
-    Returns:
-        'CRLF' or 'LF'
-
-    """
-    from .async_file_utils import async_detect_line_endings
-
-    return await async_detect_line_endings(file_path)
 
 
 def find_similar_file(file_path: str) -> str | None:
@@ -96,10 +66,7 @@ async def apply_edit(
 
     """
     if os.path.exists(file_path):
-        encoding = await detect_file_encoding(file_path)
-        from .async_file_utils import async_open_text
-
-        content = await async_open_text(file_path, encoding=encoding)
+        content = await async_open_text(file_path, encoding="utf-8")
     else:
         content = ""
 
@@ -728,14 +695,11 @@ async def edit_file_content(
                 "File has been modified since read, either by the user or by a linter. Read it again before attempting to write it."
             )
 
-    # Detect encoding and line endings
-    encoding = await detect_file_encoding(full_file_path)
-    line_endings = await detect_line_endings(full_file_path)
+    # Use UTF-8 encoding and detect line endings
+    line_endings = await detect_line_endings(full_file_path, return_format="format")
 
     # Read the original file
-    from .async_file_utils import async_open_text
-
-    content = await async_open_text(full_file_path, encoding=encoding)
+    content = await async_open_text(full_file_path, encoding="utf-8")
 
     # Check if old_string exists in the file
     if old_string and old_string not in content:
@@ -780,7 +744,7 @@ async def edit_file_content(
     os.makedirs(directory, exist_ok=True)
 
     # Write the modified content back to the file
-    await write_text_content(full_file_path, updated_file, encoding, line_endings)
+    await write_text_content(full_file_path, updated_file, "utf-8", line_endings)
 
     # Update read timestamp
     if read_file_timestamps is not None:

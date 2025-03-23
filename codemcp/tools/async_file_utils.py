@@ -5,6 +5,8 @@ from typing import List
 
 import anyio
 
+from ..line_endings import detect_line_endings
+
 
 async def async_open_text(
     file_path: str,
@@ -122,10 +124,4 @@ async def async_detect_line_endings(file_path: str) -> str:
     Returns:
         'CRLF' or 'LF'
     """
-    try:
-        content = await async_open_binary(file_path)
-        if b"\r\n" in content:
-            return "CRLF"
-        return "LF"
-    except Exception:
-        return "LF" if os.linesep == "\n" else "CRLF"
+    return await detect_line_endings(file_path, return_format="format")
