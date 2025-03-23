@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 
-import fnmatch
 import logging
 import os
 import re
 from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Optional, Set, Tuple
+
+from codemcp.glob import match as glob_match
 
 __all__ = [
     "Rule",
@@ -94,75 +95,36 @@ def match_file_with_glob(file_path: str, glob_pattern: str) -> bool:
     Returns:
         True if the file matches the pattern, False otherwise
     """
-    # Convert to Path object for consistent handling
-    path = Path(file_path)
-    file_name = path.name
-
     logging.debug(
         f"match_file_with_glob: checking if '{file_path}' matches pattern '{glob_pattern}'"
     )
 
-    # Simple case: direct file extension matching (*.js)
-    if glob_pattern.startswith("*."):
-        result = file_name.endswith(glob_pattern[1:])
-        logging.debug(
-            f"Extension match (*.ext): pattern={glob_pattern}, file={file_name}, result={result}"
-        )
-        return result
+    # Normalize path for matching
+    # Paths are normalized to use / for consistent matching across platforms
+    path = Path(file_path)
+    normalized_path = str(path).replace(os.sep, "/")
 
-    # Handle "**/*.js" pattern (match any file with .js extension in any directory)
-    if glob_pattern == "**/*.js" or glob_pattern == "**/*.jsx":
-        ext = glob_pattern.split(".")[-1]
-        result = file_name.endswith("." + ext)
-        logging.debug(
-            f"Any dir with extension (**/*.ext): pattern={glob_pattern}, ext=.{ext}, result={result}"
-        )
-        return result
+    # Get relative path if it's absolute
+    # (since glob patterns typically use relative paths)
+    if os.path.isabs(normalized_path):
+        # Try to use just the filename if it's an absolute path
+        # This helps with simple patterns like *.js
+        file_name = path.name
 
-    # Handle patterns like "src/**/*.jsx" (match files in src directory or subdirectories)
-    if "/" in glob_pattern and "**" in glob_pattern:
-        # Handle trailing /** (matches all files in a directory with infinite depth)
-        if glob_pattern.endswith("/**"):
-            dir_part = glob_pattern[:-3]  # Remove trailing "/**"
-            logging.debug(f"Trailing ** pattern: dir_part='{dir_part}'")
-
-            # Convert path to string for comparison
-            path_str = str(path)
-
-            # Simply check if dir_part appears in the path
-            # This is a simplification that matches the semantics described in the requirements
-            result = dir_part in path_str.split("/")
+        # Use the glob matcher from glob.py
+        # For filename-only patterns (without path separators)
+        if "/" not in glob_pattern:
+            result = glob_match(glob_pattern, file_name)
             logging.debug(
-                f"Directory match for trailing **: checking if '{dir_part}' is in path parts of '{path_str}', result={result}"
+                f"Filename match: pattern='{glob_pattern}', file='{file_name}', result={result}"
             )
             return result
 
-        # Handle patterns with directory and file parts like "src/**/*.jsx"
-        dir_part, file_part = glob_pattern.split("/**/")
-        logging.debug(
-            f"Directory + file pattern: dir_part='{dir_part}', file_part='{file_part}'"
-        )
-
-        # Check if the file has the right extension
-        if file_part.startswith("*"):
-            ext = file_part[1:]  # *.jsx -> .jsx
-            if not file_name.endswith(ext):
-                logging.debug(
-                    f"Extension mismatch: expected '{ext}', file='{file_name}', result=False"
-                )
-                return False
-
-        # Check if it's in the right directory
-        result = dir_part in str(path)
-        logging.debug(
-            f"Directory match: checking if '{dir_part}' is in '{str(path)}', result={result}"
-        )
-        return result
-
-    # Default to fnmatch for other patterns
-    result = fnmatch.fnmatch(file_name, glob_pattern)
+    # Use the glob matcher from glob.py for full path matching
+    # Cursor rules use vanilla glob patterns (not editorconfig features)
+    result = glob_match(glob_pattern, normalized_path)
     logging.debug(
-        f"Default fnmatch: pattern='{glob_pattern}', file='{file_name}', result={result}"
+        f"Path match: pattern='{glob_pattern}', path='{normalized_path}', result={result}"
     )
     return result
 

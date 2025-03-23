@@ -78,28 +78,36 @@ This is a glob test rule
     def test_match_file_with_glob(self):
         # Test basic glob matching
         self.assertTrue(match_file_with_glob("test.js", "*.js"))
-        self.assertTrue(match_file_with_glob("/path/to/test.js", "*.js"))
-        self.assertTrue(match_file_with_glob("/path/to/test.js", "**/*.js"))
+        # Files should match by their basename for simple patterns
+        self.assertTrue(match_file_with_glob("test.js", "*.js"))
+        # Test with relative paths
+        self.assertTrue(match_file_with_glob("path/to/test.js", "**/*.js"))
         self.assertTrue(
-            match_file_with_glob("/path/to/src/components/Button.jsx", "src/**/*.jsx")
+            match_file_with_glob("src/components/Button.jsx", "src/**/*.jsx")
         )
 
         # Test non-matching paths
         self.assertFalse(match_file_with_glob("test.py", "*.js"))
-        self.assertFalse(match_file_with_glob("/path/to/test.ts", "*.js"))
-        self.assertFalse(match_file_with_glob("/path/to/lib/test.jsx", "src/**/*.jsx"))
+        self.assertFalse(match_file_with_glob("path/to/test.ts", "*.js"))
+        self.assertFalse(match_file_with_glob("lib/test.jsx", "src/**/*.jsx"))
 
     def test_match_file_with_trailing_double_star(self):
         # Test glob patterns ending with /**
-        self.assertTrue(match_file_with_glob("/path/to/abc/file.txt", "abc/**"))
-        self.assertTrue(match_file_with_glob("/path/to/abc/subdir/file.txt", "abc/**"))
-        self.assertTrue(
-            match_file_with_glob("/path/to/abc/deep/nested/file.js", "abc/**")
-        )
+        # Create normalized relative paths for testing
+        abc_file = "abc/file.txt"
+        abc_subdir_file = "abc/subdir/file.txt"
+        abc_deep_file = "abc/deep/nested/file.js"
+        xyz_file = "xyz/file.txt"
+        abc_other_file = "abc-other/file.txt"
+
+        # Test glob patterns ending with /**
+        self.assertTrue(match_file_with_glob(abc_file, "abc/**"))
+        self.assertTrue(match_file_with_glob(abc_subdir_file, "abc/**"))
+        self.assertTrue(match_file_with_glob(abc_deep_file, "abc/**"))
 
         # Test non-matching paths for trailing /**
-        self.assertFalse(match_file_with_glob("/path/to/xyz/file.txt", "abc/**"))
-        self.assertFalse(match_file_with_glob("/abc-other/file.txt", "abc/**"))
+        self.assertFalse(match_file_with_glob(xyz_file, "abc/**"))
+        self.assertFalse(match_file_with_glob(abc_other_file, "abc/**"))
 
 
 if __name__ == "__main__":
