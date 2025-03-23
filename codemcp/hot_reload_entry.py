@@ -41,16 +41,10 @@ class HotReloadManager:
             # Create fresh queue for this run
             self._request_queue = Queue()
 
-            # Create an initialization future
-            init_future = asyncio.Future()
-
             # Create the task with explicit parameters
             self._task = asyncio.create_task(
-                self._run_manager_task(self._request_queue, init_future)
+                self._run_manager_task(self._request_queue)
             )
-
-            # Wait for the context to be fully initialized
-            await init_future
 
     async def stop(self) -> None:
         """Stop the background task and clean up resources."""
@@ -81,15 +75,12 @@ class HotReloadManager:
         # Wait for the response
         return await response_future
 
-    async def _run_manager_task(
-        self, request_queue: Queue, init_future: asyncio.Future
-    ) -> None:
+    async def _run_manager_task(self, request_queue: Queue) -> None:
         """
         Background task that owns and manages the async context managers lifecycle.
 
         Parameters:
             request_queue: Queue to receive commands from
-            init_future: Future to signal when initialization is complete
         """
         running = True
         try:
@@ -107,9 +98,6 @@ class HotReloadManager:
                 async with ClientSession(read, write) as session:
                     # Initialize the session
                     await session.initialize()
-
-                    # Signal that initialization is complete
-                    init_future.set_result(True)
 
                     # Process commands until told to stop
                     while running:
@@ -137,10 +125,8 @@ class HotReloadManager:
                             if "future" in locals() and not future.done():
                                 future.set_exception(e)
 
-        except Exception as e:
+        except Exception:
             logging.error("Error initializing hot reload context", exc_info=True)
-            if not init_future.done():
-                init_future.set_exception(e)
 
 
 # Global singleton manager
