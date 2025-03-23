@@ -95,9 +95,7 @@ async def codemcp(
                 f"Unknown subtool: {subtool}. Available subtools: {', '.join(expected_params.keys())}"
             )
 
-        # Handle string arguments - convert to a list with one element
-        if isinstance(arguments, str):
-            arguments = [arguments]
+        # We no longer need to convert string arguments to list since run_command now only accepts strings
 
         # Normalize string inputs to ensure consistent newlines
         def normalize_newlines(s):
@@ -222,7 +220,12 @@ async def codemcp(
             if command is None:
                 raise ValueError("command is required for RunCommand subtool")
 
-            return await run_command(path, command, arguments, chat_id)
+            return await run_command(
+                path,
+                command,
+                arguments,
+                chat_id,
+            )
 
         if subtool == "Grep":
             if pattern is None:
