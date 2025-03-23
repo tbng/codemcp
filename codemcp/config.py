@@ -19,6 +19,7 @@ __all__ = [
     "load_config",
     "get_logger_verbosity",
     "get_logger_path",
+    "get_line_endings_preference",
 ]
 
 # Default configuration values
@@ -26,6 +27,9 @@ DEFAULT_CONFIG = {
     "logger": {
         "verbosity": "INFO",  # Default logging level
         "path": str(Path.home() / ".codemcp"),  # Default logger path
+    },
+    "files": {
+        "line_endings": None,  # Default to OS native or based on configs
     },
 }
 
@@ -119,3 +123,14 @@ def get_logger_path() -> str:
     """
     config = load_config()
     return config["logger"]["path"]
+
+
+def get_line_endings_preference() -> str | None:
+    """Get the configured line endings preference.
+
+    Returns:
+        String representing the preferred line endings ('CRLF' or 'LF'), or None if not specified.
+
+    """
+    config = load_config()
+    return config["files"]["line_endings"]

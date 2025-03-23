@@ -10,7 +10,9 @@ from difflib import SequenceMatcher
 
 from ..common import get_edit_snippet
 from ..git import commit_changes
+from ..line_endings import detect_line_endings
 from .file_utils import (
+    async_open_text,
     check_file_path_and_permissions,
     check_git_tracking_for_existing_file,
     write_text_content,
@@ -22,7 +24,6 @@ logger = logging.getLogger(__name__)
 __all__ = [
     "edit_file_content",
     "detect_file_encoding",
-    "detect_line_endings",
     "find_similar_file",
 ]
 
@@ -37,24 +38,16 @@ async def detect_file_encoding(file_path: str) -> str:
         The encoding of the file, defaults to 'utf-8'
 
     """
-    from .async_file_utils import async_detect_encoding
+    if not os.path.exists(file_path):
+        return "utf-8"
 
-    return await async_detect_encoding(file_path)
-
-
-async def detect_line_endings(file_path: str) -> str:
-    """Detect the line endings of a file.
-
-    Args:
-        file_path: The path to the file
-
-    Returns:
-        'CRLF' or 'LF'
-
-    """
-    from .async_file_utils import async_detect_line_endings
-
-    return await async_detect_line_endings(file_path)
+    try:
+        # Try to read with utf-8 first
+        await async_open_text(file_path, encoding="utf-8")
+        return "utf-8"
+    except UnicodeDecodeError:
+        # If utf-8 fails, default to a more permissive encoding
+        return "latin-1"
 
 
 def find_similar_file(file_path: str) -> str | None:
@@ -97,8 +90,6 @@ async def apply_edit(
     """
     if os.path.exists(file_path):
         encoding = await detect_file_encoding(file_path)
-        from .async_file_utils import async_open_text
-
         content = await async_open_text(file_path, encoding=encoding)
     else:
         content = ""
@@ -730,11 +721,9 @@ async def edit_file_content(
 
     # Detect encoding and line endings
     encoding = await detect_file_encoding(full_file_path)
-    line_endings = await detect_line_endings(full_file_path)
+    line_endings = await detect_line_endings(full_file_path, return_format="format")
 
     # Read the original file
-    from .async_file_utils import async_open_text
-
     content = await async_open_text(full_file_path, encoding=encoding)
 
     # Check if old_string exists in the file
