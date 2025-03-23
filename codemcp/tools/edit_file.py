@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import asyncio
 import difflib
 import hashlib
 import logging
@@ -11,6 +12,7 @@ from difflib import SequenceMatcher
 from ..common import get_edit_snippet
 from ..git import commit_changes
 from .file_utils import (
+    async_open_text,
     check_file_path_and_permissions,
     check_git_tracking_for_existing_file,
     write_text_content,
