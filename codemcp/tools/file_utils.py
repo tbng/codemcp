@@ -50,6 +50,7 @@ async def check_git_tracking_for_existing_file(
 
     Args:
         file_path: The absolute path to the file
+        chat_id: The unique ID to identify the chat session
 
     Returns:
         A tuple of (success, error_message)
@@ -135,7 +136,7 @@ async def write_text_content(
     file_path: str,
     content: str,
     encoding: str = "utf-8",
-    line_endings: str = None,
+    line_endings: str | None = None,
 ) -> None:
     """Write text content to a file with specified encoding and line endings.
 
@@ -143,7 +144,8 @@ async def write_text_content(
         file_path: The path to the file
         content: The content to write
         encoding: The encoding to use
-        line_endings: The line endings to use ('CRLF', 'LF', '\r\n', or '\n')
+        line_endings: The line endings to use ('CRLF', 'LF', '\r\n', or '\n').
+                     If None, uses the system default.
     """
     # First normalize content to LF line endings
     normalized_content = normalize_to_lf(content)

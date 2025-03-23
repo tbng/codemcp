@@ -241,10 +241,9 @@ async def codemcp(
                     f"Found {result.get('numFiles', 0)} file(s)",
                 )
             except Exception as e:
-                logging.warning(
-                    f"Exception suppressed in grep subtool: {e!s}", exc_info=True
-                )
-                return f"Error executing grep: {e!s}"
+                # Log the error but don't suppress it - let it propagate
+                logging.error(f"Exception in grep subtool: {e!s}", exc_info=True)
+                raise
 
         if subtool == "Glob":
             if pattern is None:
@@ -266,10 +265,9 @@ async def codemcp(
                     f"Found {result.get('numFiles', 0)} file(s)",
                 )
             except Exception as e:
-                logging.warning(
-                    f"Exception suppressed in glob subtool: {e!s}", exc_info=True
-                )
-                return f"Error executing glob: {e!s}"
+                # Log the error but don't suppress it - let it propagate
+                logging.error(f"Exception in glob subtool: {e!s}", exc_info=True)
+                raise
 
         if subtool == "UserPrompt":
             if user_prompt is None:
