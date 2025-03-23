@@ -23,31 +23,8 @@ logger = logging.getLogger(__name__)
 
 __all__ = [
     "edit_file_content",
-    "detect_file_encoding",
     "find_similar_file",
 ]
-
-
-async def detect_file_encoding(file_path: str) -> str:
-    """Detect the encoding of a file.
-
-    Args:
-        file_path: The path to the file
-
-    Returns:
-        The encoding of the file, defaults to 'utf-8'
-
-    """
-    if not os.path.exists(file_path):
-        return "utf-8"
-
-    try:
-        # Try to read with utf-8 first
-        await async_open_text(file_path, encoding="utf-8")
-        return "utf-8"
-    except UnicodeDecodeError:
-        # If utf-8 fails, default to a more permissive encoding
-        return "latin-1"
 
 
 def find_similar_file(file_path: str) -> str | None:
@@ -89,8 +66,7 @@ async def apply_edit(
 
     """
     if os.path.exists(file_path):
-        encoding = await detect_file_encoding(file_path)
-        content = await async_open_text(file_path, encoding=encoding)
+        content = await async_open_text(file_path, encoding="utf-8")
     else:
         content = ""
 
@@ -719,12 +695,11 @@ async def edit_file_content(
                 "File has been modified since read, either by the user or by a linter. Read it again before attempting to write it."
             )
 
-    # Detect encoding and line endings
-    encoding = await detect_file_encoding(full_file_path)
+    # Use UTF-8 encoding and detect line endings
     line_endings = await detect_line_endings(full_file_path, return_format="format")
 
     # Read the original file
-    content = await async_open_text(full_file_path, encoding=encoding)
+    content = await async_open_text(full_file_path, encoding="utf-8")
 
     # Check if old_string exists in the file
     if old_string and old_string not in content:
@@ -769,7 +744,7 @@ async def edit_file_content(
     os.makedirs(directory, exist_ok=True)
 
     # Write the modified content back to the file
-    await write_text_content(full_file_path, updated_file, encoding, line_endings)
+    await write_text_content(full_file_path, updated_file, "utf-8", line_endings)
 
     # Update read timestamp
     if read_file_timestamps is not None:
