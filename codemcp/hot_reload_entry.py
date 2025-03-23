@@ -51,12 +51,18 @@ class HotReloadManager:
         if self._task and not self._task.done() and self._request_queue:
             # Create a future for the stop command
             stop_future = asyncio.Future()
-            await self._request_queue.put(("stop", None, stop_future))
-            await stop_future
-            await self._task
 
-            # Clear state
+            # Get a local reference to the queue and task before clearing
+            request_queue = self._request_queue
+            task = self._task
+
+            # Clear request_queue BEFORE any awaits to prevent race conditions
             self._request_queue = None
+
+            # Now it's safe to do awaits since new messages can't be added to self._request_queue
+            await request_queue.put(("stop", None, stop_future))
+            await stop_future
+            await task
 
     async def call_tool(self, **kwargs) -> str:
         """Call the codemcp tool in the subprocess."""
