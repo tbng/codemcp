@@ -4,18 +4,14 @@ import asyncio
 import logging
 import os
 
-import anyio
-
 from ..access import check_edit_permission
 from ..git import commit_changes
-from ..line_endings import apply_line_endings, normalize_to_lf
 
 __all__ = [
     "check_file_path_and_permissions",
     "check_git_tracking_for_existing_file",
     "ensure_directory_exists",
     "write_text_content",
-    "async_open_text",
 ]
 
 
@@ -108,29 +104,6 @@ def ensure_directory_exists(file_path: str) -> None:
         os.makedirs(directory, exist_ok=True)
 
 
-async def async_open_text(
-    file_path: str,
-    mode: str = "r",
-    encoding: str = "utf-8",
-    errors: str = "replace",
-) -> str:
-    """Asynchronously open and read a text file.
-
-    Args:
-        file_path: The path to the file
-        mode: The file open mode (default: 'r')
-        encoding: The text encoding (default: 'utf-8')
-        errors: How to handle encoding errors (default: 'replace')
-
-    Returns:
-        The file content as a string
-    """
-    async with await anyio.open_file(
-        file_path, mode, encoding=encoding, errors=errors
-    ) as f:
-        return await f.read()
-
-
 async def write_text_content(
     file_path: str,
     content: str,
@@ -144,12 +117,29 @@ async def write_text_content(
         content: The content to write
         encoding: The encoding to use
         line_endings: The line endings to use ('CRLF', 'LF', '\r\n', or '\n')
-    """
-    # First normalize content to LF line endings
-    normalized_content = normalize_to_lf(content)
 
-    # Apply the requested line ending
-    final_content = apply_line_endings(normalized_content, line_endings)
+    """
+    # Handle different line ending formats: string constants or actual characters
+    if isinstance(line_endings, str):
+        if line_endings.upper() == "CRLF":
+            actual_line_endings = "\r\n"
+        elif line_endings.upper() == "LF":
+            actual_line_endings = "\n"
+        else:
+            # Assume it's already the character sequence
+            actual_line_endings = line_endings
+    else:
+        # Default to system line endings if None
+        actual_line_endings = os.linesep
+
+    # First normalize all line endings to \n
+    normalized_content = content.replace("\r\n", "\n")
+
+    # Then replace with the desired line endings if different from \n
+    if actual_line_endings != "\n":
+        final_content = normalized_content.replace("\n", actual_line_endings)
+    else:
+        final_content = normalized_content
 
     # Ensure directory exists
     ensure_directory_exists(file_path)
