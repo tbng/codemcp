@@ -13,7 +13,6 @@ from unittest import mock
 from expecttest import TestCase
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
-import codemcp.hot_reload_entry
 
 
 class MCPEndToEndTestCase(TestCase, unittest.IsolatedAsyncioTestCase):
@@ -58,7 +57,6 @@ class MCPEndToEndTestCase(TestCase, unittest.IsolatedAsyncioTestCase):
         # Stop the environment patcher
         self.env_patcher.stop()
         self.temp_dir.cleanup()
-        await codemcp.hot_reload_entry.aexit()
 
     def init_git_repo(self):
         """Initialize a git repository for testing."""
