@@ -88,7 +88,6 @@ class HotReloadManager:
         Parameters:
             request_queue: Queue to receive commands from
         """
-        running = True
         try:
             # Setup stdio connection to main.py
             server_params = StdioServerParameters(
@@ -106,13 +105,12 @@ class HotReloadManager:
                     await session.initialize()
 
                     # Process commands until told to stop
-                    while running:
+                    while True:
                         try:
                             command, args, future = await request_queue.get()
 
                             if command == "stop":
                                 future.set_result(True)
-                                running = False
                                 break
 
                             if command == "call":
