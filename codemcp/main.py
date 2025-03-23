@@ -223,7 +223,7 @@ async def codemcp(
             return await run_command(
                 path,
                 command,
-                arguments[0] if isinstance(arguments, list) else arguments,
+                arguments,
                 chat_id,
             )
 

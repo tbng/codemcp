@@ -112,7 +112,7 @@ test = ["./run_test.sh"]
                     "subtool": "RunCommand",
                     "path": self.temp_dir.name,
                     "command": "test",
-                    "arguments": ["test_directory/test_another.py"],
+                    "arguments": "test_directory/test_another.py",
                     "chat_id": chat_id,
                 },
             )
