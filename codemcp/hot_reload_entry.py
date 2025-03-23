@@ -170,27 +170,14 @@ def run():
     logging.info("Starting codemcp with hot reload capability")
 
     try:
-        # Register cleanup function for when the event loop exits
-        loop = asyncio.get_event_loop()
-        loop.add_signal_handler(signal.SIGINT, lambda: asyncio.create_task(shutdown()))
-        loop.add_signal_handler(signal.SIGTERM, lambda: asyncio.create_task(shutdown()))
-
         # Run MCP server
         mcp.run()
     except KeyboardInterrupt:
         # Handle Ctrl+C gracefully
         logging.info("Received keyboard interrupt, shutting down...")
-        asyncio.run(shutdown())
-
-
-async def shutdown():
-    """Perform cleanup when shutting down."""
-    logging.info("Shutting down hot reload manager...")
-    await _MANAGER.stop()
-    logging.info("Hot reload manager shut down successfully")
+        # No need to explicitly run shutdown here - resources will be cleaned up
+        # when the program exits
 
 
 if __name__ == "__main__":
-    import signal
-
     run()
