@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import asyncio
-import contextlib
 import functools
 import logging
 import os
@@ -73,12 +72,8 @@ class HotReloadManager:
         return await response_future
 
     async def _run_manager_task(self) -> None:
-        """Background task that owns and manages the AsyncExitStack lifecycle."""
-        mgr = contextlib.AsyncExitStack()
+        """Background task that owns and manages the async context managers lifecycle."""
         try:
-            # Initialize the context
-            await mgr.__aenter__()
-
             # Setup stdio connection to main.py
             server_params = StdioServerParameters(
                 command=sys.executable,  # Use the same Python interpreter
@@ -88,35 +83,39 @@ class HotReloadManager:
                 env=os.environ.copy(),  # Pass current environment variables
             )
 
-            read, write = await mgr.enter_async_context(stdio_client(server_params))
-            self._session = await mgr.enter_async_context(ClientSession(read, write))
-            await self._session.initialize()
+            # Use nested async with statements to properly manage context
+            async with stdio_client(server_params) as (read, write):
+                async with ClientSession(read, write) as session:
+                    self._session = session
+                    await session.initialize()
 
-            # Signal that initialization is complete
-            self._init_future.set_result(True)
+                    # Signal that initialization is complete
+                    self._init_future.set_result(True)
 
-            # Process commands until told to stop
-            while self._running:
-                try:
-                    command, args, future = await self._request_queue.get()
-
-                    if command == "stop":
-                        future.set_result(True)
-                        break
-
-                    if command == "call" and self._session:
+                    # Process commands until told to stop
+                    while self._running:
                         try:
-                            result = await self._session.call_tool(
-                                "codemcp", arguments=args
-                            )
-                            future.set_result(result)
-                        except Exception as e:
-                            future.set_exception(e)
+                            command, args, future = await self._request_queue.get()
 
-                except Exception as e:
-                    logging.error("Error in hot reload manager task", exc_info=True)
-                    if "future" in locals() and not future.done():
-                        future.set_exception(e)
+                            if command == "stop":
+                                future.set_result(True)
+                                break
+
+                            if command == "call":
+                                try:
+                                    result = await session.call_tool(
+                                        "codemcp", arguments=args
+                                    )
+                                    future.set_result(result)
+                                except Exception as e:
+                                    future.set_exception(e)
+
+                        except Exception as e:
+                            logging.error(
+                                "Error in hot reload manager task", exc_info=True
+                            )
+                            if "future" in locals() and not future.done():
+                                future.set_exception(e)
 
         except Exception as e:
             logging.error("Error initializing hot reload context", exc_info=True)
@@ -124,11 +123,7 @@ class HotReloadManager:
                 self._init_future.set_exception(e)
 
         finally:
-            # Clean up resources properly
-            try:
-                await mgr.__aexit__(None, None, None)
-            except Exception:
-                logging.error("Error cleaning up hot reload context", exc_info=True)
+            # Resources are automatically cleaned up by async with blocks
             self._running = False
             self._session = None
 
