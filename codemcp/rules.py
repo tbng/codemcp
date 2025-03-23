@@ -81,7 +81,7 @@ def load_rule_from_file(file_path: str) -> Optional[Rule]:
         )
     except Exception as e:
         # If there's any error parsing the file, return None
-        print(f"Error loading rule from {file_path}: {e}")
+        logging.error(f"Error loading rule from {file_path}: {e}")
         return None
 
 

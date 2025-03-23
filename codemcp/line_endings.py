@@ -37,36 +37,35 @@ def normalize_to_lf(content: str) -> str:
     return normalized
 
 
-def apply_line_endings(content: str, line_ending: str) -> str:
+def apply_line_endings(content: str, line_ending: str | None) -> str:
     """Apply the specified line ending to the content.
 
     Args:
         content: The text content with LF line endings
         line_ending: The line ending to apply ('CRLF', 'LF', '\r\n', or '\n')
+                    If None, defaults to LF
 
     Returns:
         Text with specified line endings
     """
-    # Convert line ending format string to actual character sequence
-    if isinstance(line_ending, str):
-        if line_ending.upper() == "CRLF":
-            actual_line_ending = "\r\n"
-        elif line_ending.upper() == "LF":
-            actual_line_ending = "\n"
-        else:
-            # Assume it's already the character sequence
-            actual_line_ending = line_ending
-    else:
-        # Default to LF
+    # Default to LF if line_ending is None
+    if line_ending is None:
         actual_line_ending = "\n"
+    # Convert line ending format string to actual character sequence
+    elif line_ending.upper() == "CRLF":
+        actual_line_ending = "\r\n"
+    elif line_ending.upper() == "LF":
+        actual_line_ending = "\n"
+    else:
+        # Assume it's already the character sequence
+        actual_line_ending = line_ending
 
     # First normalize the content (ensure it uses only \n)
     normalized = normalize_to_lf(content)
 
     # Then replace with the specified line ending if it's not LF
     if actual_line_ending != "\n":
-        final_content = normalized.replace("\n", actual_line_ending)
-        return final_content
+        return normalized.replace("\n", actual_line_ending)
 
     return normalized
 
