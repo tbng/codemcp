@@ -375,7 +375,7 @@ Example:
 
 Runs a command.  This does NOT support arbitrary code execution, ONLY call
 with this set of valid commands: {command_help}
-When a single string is passed as arguments, it will be interpreted as space-separated
+The arguments parameter should be a string and will be interpreted as space-separated
 arguments using shell-style tokenization (spaces separate arguments, quotes can be used
 for arguments containing spaces, etc.).
 {_generate_command_docs(command_docs)}
@@ -391,7 +391,7 @@ Args:
     offset: Line offset for ReadFile subtool
     limit: Line limit for ReadFile subtool
     description: Short description of the change (for WriteFile/EditFile)
-    arguments: A list of string arguments for RunCommand subtool
+    arguments: A string containing space-separated arguments for RunCommand subtool
     user_prompt: The user's verbatim text (for UserPrompt subtool)
     chat_id: A unique ID to identify the chat session (required for all tools EXCEPT InitProject)
 
