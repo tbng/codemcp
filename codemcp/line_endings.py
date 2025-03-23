@@ -2,10 +2,11 @@
 
 """Module for line ending detection and handling."""
 
+import asyncio
 import os
 import re
 from pathlib import Path
-from typing import Optional
+from typing import Literal, Optional
 
 import tomli
 
@@ -13,6 +14,8 @@ __all__ = [
     "get_line_ending_preference",
     "normalize_to_lf",
     "apply_line_endings",
+    "detect_line_endings",
+    "detect_repo_line_endings",
 ]
 
 
@@ -315,3 +318,74 @@ def get_line_ending_preference(file_path: str) -> str:
 
     # Default to OS native line ending
     return os.linesep
+
+
+async def detect_line_endings(
+    file_path: str, return_format: Literal["str", "format"] = "str"
+) -> str:
+    """Detect the line endings of a file.
+
+    Args:
+        file_path: The path to the file
+        return_format: Return format - either "str" for actual characters ("\n" or "\r\n")
+                      or "format" for "LF" or "CRLF" strings
+
+    Returns:
+        The detected line endings ('\n' or '\r\n') or ('LF' or 'CRLF') based on return_format
+    """
+    if not os.path.exists(file_path):
+        line_ending = get_line_ending_preference(file_path)
+        return (
+            "LF"
+            if line_ending == "\n"
+            else "CRLF"
+            if return_format == "format"
+            else line_ending
+        )
+
+    loop = asyncio.get_event_loop()
+
+    def read_and_detect():
+        try:
+            with open(file_path, "rb") as f:
+                content = f.read(4096)  # Read a sample chunk
+                if b"\r\n" in content:
+                    return "CRLF" if return_format == "format" else "\r\n"
+                return "LF" if return_format == "format" else "\n"
+        except Exception:
+            # If there's an error reading the file, use the line ending preference
+            line_ending = get_line_ending_preference(file_path)
+            return (
+                "LF"
+                if line_ending == "\n"
+                else "CRLF"
+                if return_format == "format"
+                else line_ending
+            )
+
+    return await loop.run_in_executor(None, read_and_detect)
+
+
+def detect_repo_line_endings(
+    directory: str, return_format: Literal["str", "format"] = "str"
+) -> str:
+    """Detect the line endings to use for new files in a repository.
+
+    Args:
+        directory: The repository directory
+        return_format: Return format - either "str" for actual characters ("\n" or "\r\n")
+                      or "format" for "LF" or "CRLF" strings
+
+    Returns:
+        The line endings to use ('\n' or '\r\n') or ('LF' or 'CRLF') based on return_format
+    """
+    # Create a dummy path inside the directory to check configuration
+    dummy_path = os.path.join(directory, "dummy.txt")
+    line_ending = get_line_ending_preference(dummy_path)
+    return (
+        "LF"
+        if line_ending == "\n"
+        else "CRLF"
+        if return_format == "format"
+        else line_ending
+    )

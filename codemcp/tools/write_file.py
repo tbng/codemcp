@@ -4,7 +4,7 @@ import asyncio
 import os
 
 from ..git import commit_changes
-from ..line_endings import get_line_ending_preference
+from ..line_endings import detect_line_endings, detect_repo_line_endings
 from .file_utils import (
     check_file_path_and_permissions,
     check_git_tracking_for_existing_file,
@@ -14,8 +14,6 @@ from .file_utils import (
 __all__ = [
     "write_file_content",
     "detect_file_encoding",
-    "detect_line_endings",
-    "detect_repo_line_endings",
 ]
 
 
@@ -43,48 +41,6 @@ async def detect_file_encoding(file_path: str) -> str:
             return "utf-8"
 
     return await loop.run_in_executor(None, read_file_utf8)
-
-
-async def detect_line_endings(file_path: str) -> str:
-    """Detect the line endings of a file.
-
-    Args:
-        file_path: The path to the file
-
-    Returns:
-        The detected line endings ('\n' or '\r\n')
-    """
-    if not os.path.exists(file_path):
-        return get_line_ending_preference(file_path)
-
-    loop = asyncio.get_event_loop()
-
-    def read_and_detect():
-        try:
-            with open(file_path, "rb") as f:
-                content = f.read()
-            if b"\r\n" in content:
-                return "\r\n"
-            return "\n"
-        except Exception:
-            # If there's an error reading the file, use the line ending preference
-            return get_line_ending_preference(file_path)
-
-    return await loop.run_in_executor(None, read_and_detect)
-
-
-def detect_repo_line_endings(directory: str) -> str:
-    """Detect the line endings to use for new files in a repository.
-
-    Args:
-        directory: The repository directory
-
-    Returns:
-        The line endings to use ('\n' or '\r\n')
-    """
-    # Create a dummy path inside the directory to check configuration
-    dummy_path = os.path.join(directory, "dummy.txt")
-    return get_line_ending_preference(dummy_path)
 
 
 async def write_file_content(
