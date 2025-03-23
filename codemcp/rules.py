@@ -104,21 +104,20 @@ def match_file_with_glob(file_path: str, glob_pattern: str) -> bool:
     path = Path(file_path)
     normalized_path = str(path).replace(os.sep, "/")
 
-    # Get relative path if it's absolute
+    # File paths must be relative, not absolute
     # (since glob patterns typically use relative paths)
-    if os.path.isabs(normalized_path):
-        # Try to use just the filename if it's an absolute path
-        # This helps with simple patterns like *.js
-        file_name = path.name
+    assert not os.path.isabs(normalized_path), (
+        f"File path must be relative, got absolute path: {normalized_path}"
+    )
 
-        # Use the glob matcher from glob.py
-        # For filename-only patterns (without path separators)
-        if "/" not in glob_pattern:
-            result = glob_match(glob_pattern, file_name)
-            logging.debug(
-                f"Filename match: pattern='{glob_pattern}', file='{file_name}', result={result}"
-            )
-            return result
+    # For filename-only patterns (without path separators), we can match just the filename
+    if "/" not in glob_pattern:
+        file_name = path.name
+        result = glob_match(glob_pattern, file_name)
+        logging.debug(
+            f"Filename match: pattern='{glob_pattern}', file='{file_name}', result={result}"
+        )
+        return result
 
     # Use the glob matcher from glob.py for full path matching
     # Cursor rules use vanilla glob patterns (not editorconfig features)
@@ -207,7 +206,17 @@ def find_applicable_rules(
                                 logging.debug(
                                     f"Testing glob pattern: {glob_pattern} against file: {file_path}"
                                 )
-                                if match_file_with_glob(file_path, glob_pattern):
+                                # Convert absolute path to relative path if needed
+                                rel_file_path = file_path
+                                if os.path.isabs(file_path):
+                                    rel_file_path = os.path.relpath(
+                                        file_path, repo_root
+                                    )
+                                    logging.debug(
+                                        f"Converting absolute path to relative: {file_path} → {rel_file_path}"
+                                    )
+
+                                if match_file_with_glob(rel_file_path, glob_pattern):
                                     logging.debug(
                                         f"Glob pattern matched: {glob_pattern}"
                                     )
