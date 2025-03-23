@@ -34,8 +34,8 @@ class HotReloadManager:
 
     def __init__(self):
         self._task: Optional[Task] = None
-        self._command_queue: Queue = Queue()
-        self._response_queue: Queue = Queue()
+        self._request_queue: Queue = Queue()
+        self._init_future: Optional[asyncio.Future] = None
         self._running = False
         self._session: Optional[ClientSession] = None
 
@@ -43,15 +43,19 @@ class HotReloadManager:
         """Start the background task if not already running."""
         if self._task is None or self._task.done():
             self._running = True
+            self._init_future = asyncio.Future()
             self._task = asyncio.create_task(self._run_manager_task())
             # Wait for the context to be fully initialized
-            await self._response_queue.get()
+            await self._init_future
 
     async def stop(self) -> None:
         """Stop the background task and clean up resources."""
         if self._task and not self._task.done():
             self._running = False
-            await self._command_queue.put(("stop", None))
+            # Create a future for the stop command
+            stop_future = asyncio.Future()
+            await self._request_queue.put(("stop", None, stop_future))
+            await stop_future
             await self._task
 
     async def call_tool(self, **kwargs) -> str:
@@ -59,12 +63,14 @@ class HotReloadManager:
         if not self._running:
             await self.start()
 
-        await self._command_queue.put(("call", kwargs))
-        result = await self._response_queue.get()
+        # Create a future for this specific request
+        response_future = asyncio.Future()
 
-        if isinstance(result, Exception):
-            raise result
-        return result
+        # Send the request and its associated future to the manager task
+        await self._request_queue.put(("call", kwargs, response_future))
+
+        # Wait for the response
+        return await response_future
 
     async def _run_manager_task(self) -> None:
         """Background task that owns and manages the AsyncExitStack lifecycle."""
@@ -87,29 +93,35 @@ class HotReloadManager:
             await self._session.initialize()
 
             # Signal that initialization is complete
-            await self._response_queue.put("initialized")
+            self._init_future.set_result(True)
 
             # Process commands until told to stop
             while self._running:
                 try:
-                    command, args = await self._command_queue.get()
+                    command, args, future = await self._request_queue.get()
 
                     if command == "stop":
+                        future.set_result(True)
                         break
 
                     if command == "call" and self._session:
-                        result = await self._session.call_tool(
-                            "codemcp", arguments=args
-                        )
-                        await self._response_queue.put(result)
+                        try:
+                            result = await self._session.call_tool(
+                                "codemcp", arguments=args
+                            )
+                            future.set_result(result)
+                        except Exception as e:
+                            future.set_exception(e)
 
                 except Exception as e:
                     logging.error("Error in hot reload manager task", exc_info=True)
-                    await self._response_queue.put(e)
+                    if "future" in locals() and not future.done():
+                        future.set_exception(e)
 
         except Exception as e:
             logging.error("Error initializing hot reload context", exc_info=True)
-            await self._response_queue.put(e)
+            if self._init_future and not self._init_future.done():
+                self._init_future.set_exception(e)
 
         finally:
             # Clean up resources properly
