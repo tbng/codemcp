@@ -19,6 +19,8 @@ project_prompt = '''
   the assert. Instead, try to reason about what bug could be causing the
   invariant to be violated. If you can't figure it out, ask the user to help
   and halt.
+- End-to-end tests which call into codemcp function go in e2e/; unit tests for
+  purely functional code go in tests/
 '''
 
 [commands]
