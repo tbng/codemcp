@@ -35,6 +35,41 @@ class HotReloadManager:
     def __init__(self):
         self._task: Optional[Task] = None
         self._request_queue: Optional[Queue] = None
+        self._hot_reload_file = os.path.join(
+            os.path.dirname(os.path.dirname(__file__)), ".hot_reload"
+        )
+        self._last_hot_reload_mtime: Optional[float] = None
+        self._check_hot_reload_file()
+
+    def _check_hot_reload_file(self) -> bool:
+        """
+        Check if the .hot_reload file exists and if its mtime has changed.
+        Returns True if a reload should be triggered, False otherwise.
+        """
+        if not os.path.exists(self._hot_reload_file):
+            # If the file doesn't exist now but did before, we should reload
+            if self._last_hot_reload_mtime is not None:
+                logging.info("Hot reload file removed, triggering reload")
+                self._last_hot_reload_mtime = None
+                return True
+            return False
+
+        current_mtime = os.path.getmtime(self._hot_reload_file)
+
+        # If we haven't recorded an mtime yet, store it and don't reload
+        if self._last_hot_reload_mtime is None:
+            self._last_hot_reload_mtime = current_mtime
+            return False
+
+        # If the mtime has changed, trigger a reload
+        if current_mtime > self._last_hot_reload_mtime:
+            logging.info(
+                f"Hot reload file modified, triggering reload (mtime: {current_mtime})"
+            )
+            self._last_hot_reload_mtime = current_mtime
+            return True
+
+        return False
 
     async def start(self) -> None:
         """Start the background task if not already running."""
@@ -69,6 +104,16 @@ class HotReloadManager:
 
     async def call_tool(self, **kwargs) -> str:
         """Call the codemcp tool in the subprocess."""
+        # Check if we need to reload based on .hot_reload file
+        if (
+            self._check_hot_reload_file()
+            and self._task is not None
+            and not self._task.done()
+        ):
+            logging.info("Stopping hot reload manager due to .hot_reload file change")
+            await self.stop()
+
+        # Start if needed
         if self._task is None or self._task.done() or self._request_queue is None:
             await self.start()
 
