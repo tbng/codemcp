@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import asyncio
 import os
 
 from ..git import commit_changes
@@ -13,34 +12,7 @@ from .file_utils import (
 
 __all__ = [
     "write_file_content",
-    "detect_file_encoding",
 ]
-
-
-async def detect_file_encoding(file_path: str) -> str:
-    """Detect the encoding of a file.
-
-    Args:
-        file_path: The path to the file
-
-    Returns:
-        The detected encoding, defaulting to 'utf-8'
-
-    """
-    # Simple implementation - in a real-world scenario, you might use chardet or similar
-    loop = asyncio.get_event_loop()
-
-    def read_file_utf8():
-        try:
-            with open(file_path, encoding="utf-8") as f:
-                f.read()
-            return "utf-8"
-        except UnicodeDecodeError:
-            return "latin-1"  # A safe fallback
-        except FileNotFoundError:
-            return "utf-8"
-
-    return await loop.run_in_executor(None, read_file_utf8)
 
 
 async def write_file_content(
@@ -75,9 +47,8 @@ async def write_file_content(
     if not is_tracked:
         raise ValueError(track_error)
 
-    # Determine encoding and line endings
+    # Determine line endings
     old_file_exists = os.path.exists(file_path)
-    encoding = await detect_file_encoding(file_path) if old_file_exists else "utf-8"
 
     if old_file_exists:
         line_endings = await detect_line_endings(file_path)
@@ -87,8 +58,8 @@ async def write_file_content(
         directory = os.path.dirname(file_path)
         os.makedirs(directory, exist_ok=True)
 
-    # Write the content with proper encoding and line endings
-    await write_text_content(file_path, content, encoding, line_endings)
+    # Write the content with UTF-8 encoding and proper line endings
+    await write_text_content(file_path, content, "utf-8", line_endings)
 
     # Commit the changes
     git_message = ""
