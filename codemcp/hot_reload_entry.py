@@ -34,35 +34,27 @@ class HotReloadManager:
     def __init__(self):
         self._task: Optional[Task] = None
         self._request_queue: Optional[Queue] = None
-        self._init_future: Optional[asyncio.Future] = None
-        self._running = False
-        self._session: Optional[ClientSession] = None
 
     async def start(self) -> None:
         """Start the background task if not already running."""
         if self._task is None or self._task.done():
-            # Create fresh state for this run
-            self._running = True
+            # Create fresh queue for this run
             self._request_queue = Queue()
-            self._init_future = asyncio.Future()
 
-            # Start task with explicit parameters to avoid accessing self
-            request_queue = self._request_queue
-            init_future = self._init_future
+            # Create an initialization future
+            init_future = asyncio.Future()
 
             # Create the task with explicit parameters
             self._task = asyncio.create_task(
-                self._run_manager_task(request_queue, init_future)
+                self._run_manager_task(self._request_queue, init_future)
             )
 
             # Wait for the context to be fully initialized
-            await self._init_future
+            await init_future
 
     async def stop(self) -> None:
         """Stop the background task and clean up resources."""
         if self._task and not self._task.done() and self._request_queue:
-            self._running = False
-
             # Create a future for the stop command
             stop_future = asyncio.Future()
             await self._request_queue.put(("stop", None, stop_future))
@@ -71,12 +63,10 @@ class HotReloadManager:
 
             # Clear state
             self._request_queue = None
-            self._init_future = None
-            self._session = None
 
     async def call_tool(self, **kwargs) -> str:
         """Call the codemcp tool in the subprocess."""
-        if not self._running or not self._request_queue:
+        if self._task is None or self._task.done() or self._request_queue is None:
             await self.start()
 
         # Create a future for this specific request
@@ -101,7 +91,6 @@ class HotReloadManager:
             request_queue: Queue to receive commands from
             init_future: Future to signal when initialization is complete
         """
-        session = None
         running = True
         try:
             # Setup stdio connection to main.py
@@ -116,15 +105,14 @@ class HotReloadManager:
             # Use nested async with statements to properly manage context
             async with stdio_client(server_params) as (read, write):
                 async with ClientSession(read, write) as session:
-                    # Store the session in self for monitoring/debugging
-                    self._session = session
+                    # Initialize the session
                     await session.initialize()
 
                     # Signal that initialization is complete
                     init_future.set_result(True)
 
                     # Process commands until told to stop
-                    while running and self._running:
+                    while running:
                         try:
                             command, args, future = await request_queue.get()
 
@@ -153,10 +141,6 @@ class HotReloadManager:
             logging.error("Error initializing hot reload context", exc_info=True)
             if not init_future.done():
                 init_future.set_exception(e)
-
-        finally:
-            # Resources are automatically cleaned up by async with blocks
-            self._session = None
 
 
 # Global singleton manager
