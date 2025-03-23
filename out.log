@@ -1,0 +1,312 @@
+test_hot_reload_with_parameters (__main__.TestHotReloadEntry.test_hot_reload_with_parameters)
+Test that the hot reload mechanism properly passes parameters to the main module. ... [main (root-commit) ced5740] Initial commit
+ Author: A U Thor <author@example.com>
+ 2 files changed, 1 insertion(+)
+ create mode 100644 README.md
+ create mode 100644 codemcp.toml
+[03/23/25 08:27:44] INFO     execute program 'git': <_UnixSubprocessTransport pid=39673 running>                                            base_events.py:1760
+                    INFO     <_UnixSubprocessTransport pid=39673 running> exited with return code 0                                      base_subprocess.py:211
+                    INFO     execute program 'git': <_UnixSubprocessTransport pid=39674 running>                                            base_events.py:1760
+[main 95a70a8] Add params test file
+ Author: A U Thor <author@example.com>
+ 1 file changed, 2 insertions(+)
+ create mode 100644 params_test.txt
+                    INFO     <_UnixSubprocessTransport pid=39674 running> exited with return code 0                                      base_subprocess.py:211
+                    INFO     Running command: git rev-parse --show-toplevel                                                                         shell.py:58
+                    INFO     execute program 'git': <_UnixSubprocessTransport pid=39677 running stdout=<_UnixReadPipeTransport fd=6         base_events.py:1760
+                             polling> stderr=<_UnixReadPipeTransport fd=8 polling>>                                                                            
+                    INFO     <_UnixReadPipeTransport fd=8 polling> was closed by peer                                                        unix_events.py:535
+                    INFO     <_UnixReadPipeTransport fd=6 polling> was closed by peer                                                        unix_events.py:535
+                    INFO     <_UnixSubprocessTransport pid=39677 running stdout=<_UnixReadPipeTransport closed fd=6 closed>              base_subprocess.py:211
+                             stderr=<_UnixReadPipeTransport closed fd=8 closed>> exited with return code 0                                                     
+                    INFO     Running command: git rev-parse --show-toplevel                                                                         shell.py:58
+                    INFO     execute program 'git': <_UnixSubprocessTransport pid=39678 running stdout=<_UnixReadPipeTransport fd=6         base_events.py:1760
+                             polling> stderr=<_UnixReadPipeTransport fd=8 polling>>                                                                            
+                    INFO     <_UnixReadPipeTransport fd=8 polling> was closed by peer                                                        unix_events.py:535
+                    INFO     <_UnixReadPipeTransport fd=6 polling> was closed by peer                                                        unix_events.py:535
+                    INFO     <_UnixSubprocessTransport pid=39678 running stdout=<_UnixReadPipeTransport closed fd=6 closed>              base_subprocess.py:211
+                             stderr=<_UnixReadPipeTransport closed fd=8 closed>> exited with return code 0                                                     
+                    INFO     Running command: git rev-parse --show-toplevel                                                                         shell.py:58
+                    INFO     execute program 'git': <_UnixSubprocessTransport pid=39679 running stdout=<_UnixReadPipeTransport fd=6         base_events.py:1760
+                             polling> stderr=<_UnixReadPipeTransport fd=8 polling>>                                                                            
+                    INFO     <_UnixReadPipeTransport fd=8 polling> was closed by peer                                                        unix_events.py:535
+                    INFO     <_UnixReadPipeTransport fd=6 polling> was closed by peer                                                        unix_events.py:535
+                    INFO     <_UnixSubprocessTransport pid=39679 running stdout=<_UnixReadPipeTransport closed fd=6 closed>              base_subprocess.py:211
+                             stderr=<_UnixReadPipeTransport closed fd=8 closed>> exited with return code 0                                                     
+                    INFO     Running command: git rev-parse --show-toplevel                                                                         shell.py:58
+                    INFO     execute program 'git': <_UnixSubprocessTransport pid=39680 running stdout=<_UnixReadPipeTransport fd=6         base_events.py:1760
+                             polling> stderr=<_UnixReadPipeTransport fd=8 polling>>                                                                            
+                    INFO     <_UnixReadPipeTransport fd=8 polling> was closed by peer                                                        unix_events.py:535
+                    INFO     <_UnixReadPipeTransport fd=6 polling> was closed by peer                                                        unix_events.py:535
+                    INFO     <_UnixSubprocessTransport pid=39680 running stdout=<_UnixReadPipeTransport closed fd=6 closed>              base_subprocess.py:211
+                             stderr=<_UnixReadPipeTransport closed fd=8 closed>> exited with return code 0                                                     
+                    INFO     Running command: git rev-parse --show-toplevel                                                                         shell.py:58
+                    INFO     execute program 'git': <_UnixSubprocessTransport pid=39681 running stdout=<_UnixReadPipeTransport fd=6         base_events.py:1760
+                             polling> stderr=<_UnixReadPipeTransport fd=8 polling>>                                                                            
+                    INFO     <_UnixReadPipeTransport fd=8 polling> was closed by peer                                                        unix_events.py:535
+                    INFO     <_UnixReadPipeTransport fd=6 polling> was closed by peer                                                        unix_events.py:535
+                    INFO     <_UnixSubprocessTransport pid=39681 running stdout=<_UnixReadPipeTransport closed fd=6 closed>              base_subprocess.py:211
+                             stderr=<_UnixReadPipeTransport closed fd=8 closed>> exited with return code 0                                                     
+                    INFO     Running command: git rev-parse --verify HEAD                                                                           shell.py:58
+                    INFO     execute program 'git': <_UnixSubprocessTransport pid=39682 running stdout=<_UnixReadPipeTransport fd=6         base_events.py:1760
+                             polling> stderr=<_UnixReadPipeTransport fd=8 polling>>                                                                            
+                    INFO     <_UnixReadPipeTransport fd=8 polling> was closed by peer                                                        unix_events.py:535
+                    INFO     <_UnixReadPipeTransport fd=6 polling> was closed by peer                                                        unix_events.py:535
+                    INFO     <_UnixSubprocessTransport pid=39682 running stdout=<_UnixReadPipeTransport closed fd=6 closed>              base_subprocess.py:211
+                             stderr=<_UnixReadPipeTransport closed fd=8 closed>> exited with return code 0                                                     
+                    INFO     Running command: git show -s --format=%T HEAD                                                                          shell.py:58
+                    INFO     execute program 'git': <_UnixSubprocessTransport pid=39683 running stdout=<_UnixReadPipeTransport fd=6         base_events.py:1760
+                             polling> stderr=<_UnixReadPipeTransport fd=8 polling>>                                                                            
+                    INFO     <_UnixReadPipeTransport fd=8 polling> was closed by peer                                                        unix_events.py:535
+                    INFO     <_UnixReadPipeTransport fd=6 polling> was closed by peer                                                        unix_events.py:535
+                    INFO     <_UnixSubprocessTransport pid=39683 running stdout=<_UnixReadPipeTransport closed fd=6 closed>              base_subprocess.py:211
+                             stderr=<_UnixReadPipeTransport closed fd=8 closed>> exited with return code 0                                                     
+                    INFO     Running command: git rev-parse HEAD                                                                                    shell.py:58
+                    INFO     execute program 'git': <_UnixSubprocessTransport pid=39684 running stdout=<_UnixReadPipeTransport fd=6         base_events.py:1760
+                             polling> stderr=<_UnixReadPipeTransport fd=8 polling>>                                                                            
+                    INFO     <_UnixReadPipeTransport fd=8 polling> was closed by peer                                                        unix_events.py:535
+                    INFO     <_UnixReadPipeTransport fd=6 polling> was closed by peer                                                        unix_events.py:535
+                    INFO     <_UnixSubprocessTransport pid=39684 running stdout=<_UnixReadPipeTransport closed fd=6 closed>              base_subprocess.py:211
+                             stderr=<_UnixReadPipeTransport closed fd=8 closed>> exited with return code 0                                                     
+                    INFO     Running command: git commit-tree --no-gpg-sign b151a5fe4ee5f1257847511e4abdea105c4c63e1 -p                             shell.py:58
+                             95a70a8213a6b36200e568b1cb654ac542b8b045 -m test: initialize for e2e testing                                                      
+                                                                                                                                                               
+                             Test initialization for get_chat_id                                                                                               
+                                                                                                                                                               
+                             codemcp-id: 1-test-initialize-for-e2e-testing                                                                                     
+                    INFO     execute program 'git': <_UnixSubprocessTransport pid=39685 running stdout=<_UnixReadPipeTransport fd=6         base_events.py:1760
+                             polling> stderr=<_UnixReadPipeTransport fd=8 polling>>                                                                            
+                    INFO     <_UnixReadPipeTransport fd=8 polling> was closed by peer                                                        unix_events.py:535
+                    INFO     <_UnixReadPipeTransport fd=6 polling> was closed by peer                                                        unix_events.py:535
+                    INFO     <_UnixSubprocessTransport pid=39685 running stdout=<_UnixReadPipeTransport closed fd=6 closed>              base_subprocess.py:211
+                             stderr=<_UnixReadPipeTransport closed fd=8 closed>> exited with return code 0                                                     
+                    INFO     Running command: git update-ref refs/codemcp/1-test-initialize-for-e2e-testing                                         shell.py:58
+                             0085dbb4aaf59bb61810c97b14d4336c02e019cc                                                                                          
+                    INFO     execute program 'git': <_UnixSubprocessTransport pid=39686 running stdout=<_UnixReadPipeTransport fd=6         base_events.py:1760
+                             polling> stderr=<_UnixReadPipeTransport fd=8 polling>>                                                                            
+                    INFO     <_UnixReadPipeTransport fd=8 polling> was closed by peer                                                        unix_events.py:535
+                    INFO     <_UnixReadPipeTransport fd=6 polling> was closed by peer                                                        unix_events.py:535
+                    INFO     <_UnixSubprocessTransport pid=39686 running stdout=<_UnixReadPipeTransport closed fd=6 closed>              base_subprocess.py:211
+                             stderr=<_UnixReadPipeTransport closed fd=8 closed>> exited with return code 0                                                     
+2025-03-23 08:27:44,879 - root - INFO - Logging configured. Log file: /Users/ezyang/.codemcp/codemcp_hot_reload.log
+2025-03-23 08:27:44,879 - root - INFO - Log level set to: DEBUG
+2025-03-23 08:27:44,880 - root - INFO - Logs from 'mcp' module are being filtered
+2025-03-23 08:27:44,880 - asyncio - DEBUG - execute program '/Users/ezyang/Dev/codemcp/.venv/bin/python' stdin=<pipe> stdout=<pipe> stderr=<_io.TextIOWrapper name='<stderr>' mode='w' encoding='utf-8'>
+2025-03-23 08:27:44,881 - asyncio - DEBUG - process '/Users/ezyang/Dev/codemcp/.venv/bin/python' created: pid 39687
+2025-03-23 08:27:44,882 - asyncio - DEBUG - Write pipe 8 connected: (<_UnixWritePipeTransport fd=8 idle bufsize=0>, <WriteSubprocessPipeProto fd=0 pipe=<_UnixWritePipeTransport fd=8 idle bufsize=0>>)
+2025-03-23 08:27:44,882 - asyncio - DEBUG - Read pipe 9 connected: (<_UnixReadPipeTransport fd=9 polling>, <ReadSubprocessPipeProto fd=1 pipe=<_UnixReadPipeTransport fd=9 polling>>)
+2025-03-23 08:27:44,882 - asyncio - INFO - execute program '/Users/ezyang/Dev/codemcp/.venv/bin/python': <_UnixSubprocessTransport pid=39687 running stdin=<_UnixWritePipeTransport fd=8 idle bufsize=0> stdout=<_UnixReadPipeTransport fd=9 polling>>
+2025-03-23 08:27:45,029 - root - INFO - Logging configured. Log file: /Users/ezyang/.codemcp/codemcp.log
+2025-03-23 08:27:45,029 - root - INFO - Log level set to: DEBUG
+2025-03-23 08:27:45,029 - root - INFO - Logs from 'mcp' module are being filtered
+2025-03-23 08:27:45,030 - asyncio - DEBUG - Using selector: KqueueSelector
+/Users/ezyang/Dev/codemcp/.venv/lib/python3.12/site-packages/anyio/streams/memory.py:183: ResourceWarning: Unclosed <MemoryObjectReceiveStream at 1037d7c20>
+  warnings.warn(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+2025-03-23 08:27:45,034 - root - DEBUG - Using existing directory for git operation: /var/folders/zp/xff7r1c96vj9b2f375x9r0340000gn/T/tmp27hb_24y
+2025-03-23 08:27:45,034 - root - INFO - Running command: git rev-parse --show-toplevel
+2025-03-23 08:27:45,039 - root - DEBUG - Command stdout: /private/var/folders/zp/xff7r1c96vj9b2f375x9r0340000gn/T/tmp27hb_24y
+
+2025-03-23 08:27:45,039 - root - DEBUG - Command return code: 0
+2025-03-23 08:27:45,039 - root - DEBUG - Git base directory: /private/var/folders/zp/xff7r1c96vj9b2f375x9r0340000gn/T/tmp27hb_24y
+2025-03-23 08:27:45,039 - root - INFO - Running command: git ls-files --error-unmatch /var/folders/zp/xff7r1c96vj9b2f375x9r0340000gn/T/tmp27hb_24y/params_test.txt
+2025-03-23 08:27:45,043 - root - DEBUG - Command stdout: params_test.txt
+
+2025-03-23 08:27:45,043 - root - DEBUG - Command return code: 0
+2025-03-23 08:27:45,043 - codemcp.git_commit - DEBUG - commit_changes(/var/folders/zp/xff7r1c96vj9b2f375x9r0340000gn/T/tmp27hb_24y/params_test.txt, Snapshot before codemcp change, 1-test-initialize-for-e2e-testing, commit_all=False)
+2025-03-23 08:27:45,043 - root - DEBUG - Using existing directory for git operation: /var/folders/zp/xff7r1c96vj9b2f375x9r0340000gn/T/tmp27hb_24y
+2025-03-23 08:27:45,043 - root - INFO - Running command: git rev-parse --show-toplevel
+2025-03-23 08:27:45,046 - root - DEBUG - Command stdout: /private/var/folders/zp/xff7r1c96vj9b2f375x9r0340000gn/T/tmp27hb_24y
+
+2025-03-23 08:27:45,047 - root - DEBUG - Command return code: 0
+2025-03-23 08:27:45,047 - root - DEBUG - Using existing directory for git operation: /var/folders/zp/xff7r1c96vj9b2f375x9r0340000gn/T/tmp27hb_24y
+2025-03-23 08:27:45,047 - root - INFO - Running command: git rev-parse --show-toplevel
+2025-03-23 08:27:45,050 - root - DEBUG - Command stdout: /private/var/folders/zp/xff7r1c96vj9b2f375x9r0340000gn/T/tmp27hb_24y
+
+2025-03-23 08:27:45,050 - root - DEBUG - Command return code: 0
+2025-03-23 08:27:45,050 - root - INFO - Running command: git add /var/folders/zp/xff7r1c96vj9b2f375x9r0340000gn/T/tmp27hb_24y/params_test.txt
+2025-03-23 08:27:45,054 - root - DEBUG - Command return code: 0
+2025-03-23 08:27:45,054 - root - INFO - Running command: git diff-index --cached --quiet HEAD
+2025-03-23 08:27:45,059 - root - DEBUG - Command return code: 0
+2025-03-23 08:27:45,059 - root - DEBUG - Pending changes status: No changes to commit (changes already committed or no changes detected)
+2025-03-23 08:27:45,060 - codemcp.git_commit - DEBUG - commit_changes(/var/folders/zp/xff7r1c96vj9b2f375x9r0340000gn/T/tmp27hb_24y/params_test.txt, Write test through hot reload, 1-test-initialize-for-e2e-testing, commit_all=False)
+2025-03-23 08:27:45,060 - root - DEBUG - Using existing directory for git operation: /var/folders/zp/xff7r1c96vj9b2f375x9r0340000gn/T/tmp27hb_24y
+2025-03-23 08:27:45,060 - root - INFO - Running command: git rev-parse --show-toplevel
+2025-03-23 08:27:45,063 - root - DEBUG - Command stdout: /private/var/folders/zp/xff7r1c96vj9b2f375x9r0340000gn/T/tmp27hb_24y
+
+2025-03-23 08:27:45,064 - root - DEBUG - Command return code: 0
+2025-03-23 08:27:45,064 - root - DEBUG - Using existing directory for git operation: /var/folders/zp/xff7r1c96vj9b2f375x9r0340000gn/T/tmp27hb_24y
+2025-03-23 08:27:45,064 - root - INFO - Running command: git rev-parse --show-toplevel
+2025-03-23 08:27:45,068 - root - DEBUG - Command stdout: /private/var/folders/zp/xff7r1c96vj9b2f375x9r0340000gn/T/tmp27hb_24y
+
+2025-03-23 08:27:45,068 - root - DEBUG - Command return code: 0
+2025-03-23 08:27:45,068 - root - INFO - Running command: git add /var/folders/zp/xff7r1c96vj9b2f375x9r0340000gn/T/tmp27hb_24y/params_test.txt
+2025-03-23 08:27:45,073 - root - DEBUG - Command return code: 0
+2025-03-23 08:27:45,074 - root - INFO - Running command: git diff-index --cached --quiet HEAD
+2025-03-23 08:27:45,078 - root - DEBUG - Command return code: 1
+2025-03-23 08:27:45,078 - root - INFO - Running command: git log -1 --pretty=%B
+2025-03-23 08:27:45,083 - root - DEBUG - Command stdout: Add params test file
+
+
+2025-03-23 08:27:45,083 - root - DEBUG - Command return code: 0
+2025-03-23 08:27:45,083 - root - DEBUG - commit_changes: head_chat_id = None
+2025-03-23 08:27:45,083 - root - INFO - Running command: git show-ref --verify refs/codemcp/1-test-initialize-for-e2e-testing
+2025-03-23 08:27:45,087 - root - DEBUG - Command stdout: 0085dbb4aaf59bb61810c97b14d4336c02e019cc refs/codemcp/1-test-initialize-for-e2e-testing
+
+2025-03-23 08:27:45,087 - root - DEBUG - Command return code: 0
+2025-03-23 08:27:45,087 - root - INFO - Creating a new commit from reference refs/codemcp/1-test-initialize-for-e2e-testing
+2025-03-23 08:27:45,087 - root - INFO - Running command: git rev-parse HEAD
+2025-03-23 08:27:45,091 - root - DEBUG - Command stdout: 95a70a8213a6b36200e568b1cb654ac542b8b045
+
+2025-03-23 08:27:45,091 - root - DEBUG - Command return code: 0
+2025-03-23 08:27:45,091 - root - INFO - Running command: git show -s --format=%T HEAD
+2025-03-23 08:27:45,095 - root - DEBUG - Command stdout: b151a5fe4ee5f1257847511e4abdea105c4c63e1
+
+2025-03-23 08:27:45,095 - root - DEBUG - Command return code: 0
+2025-03-23 08:27:45,095 - root - INFO - Running command: git log -1 --pretty=%B refs/codemcp/1-test-initialize-for-e2e-testing
+2025-03-23 08:27:45,099 - root - DEBUG - Command stdout: test: initialize for e2e testing
+
+Test initialization for get_chat_id
+
+codemcp-id: 1-test-initialize-for-e2e-testing
+
+
+2025-03-23 08:27:45,099 - root - DEBUG - Command return code: 0
+2025-03-23 08:27:45,099 - root - INFO - Running command: git commit-tree --no-gpg-sign b151a5fe4ee5f1257847511e4abdea105c4c63e1 -p 95a70a8213a6b36200e568b1cb654ac542b8b045 -m test: initialize for e2e testing
+
+Test initialization for get_chat_id
+
+codemcp-id: 1-test-initialize-for-e2e-testing
+2025-03-23 08:27:45,104 - root - DEBUG - Command stdout: fd268c5f8883b8900fccc58488bd4f7999ebba4b
+
+2025-03-23 08:27:45,104 - root - DEBUG - Command return code: 0
+2025-03-23 08:27:45,104 - root - INFO - Running command: git update-ref HEAD fd268c5f8883b8900fccc58488bd4f7999ebba4b
+2025-03-23 08:27:45,110 - root - DEBUG - Command return code: 0
+2025-03-23 08:27:45,110 - root - INFO - Successfully applied reference commit for chat ID 1-test-initialize-for-e2e-testing
+2025-03-23 08:27:45,110 - root - INFO - Running command: git log -1 --pretty=%B
+2025-03-23 08:27:45,114 - root - DEBUG - Command stdout: test: initialize for e2e testing
+
+Test initialization for get_chat_id
+
+codemcp-id: 1-test-initialize-for-e2e-testing
+
+
+2025-03-23 08:27:45,114 - root - DEBUG - Command return code: 0
+2025-03-23 08:27:45,114 - root - INFO - Running command: git rev-parse --short HEAD
+2025-03-23 08:27:45,118 - root - DEBUG - Command stdout: fd268c5
+
+2025-03-23 08:27:45,119 - root - DEBUG - Command return code: 0
+2025-03-23 08:27:45,119 - root - INFO - Running command: git log -1 --pretty=%B
+2025-03-23 08:27:45,123 - root - DEBUG - Command stdout: test: initialize for e2e testing
+
+Test initialization for get_chat_id
+
+codemcp-id: 1-test-initialize-for-e2e-testing
+
+
+2025-03-23 08:27:45,123 - root - DEBUG - Command return code: 0
+2025-03-23 08:27:45,123 - root - INFO - Running command: git commit --amend --no-gpg-sign -m test: initialize for e2e testing
+
+Test initialization for get_chat_id
+
+```git-revs
+fd268c5  (Base revision)
+HEAD     Write test through hot reload
+```
+
+codemcp-id: 1-test-initialize-for-e2e-testing
+2025-03-23 08:27:45,132 - root - DEBUG - Command stdout: [main 452a35b] test: initialize for e2e testing
+ Date: Sun Mar 23 08:27:45 2025 +0800
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+2025-03-23 08:27:45,133 - root - DEBUG - Command return code: 0
+/Users/ezyang/Dev/codemcp/.venv/lib/python3.12/site-packages/anyio/streams/memory.py:313: ResourceWarning: Unclosed <MemoryObjectSendStream at 1037d6b70>
+  warnings.warn(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/ezyang/Dev/codemcp/.venv/lib/python3.12/site-packages/anyio/streams/memory.py:183: ResourceWarning: Unclosed <MemoryObjectReceiveStream at 1037d6e40>
+  warnings.warn(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+2025-03-23 08:27:45,167 - asyncio - DEBUG - process 39687 exited with returncode 0
+2025-03-23 08:27:45,167 - asyncio - INFO - <_UnixReadPipeTransport fd=9 polling> was closed by peer
+2025-03-23 08:27:45,168 - asyncio - INFO - <_UnixSubprocessTransport pid=39687 running stdin=<_UnixWritePipeTransport closed fd=8 closed> stdout=<_UnixReadPipeTransport closed fd=9 closed>> exited with return code 0
+ERROR
+2025-03-23 08:27:45,169 - asyncio - DEBUG - Close <_UnixSelectorEventLoop running=False closed=False debug=True>
+
+======================================================================
+ERROR: test_hot_reload_with_parameters (__main__.TestHotReloadEntry.test_hot_reload_with_parameters)
+Test that the hot reload mechanism properly passes parameters to the main module.
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/ezyang/Dev/codemcp/.venv/lib/python3.12/site-packages/mcp/client/stdio.py", line 153, in stdio_client
+    yield read_stream, write_stream
+  File "/Users/ezyang/.local/share/uv/python/cpython-3.12.9-macos-aarch64-none/lib/python3.12/contextlib.py", line 737, in __aexit__
+    cb_suppress = await cb(*exc_details)
+                  ^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/ezyang/Dev/codemcp/.venv/lib/python3.12/site-packages/mcp/shared/session.py", line 197, in __aexit__
+    return await self._task_group.__aexit__(exc_type, exc_val, exc_tb)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/ezyang/Dev/codemcp/.venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 778, in __aexit__
+    return self.cancel_scope.__exit__(exc_type, exc_val, exc_tb)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/ezyang/Dev/codemcp/.venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 456, in __exit__
+    raise RuntimeError(
+RuntimeError: Attempted to exit cancel scope in a different task than it was entered in
+
+During handling of the above exception, another exception occurred:
+
+  + Exception Group Traceback (most recent call last):
+  |   File "/Users/ezyang/Dev/codemcp/.venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 767, in __aexit__
+  |     raise BaseExceptionGroup(
+  | ExceptionGroup: unhandled errors in a TaskGroup (1 sub-exception)
+  +-+---------------- 1 ----------------
+    | Traceback (most recent call last):
+    |   File "/Users/ezyang/Dev/codemcp/.venv/lib/python3.12/site-packages/mcp/client/stdio.py", line 153, in stdio_client
+    |     yield read_stream, write_stream
+    |   File "/Users/ezyang/.local/share/uv/python/cpython-3.12.9-macos-aarch64-none/lib/python3.12/contextlib.py", line 737, in __aexit__
+    |     cb_suppress = await cb(*exc_details)
+    |                   ^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/Users/ezyang/Dev/codemcp/.venv/lib/python3.12/site-packages/mcp/shared/session.py", line 197, in __aexit__
+    |     return await self._task_group.__aexit__(exc_type, exc_val, exc_tb)
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/Users/ezyang/Dev/codemcp/.venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 778, in __aexit__
+    |     return self.cancel_scope.__exit__(exc_type, exc_val, exc_tb)
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/Users/ezyang/Dev/codemcp/.venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 456, in __exit__
+    |     raise RuntimeError(
+    | RuntimeError: Attempted to exit cancel scope in a different task than it was entered in
+    +------------------------------------
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/ezyang/.local/share/uv/python/cpython-3.12.9-macos-aarch64-none/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/ezyang/.local/share/uv/python/cpython-3.12.9-macos-aarch64-none/lib/python3.12/asyncio/base_events.py", line 691, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/Users/ezyang/Dev/codemcp/codemcp/testing.py", line 61, in asyncTearDown
+    await codemcp.hot_reload_entry.aexit()
+  File "/Users/ezyang/Dev/codemcp/codemcp/hot_reload_entry.py", line 32, in aexit
+    await mgr.__aexit__(None, None, None)
+  File "/Users/ezyang/.local/share/uv/python/cpython-3.12.9-macos-aarch64-none/lib/python3.12/contextlib.py", line 754, in __aexit__
+    raise exc_details[1]
+  File "/Users/ezyang/.local/share/uv/python/cpython-3.12.9-macos-aarch64-none/lib/python3.12/contextlib.py", line 737, in __aexit__
+    cb_suppress = await cb(*exc_details)
+                  ^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/ezyang/.local/share/uv/python/cpython-3.12.9-macos-aarch64-none/lib/python3.12/contextlib.py", line 231, in __aexit__
+    await self.gen.athrow(value)
+  File "/Users/ezyang/Dev/codemcp/.venv/lib/python3.12/site-packages/mcp/client/stdio.py", line 148, in stdio_client
+    anyio.create_task_group() as tg,
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/ezyang/Dev/codemcp/.venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 773, in __aexit__
+    if self.cancel_scope.__exit__(type(exc), exc, exc.__traceback__):
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/ezyang/Dev/codemcp/.venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 456, in __exit__
+    raise RuntimeError(
+RuntimeError: Attempted to exit cancel scope in a different task than it was entered in
+
+----------------------------------------------------------------------
+Ran 1 test in 0.397s
+
+FAILED (errors=1)
