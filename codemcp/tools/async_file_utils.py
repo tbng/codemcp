@@ -78,7 +78,7 @@ async def async_write_text(
         mode: The file open mode (default: 'w')
         encoding: The text encoding (default: 'utf-8')
     """
-    async with await anyio.open_file(file_path, mode, encoding=encoding) as f:
+    async with await anyio.open_file(file_path, mode, encoding=encoding, newline='') as f:
         await f.write(content)
 
 
@@ -90,7 +90,7 @@ async def async_write_binary(file_path: str, content: bytes, mode: str = "wb") -
         content: The binary content to write
         mode: The file open mode (default: 'wb')
     """
-    async with await anyio.open_file(file_path, mode) as f:
+    async with await anyio.open_file(file_path, mode, newline='') as f:
         await f.write(content)
 
 

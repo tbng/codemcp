@@ -171,5 +171,5 @@ def write_file_sync(file_path: str, content: str, encoding: str = "utf-8") -> No
         content: The content to write
         encoding: The encoding to use
     """
-    with open(file_path, "w", encoding=encoding) as f:
+    with open(file_path, "w", encoding=encoding, newline='') as f:
         f.write(content)
