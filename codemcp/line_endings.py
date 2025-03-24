@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Literal, Optional
 
 import tomli
-from editorconfig import EditorConfigError, get_properties
+from editorconfig import get_properties
 
 from .glob import match as glob_match
 

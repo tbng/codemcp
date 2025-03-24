@@ -9,7 +9,6 @@ import unittest
 from contextlib import asynccontextmanager
 from typing import Any, List, Union
 from unittest import mock
-
 from expecttest import TestCase
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
@@ -50,7 +49,7 @@ class MCPEndToEndTestCase(TestCase, unittest.IsolatedAsyncioTestCase):
         self.env_patcher.start()
 
         # Initialize a git repository in the temp directory
-        self.init_git_repo()
+        await self.setup_repository()
 
     async def asyncTearDown(self):
         """Async teardown to clean up after the test."""
@@ -58,40 +57,29 @@ class MCPEndToEndTestCase(TestCase, unittest.IsolatedAsyncioTestCase):
         self.env_patcher.stop()
         self.temp_dir.cleanup()
 
-    def init_git_repo(self):
-        """Initialize a git repository for testing."""
-        subprocess.run(
-            ["git", "init", "-b", "main"],
-            cwd=self.temp_dir.name,
-            env=self.env,
-            check=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        )
+    async def setup_repository(self):
+        """Setup a git repository for testing with an initial commit.
+
+        This method can be overridden by subclasses to customize the repository setup.
+        By default, it initializes a git repository and creates an initial commit.
+        """
+        # Initialize and configure git
+        await self.git_run(["init", "-b", "main"])
+        await self.git_run(["config", "user.email", "test@example.com"])
+        await self.git_run(["config", "user.name", "Test User"])
 
         # Create initial commit
         readme_path = os.path.join(self.temp_dir.name, "README.md")
-        with open(readme_path, "w") as f:
+        with open(readme_path, "w") as f:  # noqa: ASYNC230
             f.write("# Test Repository\n")
 
         # Create a codemcp.toml file in the repo root (required for permission checks)
         codemcp_toml_path = os.path.join(self.temp_dir.name, "codemcp.toml")
-        with open(codemcp_toml_path, "w") as f:
+        with open(codemcp_toml_path, "w") as f:  # noqa: ASYNC230
             f.write("")
 
-        subprocess.run(
-            ["git", "add", "README.md", "codemcp.toml"],
-            cwd=self.temp_dir.name,
-            env=self.env,
-            check=True,
-        )
-
-        subprocess.run(
-            ["git", "commit", "-m", "Initial commit"],
-            cwd=self.temp_dir.name,
-            env=self.env,
-            check=True,
-        )
+        await self.git_run(["add", "README.md", "codemcp.toml"])
+        await self.git_run(["commit", "-m", "Initial commit"])
 
     def normalize_path(self, text):
         """Normalize temporary directory paths in output text."""
