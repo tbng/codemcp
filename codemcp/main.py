@@ -11,6 +11,7 @@ from .tools.grep import grep_files
 from .tools.init_project import init_project
 from .tools.ls import ls_directory
 from .tools.read_file import read_file_content
+from .tools.rm import rm_file
 from .tools.run_command import run_command
 from .tools.think import think
 from .tools.user_prompt import user_prompt as user_prompt_tool
@@ -90,6 +91,7 @@ async def codemcp(
             "RunCommand": {"path", "command", "arguments", "chat_id"},
             "Grep": {"pattern", "path", "include", "chat_id"},
             "Glob": {"pattern", "path", "limit", "offset", "chat_id"},
+            "RM": {"path", "description", "chat_id"},
             "Think": {"thought", "chat_id"},
         }
 
@@ -280,6 +282,14 @@ async def codemcp(
                 raise ValueError("user_prompt is required for UserPrompt subtool")
 
             return await user_prompt_tool(user_prompt, chat_id)
+
+        if subtool == "RM":
+            if path is None:
+                raise ValueError("path is required for RM subtool")
+            if description is None:
+                raise ValueError("description is required for RM subtool")
+
+            return await rm_file(path, description, chat_id)
 
         if subtool == "Think":
             if thought is None:
