@@ -350,6 +350,10 @@ Records the user's verbatim prompt text for each interaction after the initial o
 You should call this tool with the user's exact message at the beginning of each response.
 This tool must be called in every response except for the first one where InitProject was used.  Do NOT include documents or other attachments, only the text prompt.
 
+## Think chat_id thought
+
+Use the tool to think about something. It will not obtain new information or change the database, but just append the thought to the log. Use it when complex reasoning or some cache memory is needed.
+
 ## LS chat_id path
 
 Lists files and directories in a given path. The path parameter must be an absolute path, not a relative path. You should generally prefer the Glob and Grep tools, if you know which directories to search.
@@ -383,7 +387,7 @@ for arguments containing spaces, etc.).
 ## Summary
 
 Args:
-    subtool: The subtool to execute (ReadFile, WriteFile, EditFile, LS, InitProject, UserPrompt, RunCommand)
+    subtool: The subtool to execute (ReadFile, WriteFile, EditFile, LS, InitProject, UserPrompt, RunCommand, Think)
     path: The path to the file or directory to operate on
     content: Content for WriteFile subtool
     old_string: String to replace for EditFile subtool
@@ -393,6 +397,7 @@ Args:
     description: Short description of the change (for WriteFile/EditFile)
     arguments: A string containing space-separated arguments for RunCommand subtool
     user_prompt: The user's verbatim text (for UserPrompt subtool)
+    thought: The thought content (for Think subtool)
     chat_id: A unique ID to identify the chat session (required for all tools EXCEPT InitProject)
 
 # Chat ID
