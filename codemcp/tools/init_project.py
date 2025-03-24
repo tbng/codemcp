@@ -453,10 +453,25 @@ Args:
     description: Short description of why the file is being removed
     chat_id: The unique ID to identify the chat session
 
+## Chmod chat_id path mode
+
+Changes file permissions using chmod. Unlike standard chmod, this tool only supports 
+a+x (add executable permission) and a-x (remove executable permission), because these 
+are the only bits that git knows how to track.
+
+Args:
+    path: The absolute path to the file to modify
+    mode: The chmod mode to apply, only "a+x" and "a-x" are supported
+    chat_id: The unique ID to identify the chat session
+
+Example:
+  chmod a+x path/to/file  # Makes a file executable by all users
+  chmod a-x path/to/file  # Makes a file non-executable for all users
+
 ## Summary
 
 Args:
-    subtool: The subtool to execute (ReadFile, WriteFile, EditFile, LS, InitProject, UserPrompt, RunCommand, RM, Think)
+    subtool: The subtool to execute (ReadFile, WriteFile, EditFile, LS, InitProject, UserPrompt, RunCommand, RM, Think, Chmod)
     path: The path to the file or directory to operate on
     content: Content for WriteFile subtool
     old_string: String to replace for EditFile subtool
@@ -467,6 +482,7 @@ Args:
     arguments: A string containing space-separated arguments for RunCommand subtool
     user_prompt: The user's verbatim text (for UserPrompt subtool)
     thought: The thought content (for Think subtool)
+    mode: The chmod mode to apply (a+x or a-x) for Chmod subtool
     chat_id: A unique ID to identify the chat session (required for all tools EXCEPT InitProject)
 
 # Chat ID

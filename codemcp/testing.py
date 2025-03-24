@@ -15,6 +15,61 @@ from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 
 
+__all__ = [
+    "init_git_repo",
+    "MCPEndToEndTestCase",
+]
+
+
+async def init_git_repo(path: str) -> None:
+    """Initialize a git repository for testing.
+
+    Args:
+        path: The path where the git repository should be initialized
+    """
+    os.makedirs(path, exist_ok=True)
+    
+    # Run git commands to initialize the repository
+    cmds = [
+        ["git", "init", "-b", "main"],
+        ["git", "config", "user.email", "test@example.com"],
+        ["git", "config", "user.name", "Test User"],
+    ]
+    
+    for cmd in cmds:
+        proc = await asyncio.create_subprocess_exec(
+            *cmd,
+            cwd=path,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        await proc.communicate()
+        if proc.returncode != 0:
+            raise subprocess.CalledProcessError(proc.returncode, cmd)
+    
+    # Create a codemcp.toml file in the repo root
+    codemcp_toml_path = os.path.join(path, "codemcp.toml")
+    with open(codemcp_toml_path, "w") as f:  # noqa: ASYNC230
+        f.write("")
+    
+    # Add and commit the file
+    cmds = [
+        ["git", "add", "codemcp.toml"],
+        ["git", "commit", "-m", "Initial commit"],
+    ]
+    
+    for cmd in cmds:
+        proc = await asyncio.create_subprocess_exec(
+            *cmd,
+            cwd=path,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        await proc.communicate()
+        if proc.returncode != 0:
+            raise subprocess.CalledProcessError(proc.returncode, cmd)
+
+
 class MCPEndToEndTestCase(TestCase, unittest.IsolatedAsyncioTestCase):
     """Base class for end-to-end tests of codemcp using MCP client."""
 
