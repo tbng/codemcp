@@ -5,7 +5,7 @@ from typing import List
 
 import anyio
 
-from ..line_endings import detect_line_endings
+from .line_endings import detect_line_endings
 
 
 async def async_open_text(
