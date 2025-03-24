@@ -30,6 +30,7 @@ async def run_command(
     text: bool = True,
     wait_time: Optional[float] = None,  # Renamed from timeout to avoid ASYNC109
     shell: bool = False,
+    input: Optional[str] = None,
 ) -> subprocess.CompletedProcess:
     """
     Run a subprocess command with consistent logging asynchronously.
@@ -42,6 +43,7 @@ async def run_command(
         text: If True, decode stdout and stderr as text
         wait_time: Timeout in seconds
         shell: If True, run command in a shell
+        input: Input to pass to the subprocess's stdin
 
     Returns:
         CompletedProcess instance with attributes args, returncode, stdout, stderr
@@ -60,6 +62,12 @@ async def run_command(
     # Prepare stdout and stderr pipes
     stdout_pipe = asyncio.subprocess.PIPE if capture_output else None
     stderr_pipe = asyncio.subprocess.PIPE if capture_output else None
+    stdin_pipe = asyncio.subprocess.PIPE if input is not None else None
+
+    # Convert input to bytes if provided
+    input_bytes = None
+    if input is not None:
+        input_bytes = input.encode() if isinstance(input, str) else input
 
     # Run the subprocess asynchronously
     process = await asyncio.create_subprocess_exec(
@@ -68,12 +76,13 @@ async def run_command(
         env=get_subprocess_env(),
         stdout=stdout_pipe,
         stderr=stderr_pipe,
+        stdin=stdin_pipe,
     )
 
     try:
         # Wait for the process to complete with optional timeout
         stdout_data, stderr_data = await asyncio.wait_for(
-            process.communicate(), timeout=wait_time
+            process.communicate(input=input_bytes), timeout=wait_time
         )
     except asyncio.TimeoutError:
         process.kill()
