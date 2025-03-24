@@ -85,8 +85,8 @@ class RMTest(MCPEndToEndTestCase):
             # Get a valid chat_id
             chat_id = await self.get_chat_id(session)
 
-            # Attempt to remove a file that doesn't exist
-            result = await self.call_tool_assert_success(
+            # Attempt to remove a file that doesn't exist - should fail
+            result = await self.call_tool_assert_error(
                 session,
                 "codemcp",
                 {
@@ -98,8 +98,7 @@ class RMTest(MCPEndToEndTestCase):
             )
 
             # Verify the operation failed with proper error message
-            self.assertIn("Error", result)
-            self.assertIn("does not exist", result)
+            self.assertIn("File does not exist", result)
 
     async def test_rm_outside_repo(self):
         """Test attempting to remove a file outside the repository."""
@@ -114,8 +113,8 @@ class RMTest(MCPEndToEndTestCase):
             # Get a valid chat_id
             chat_id = await self.get_chat_id(session)
 
-            # Attempt to remove the file (using absolute path)
-            result = await self.call_tool_assert_success(
+            # Attempt to remove the file (using absolute path) - should fail
+            result = await self.call_tool_assert_error(
                 session,
                 "codemcp",
                 {
@@ -127,11 +126,10 @@ class RMTest(MCPEndToEndTestCase):
             )
 
             # Verify the operation failed with proper error message
-            self.assertIn("Error", result)
-            # Could be either "not a git repository" or "not within the git repository"
+            # Could be either form of the git error message
             self.assertTrue(
-                "not a git repository" in result
-                or "not within the git repository" in result,
+                "fatal: not a git repository" in result
+                or "not a git repository" in result,
                 f"Expected git repository error not found in: {result}",
             )
 
