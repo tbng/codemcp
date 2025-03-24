@@ -5,9 +5,9 @@ import os
 
 import anyio
 
-from ..access import check_edit_permission
-from ..git import commit_changes
-from ..line_endings import apply_line_endings, normalize_to_lf
+from .access import check_edit_permission
+from .git import commit_changes
+from .line_endings import apply_line_endings, normalize_to_lf
 
 __all__ = [
     "check_file_path_and_permissions",
@@ -64,7 +64,7 @@ async def check_git_tracking_for_existing_file(
         directory = os.path.dirname(file_path)
 
         # Check if the file is tracked by git
-        from ..shell import run_command
+        from .shell import run_command
 
         file_status = await run_command(
             ["git", "ls-files", "--error-unmatch", file_path],
