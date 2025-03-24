@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import json
 import logging
 import os
 
@@ -173,7 +174,12 @@ async def codemcp(
             if description is None:
                 raise ValueError("description is required for WriteFile subtool")
 
-            content_str = content or ""
+            # If content is not a string, serialize it to a string using json.dumps
+            if content is not None and not isinstance(content, str):
+                content_str = json.dumps(content)
+            else:
+                content_str = content or ""
+
             return await write_file_content(path, content_str, description, chat_id)
 
         if subtool == "EditFile":

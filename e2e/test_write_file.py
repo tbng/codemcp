@@ -2,6 +2,7 @@
 
 """Tests for the WriteFile subtool."""
 
+import json
 import os
 import unittest
 
@@ -530,6 +531,78 @@ HEAD     Update file with second write
 
 codemcp-id: test-chat-id""",
             )
+
+    async def test_write_non_string_content(self):
+        """Test that WriteFile correctly serializes non-string content using json.dumps."""
+        test_file_path = os.path.join(self.temp_dir.name, "non_string_content.json")
+
+        # Create a complex data structure with different types
+        content = {
+            "name": "Test Data",
+            "values": [1, 2, 3, 4, 5],
+            "nested": {"boolean": True, "null_value": None, "number": 42.5},
+        }
+
+        # First add the file to git to make it tracked
+        with open(test_file_path, "w") as f:
+            f.write("")
+
+        # Add it to git
+        await self.git_run(["add", test_file_path])
+
+        # Commit it
+        await self.git_run(
+            ["commit", "-m", "Add empty file for non-string content test"]
+        )
+
+        async with self.create_client_session() as session:
+            # First initialize project to get chat_id
+            init_result_text = await self.call_tool_assert_success(
+                session,
+                "codemcp",
+                {
+                    "subtool": "InitProject",
+                    "path": self.temp_dir.name,
+                    "user_prompt": "Test initialization for non-string content test",
+                    "subject_line": "test: initialize for non-string content test",
+                    "reuse_head_chat_id": False,
+                },
+            )
+
+            # Extract chat_id from the init result
+            chat_id = self.extract_chat_id_from_text(init_result_text)
+
+            # Call the WriteFile tool with non-string content
+            result_text = await self.call_tool_assert_success(
+                session,
+                "codemcp",
+                {
+                    "subtool": "WriteFile",
+                    "path": test_file_path,
+                    "content": content,  # This is a dictionary, not a string
+                    "description": "Create file with non-string content",
+                    "chat_id": chat_id,
+                },
+            )
+
+            # Verify the success message
+            self.assertIn("Successfully wrote to", result_text)
+
+            # Verify the file was created with the correct content (serialized as JSON)
+            with open(test_file_path) as f:
+                file_content = f.read()
+
+            # Parse the JSON content and compare with the original dictionary
+            parsed_content = json.loads(file_content)
+            self.assertEqual(parsed_content, content)
+
+            # Verify that the content was written as a properly formatted JSON string
+            expected_json = json.dumps(content)
+            self.assertEqual(file_content, expected_json)
+
+            # Verify git state (working tree should be clean after automatic commit)
+            status = await self.git_run(["status"], capture_output=True, text=True)
+            self.assertIn("working tree clean", status)
 
 
 if __name__ == "__main__":
