@@ -54,8 +54,8 @@ async def rm_file(
         path = path.replace("\\", "/")
         # Remove trailing slash
         path = path.rstrip("/")
-        # Handle macOS /private/tmp vs /tmp
-        path = re.sub(r"^/private(/tmp/.*)", r"\1", path)
+        # Handle macOS /private/ prefix (macOS symlinks /tmp, /var to /private/tmp, /private/var)
+        path = re.sub(r"^/private(/.*)", r"\1", path)
         return path
 
     # Normalize paths for comparison
