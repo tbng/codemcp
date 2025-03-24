@@ -7,9 +7,9 @@ from typing import List, Optional
 
 import tomli
 
-from ..common import normalize_file_path, truncate_output_content
-from ..git import commit_changes, get_repository_root, is_git_repository
-from ..shell import run_command
+from .common import normalize_file_path, truncate_output_content
+from .git import commit_changes, get_repository_root, is_git_repository
+from .shell import run_command
 
 __all__ = [
     "get_command_from_config",
