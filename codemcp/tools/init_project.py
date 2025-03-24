@@ -276,6 +276,61 @@ When making changes to files, first understand the file's code conventions. Mimi
 # codemcp tool
 The codemcp tool supports a number of subtools which you should use to perform coding tasks.
 
+## GitLog chat_id path arguments?
+
+Shows commit logs using git log.
+This tool is read-only and safe to use with any arguments.
+The arguments parameter should be a string and will be interpreted as space-separated
+arguments using shell-style tokenization (spaces separate arguments, quotes can be used
+for arguments containing spaces, etc.).
+
+Example:
+  git log --oneline -n 5  # Show the last 5 commits in oneline format
+  git log --author="John Doe" --since="2023-01-01"  # Show commits by an author since a date
+  git log -- path/to/file  # Show commit history for a specific file
+
+## GitDiff chat_id path arguments?
+
+Shows differences between commits, commit and working tree, etc. using git diff.
+This tool is read-only and safe to use with any arguments.
+The arguments parameter should be a string and will be interpreted as space-separated
+arguments using shell-style tokenization (spaces separate arguments, quotes can be used
+for arguments containing spaces, etc.).
+
+Example:
+  git diff  # Show changes between working directory and index
+  git diff HEAD~1  # Show changes between current commit and previous commit
+  git diff branch1 branch2  # Show differences between two branches
+  git diff --stat  # Show summary of changes instead of full diff
+
+## GitShow chat_id path arguments?
+
+Shows various types of objects (commits, tags, trees, blobs) using git show.
+This tool is read-only and safe to use with any arguments.
+The arguments parameter should be a string and will be interpreted as space-separated
+arguments using shell-style tokenization (spaces separate arguments, quotes can be used
+for arguments containing spaces, etc.).
+
+Example:
+  git show  # Show the most recent commit
+  git show a1b2c3d  # Show a specific commit by hash
+  git show HEAD~3  # Show the commit 3 before HEAD
+  git show v1.0  # Show a tag
+  git show HEAD:path/to/file  # Show a file from a specific commit
+
+## GitBlame chat_id path arguments?
+
+Shows what revision and author last modified each line of a file using git blame.
+This tool is read-only and safe to use with any arguments.
+The arguments parameter should be a string and will be interpreted as space-separated
+arguments using shell-style tokenization (spaces separate arguments, quotes can be used
+for arguments containing spaces, etc.).
+
+Example:
+  git blame path/to/file  # Show blame information for a file
+  git blame -L 10,20 path/to/file  # Show blame information for lines 10-20
+  git blame -w path/to/file  # Ignore whitespace changes
+
 ## ReadFile chat_id path offset? limit?
 
 Reads a file from the local filesystem. The path parameter must be an absolute path, not a relative path. By default, it reads up to {MAX_LINES_TO_READ} lines starting from the beginning of the file. You can optionally specify a line offset and limit (especially handy for long files), but it's recommended to read the whole file by not providing these parameters. Any lines longer than {MAX_LINE_LENGTH} characters will be truncated. For image files, the tool will display the image for you.
