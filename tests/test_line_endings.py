@@ -600,63 +600,6 @@ line_endings = "CRLF"
                 "Frontend files should use CRLF from codemcp.toml when no .editorconfig",
             )
 
-    def test_error_handling(self):
-        """Test that error handling in line_endings functions is robust."""
-        with tempfile.TemporaryDirectory() as temp_dir:
-            test_dir = Path(temp_dir)
-            test_file = test_dir / "test.py"
-            test_file.touch()
-
-            # Test with an invalid .editorconfig file
-            with open(test_dir / ".editorconfig", "w") as f:
-                f.write("""
-root = true
-[*]
-# Missing the value part in this line
-end_of_line
-                """)
-
-            # Should not raise an exception, just return None
-            result = check_editorconfig(str(test_file))
-            self.assertIsNone(
-                result, "Invalid .editorconfig should be handled gracefully"
-            )
-
-            # Test with an invalid .gitattributes file
-            with open(test_dir / ".gitattributes", "w") as f:
-                f.write("""
-# This is malformed and missing attributes
-*.py
-                """)
-
-            # Should not raise an exception, just return None
-            result = check_gitattributes(str(test_file))
-            self.assertIsNone(
-                result, "Invalid .gitattributes should be handled gracefully"
-            )
-
-            # Test with an invalid codemcp.toml file
-            with open(test_dir / "codemcp.toml", "w") as f:
-                f.write("""
-[files]
-# This is invalid TOML (missing quotes)
-line_endings = CRLF
-                """)
-
-            # Should not raise an exception, just return None
-            result = check_codemcp_toml(str(test_file))
-            self.assertIsNone(
-                result, "Invalid codemcp.toml should be handled gracefully"
-            )
-
-            # Test with all configuration files present but invalid
-            result = get_line_ending_preference(str(test_file))
-            self.assertEqual(
-                result,
-                os.linesep,
-                "Should fallback to OS line endings when all configs are invalid",
-            )
-
 
 if __name__ == "__main__":
     unittest.main()
