@@ -384,17 +384,31 @@ arguments using shell-style tokenization (spaces separate arguments, quotes can 
 for arguments containing spaces, etc.).
 {_generate_command_docs(command_docs)}
 
+## RM chat_id path description
+
+Removes a file using git rm and commits the change.
+Provide a short description of why the file is being removed.
+
+Before using this tool:
+1. Ensure the file exists and is tracked by git
+2. Provide a meaningful description of why the file is being removed
+
+Args:
+    path: The path to the file to remove (can be relative to the project root or absolute)
+    description: Short description of why the file is being removed
+    chat_id: The unique ID to identify the chat session
+
 ## Summary
 
 Args:
-    subtool: The subtool to execute (ReadFile, WriteFile, EditFile, LS, InitProject, UserPrompt, RunCommand, Think)
+    subtool: The subtool to execute (ReadFile, WriteFile, EditFile, LS, InitProject, UserPrompt, RunCommand, RM, Think)
     path: The path to the file or directory to operate on
     content: Content for WriteFile subtool
     old_string: String to replace for EditFile subtool
     new_string: Replacement string for EditFile subtool
     offset: Line offset for ReadFile subtool
     limit: Line limit for ReadFile subtool
-    description: Short description of the change (for WriteFile/EditFile)
+    description: Short description of the change (for WriteFile/EditFile/RM)
     arguments: A string containing space-separated arguments for RunCommand subtool
     user_prompt: The user's verbatim text (for UserPrompt subtool)
     thought: The thought content (for Think subtool)
