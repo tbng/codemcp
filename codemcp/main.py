@@ -13,6 +13,7 @@ from .tools.ls import ls_directory
 from .tools.read_file import read_file_content
 from .tools.rm import rm_file
 from .tools.run_command import run_command
+from .tools.think import think
 from .tools.user_prompt import user_prompt as user_prompt_tool
 from .tools.write_file import write_file_content
 
@@ -43,6 +44,7 @@ async def codemcp(
     subject_line: str | None = None,  # Added for InitProject commit message
     reuse_head_chat_id: bool
     | None = None,  # Whether to reuse the chat ID from the HEAD commit
+    thought: str | None = None,  # Added for Think tool
 ) -> str:
     """If and only if the user explicitly asks you to initialize codemcp with
     path, you should invoke this tool.  This will return instructions which you should
@@ -55,12 +57,13 @@ async def codemcp(
     with the user's verbatim message text.
 
     Arguments:
-      subtool: The subtool to run (InitProject, UserPrompt, ...)
+      subtool: The subtool to run (InitProject, UserPrompt, Think, ...)
       path: The path to the file or directory to operate on
       chat_id: A unique ID to identify the chat session (provided by InitProject and required for all tools EXCEPT InitProject)
       user_prompt: The user's original prompt verbatim, starting AFTER instructions to initialize codemcp (e.g., you should exclude "Initialize codemcp for PATH")
       subject_line: A short subject line in Git conventional commit format (for InitProject)
       reuse_head_chat_id: If True, reuse the chat ID from the HEAD commit instead of generating a new one (for InitProject)
+      thought: The thought content for the Think tool (used for complex reasoning or cache memory)
       ... (there are other arguments which are documented later)
     """
     try:
@@ -89,6 +92,7 @@ async def codemcp(
             "Grep": {"pattern", "path", "include", "chat_id"},
             "Glob": {"pattern", "path", "limit", "offset", "chat_id"},
             "RM": {"path", "description", "chat_id"},
+            "Think": {"thought", "chat_id"},
         }
 
         # Check if subtool exists
@@ -139,6 +143,8 @@ async def codemcp(
                 "subject_line": subject_line,
                 # Whether to reuse the chat ID from the HEAD commit
                 "reuse_head_chat_id": reuse_head_chat_id,
+                # Think tool parameter
+                "thought": thought,
             }.items()
             if value is not None
         }
@@ -284,6 +290,12 @@ async def codemcp(
                 raise ValueError("description is required for RM subtool")
 
             return await rm_file(path, description, chat_id)
+
+        if subtool == "Think":
+            if thought is None:
+                raise ValueError("thought is required for Think subtool")
+
+            return await think(thought, chat_id)
     except Exception:
         logging.error("Exception", exc_info=True)
         raise
