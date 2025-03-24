@@ -28,7 +28,7 @@ async def codemcp(
     subtool: str,
     *,
     path: str | None = None,
-    content: str | None = None,
+    content: object = None,  # Changed from str | None to object to accept any type
     old_string: str | None = None,
     new_string: str | None = None,
     offset: int | None = None,
@@ -65,6 +65,7 @@ async def codemcp(
       subject_line: A short subject line in Git conventional commit format (for InitProject)
       reuse_head_chat_id: If True, reuse the chat ID from the HEAD commit instead of generating a new one (for InitProject)
       thought: The thought content for the Think tool (used for complex reasoning or cache memory)
+      content: For WriteFile, can be any serializable object (will be converted to JSON if not a string)
       ... (there are other arguments which are documented later)
     """
     try:
