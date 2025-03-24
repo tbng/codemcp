@@ -4,11 +4,11 @@
 
 import asyncio
 import os
-import re
 from pathlib import Path
 from typing import Literal, Optional
 
 import tomli
+from editorconfig import EditorConfigError, get_properties
 
 from .glob import match as glob_match
 
@@ -71,7 +71,7 @@ def apply_line_endings(content: str, line_ending: str | None) -> str:
 
 
 def check_editorconfig(file_path: str) -> Optional[str]:
-    """Check .editorconfig file for line ending preferences.
+    """Check .editorconfig file for line ending preferences using the official editorconfig library.
 
     Args:
         file_path: The path to the file being edited
@@ -80,72 +80,24 @@ def check_editorconfig(file_path: str) -> Optional[str]:
         'CRLF' or 'LF' if specified in .editorconfig, None otherwise
     """
     try:
-        # Use the Path object to navigate up the directory tree
-        path = Path(file_path)
-        file_dir = path.parent
-        file_name = path.name
+        # Use the official editorconfig library to get properties
+        options = get_properties(file_path)
 
-        # Iterate up through parent directories looking for .editorconfig
-        current_dir = file_dir
-        while current_dir != current_dir.parent:  # Stop at the root directory
-            editorconfig_path = current_dir / ".editorconfig"
-            if editorconfig_path.exists():
-                # Found an .editorconfig file
-                with open(editorconfig_path, "r", encoding="utf-8") as f:
-                    ec_content = f.read()
+        # Check if end_of_line is specified
+        if "end_of_line" in options:
+            eol_value = options["end_of_line"].lower()
+            if eol_value == "crlf":
+                return "CRLF"
+            elif eol_value == "lf":
+                return "LF"
+            # Ignore other values (like CR)
 
-                # Parse the .editorconfig file
-                # Find the most specific section that applies to this file
-                sections = []
-                for match in re.finditer(r"^\[(.+?)\]", ec_content, re.MULTILINE):
-                    pattern = match.group(1)
-
-                    # Use glob.match with editorconfig features enabled
-                    if glob_match(
-                        pattern,
-                        file_name,
-                        editorconfig_braces=True,
-                        editorconfig_asterisk=True,
-                        editorconfig_double_asterisk=True,
-                    ):
-                        # Extract section content
-                        section_start = match.end()
-                        next_section = re.search(
-                            r"^\[", ec_content[section_start:], re.MULTILINE
-                        )
-                        if next_section:
-                            section_end = section_start + next_section.start()
-                            section = ec_content[section_start:section_end]
-                        else:
-                            section = ec_content[section_start:]
-
-                        sections.append((pattern, section))
-
-                # Find the most specific section
-                if sections:
-                    # Sort by specificity (more specific patterns come later)
-                    sections.sort(key=lambda s: len(s[0]))
-
-                    # Check the most specific section for end_of_line setting
-                    for _, section in reversed(sections):
-                        eol_match = re.search(r"end_of_line\s*=\s*(.+)", section)
-                        if eol_match:
-                            eol_value = eol_match.group(1).strip().lower()
-                            if eol_value == "crlf":
-                                return "CRLF"
-                            elif eol_value == "lf":
-                                return "LF"
-                            # Ignore other values (like CR)
-
-                # If we found an .editorconfig but couldn't determine the line ending,
-                # stop searching (don't check parent dirs)
-                break
-
-            # Move up to the parent directory
-            current_dir = current_dir.parent
-
+    except EditorConfigError:
+        # If there's an error parsing the EditorConfig files, just continue
+        pass
     except Exception:
-        pass  # Ignore any errors in parsing .editorconfig
+        # Catch any other unexpected errors
+        pass
 
     return None
 
