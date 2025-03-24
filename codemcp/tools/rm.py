@@ -2,7 +2,7 @@
 
 import logging
 import os
-import re
+import pathlib
 
 from ..common import normalize_file_path
 from ..git import commit_changes, get_repository_root
@@ -40,51 +40,33 @@ async def rm_file(
 
     # Get git repository root
     git_root = await get_repository_root(dir_path)
-    # Fix git root path - ensure it's normalized the same way as our file path
-    git_root = normalize_file_path(git_root)
+    # Ensure paths are absolute and resolve any symlinks
+    file_path_resolved = os.path.realpath(file_path)
+    git_root_resolved = os.path.realpath(git_root)
 
-    # Function to normalize paths for comparison
-    def normalize_path_for_comparison(path):
-        # Convert to absolute path
-        path = os.path.abspath(path)
-        # Handle symbolic links
-        if os.path.islink(path):
-            path = os.path.realpath(path)
-        # Normalize path separators
-        path = path.replace("\\", "/")
-        # Remove trailing slash
-        path = path.rstrip("/")
-        # Handle macOS /private/ prefix (macOS symlinks /tmp, /var to /private/tmp, /private/var)
-        path = re.sub(r"^/private(/.*)", r"\1", path)
-        return path
+    # Use pathlib to check if the file is within the git repo
+    # This handles path traversal correctly on all platforms
+    try:
+        # Convert to Path objects
+        file_path_obj = pathlib.Path(file_path_resolved)
+        git_root_obj = pathlib.Path(git_root_resolved)
 
-    # Normalize paths for comparison
-    norm_file_path = normalize_path_for_comparison(file_path)
-    norm_git_root = normalize_path_for_comparison(git_root)
-
-    # Check if file is in the git repo
-    if not norm_file_path.startswith(norm_git_root):
+        # Check if file is inside the git repo using Path.relative_to
+        # This will raise ValueError if file_path is not inside git_root
+        file_path_obj.relative_to(git_root_obj)
+    except ValueError:
         msg = f"Path {file_path} is not within the git repository at {git_root}"
         logging.error(msg)
         raise ValueError(msg)
 
-    # Get the relative path
-    os.path.relpath(file_path, git_root)
+    # Get the relative path using pathlib
+    rel_path = os.path.relpath(file_path_resolved, git_root_resolved)
+    logging.info(f"Using relative path: {rel_path}")
 
-    # Run git rm on the file - just use the basename to be safe
-    file_basename = os.path.basename(file_path)
-    logging.info(f"Running git rm on file: {file_basename}")
-
-    # Before running git rm, we need to change to the directory containing the file
-    # to avoid path issues
-    file_dir = os.path.dirname(file_path)
-    if not file_dir:
-        file_dir = git_root
-
-    # Check if the file is tracked by git
+    # Check if the file is tracked by git from the git root
     await run_command(
-        ["git", "ls-files", "--error-unmatch", file_basename],
-        cwd=file_dir,
+        ["git", "ls-files", "--error-unmatch", rel_path],
+        cwd=git_root_resolved,
         check=True,
         capture_output=True,
         text=True,
@@ -92,25 +74,23 @@ async def rm_file(
 
     # If we get here, the file is tracked by git, so we can remove it
     await run_command(
-        ["git", "rm", file_basename],
-        cwd=file_dir,
+        ["git", "rm", rel_path],
+        cwd=git_root_resolved,
         check=True,
         capture_output=True,
         text=True,
     )
 
     # Commit the changes
-    logging.info(f"Committing removal of file: {file_basename}")
+    logging.info(f"Committing removal of file: {rel_path}")
     success, commit_message = await commit_changes(
-        git_root,
-        f"Remove {file_basename}: {description}",
+        git_root_resolved,
+        f"Remove {rel_path}: {description}",
         chat_id,
         commit_all=False,  # No need for commit_all since git rm already stages the change
     )
 
     if success:
-        return f"Successfully removed file {file_basename}."
+        return f"Successfully removed file {rel_path}."
     else:
-        return (
-            f"File {file_basename} was removed but failed to commit: {commit_message}"
-        )
+        return f"File {rel_path} was removed but failed to commit: {commit_message}"
