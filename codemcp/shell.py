@@ -37,7 +37,7 @@ async def run_command(
     Args:
         cmd: Command to run as a list of strings
         cwd: Current working directory for the command
-        check: If True, raise CalledProcessError if the command returns non-zero exit code
+        check: If True, raise RuntimeError if the command returns non-zero exit code
         capture_output: If True, capture stdout and stderr
         text: If True, decode stdout and stderr as text
         wait_time: Timeout in seconds
@@ -47,7 +47,7 @@ async def run_command(
         CompletedProcess instance with attributes args, returncode, stdout, stderr
 
     Raises:
-        subprocess.CalledProcessError: If check=True and process returns non-zero exit code
+        RuntimeError: If check=True and process returns non-zero exit code
         subprocess.TimeoutExpired: If the process times out
 
     Notes:
@@ -107,10 +107,13 @@ async def run_command(
         args=cmd, returncode=returncode, stdout=stdout, stderr=stderr
     )
 
-    # Re-raise CalledProcessError if check is True and command failed
+    # Raise RuntimeError if check is True and command failed
     if check and result.returncode != 0:
-        raise subprocess.CalledProcessError(
-            result.returncode, cmd, output=result.stdout, stderr=result.stderr
-        )
+        error_message = f"Command failed with exit code {result.returncode}: {' '.join(str(c) for c in cmd)}"
+        if result.stdout:
+            error_message += f"\nStdout: {result.stdout}"
+        if result.stderr:
+            error_message += f"\nStderr: {result.stderr}"
+        raise RuntimeError(error_message)
 
     return result
