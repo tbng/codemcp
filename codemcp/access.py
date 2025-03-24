@@ -85,24 +85,16 @@ async def check_edit_permission(file_path: str) -> tuple[bool, str]:
         OSError: If there's an issue with file operations
         ValueError: If file_path is not in a git repository or other path issues
     """
-    try:
-        # Get the git base directory (will raise an exception if not in a git repo)
-        git_base_dir = await get_git_base_dir(file_path)
+    # Get the git base directory (will raise an exception if not in a git repo)
+    git_base_dir = await get_git_base_dir(file_path)
 
-        # Check for codemcp.toml in the git base directory
-        config_path = os.path.join(git_base_dir, "codemcp.toml")
-        if not os.path.exists(config_path):
-            return False, (
-                "Permission denied: codemcp.toml file not found in the git repository root. "
-                "Please create a codemcp.toml file in the root directory of your project "
-                "to enable editing files with codemcp."
-            )
-
-        return True, "Permission granted."
-    except (subprocess.SubprocessError, OSError, ValueError) as e:
-        # Only catch exceptions to provide a specific permission denied message
-        # This is not silent suppression as we're explicitly handling the error case
-        return (
-            False,
-            f"File is not in a valid git repository. Permission denied. Error: {e}",
+    # Check for codemcp.toml in the git base directory
+    config_path = os.path.join(git_base_dir, "codemcp.toml")
+    if not os.path.exists(config_path):
+        return False, (
+            "Permission denied: codemcp.toml file not found in the git repository root. "
+            "Please create a codemcp.toml file in the root directory of your project "
+            "to enable editing files with codemcp."
         )
+
+    return True, "Permission granted."
