@@ -18,6 +18,8 @@ from mcp.client.stdio import stdio_client
 class MCPEndToEndTestCase(TestCase, unittest.IsolatedAsyncioTestCase):
     """Base class for end-to-end tests of codemcp using MCP client."""
 
+    in_process: bool = True
+
     async def asyncSetUp(self):
         """Async setup method to prepare the test environment."""
         # Create a temporary directory for testing
@@ -166,10 +168,16 @@ class MCPEndToEndTestCase(TestCase, unittest.IsolatedAsyncioTestCase):
         kwargs = {k: v for k, v in tool_params.items() if k != "subtool"}
 
         try:
-            # Call codemcp.main.codemcp directly instead of using the client session
-            await codemcp.main.codemcp(subtool, **kwargs)
-            # If we get here, the call succeeded - but we expected it to fail
-            self.fail(f"Tool call to {tool_name} succeeded, expected to fail")
+            if self.in_process:
+                # Call codemcp.main.codemcp directly instead of using the client session
+                await codemcp.main.codemcp(subtool, **kwargs)
+                # If we get here, the call succeeded - but we expected it to fail
+                self.fail(f"Tool call to {tool_name} succeeded, expected to fail")
+            else:
+                result = await session.call_tool("codemcp", tool_params)
+                self.assertTrue(result.isError, result)
+                error_message = self.extract_text_from_result(result.content)
+                return self.normalize_path(error_message)
         except Exception as e:
             # The call failed as expected - return the error message
             error_message = f"Error executing tool {tool_name}: {str(e)}"
@@ -207,10 +215,16 @@ class MCPEndToEndTestCase(TestCase, unittest.IsolatedAsyncioTestCase):
         kwargs = {k: v for k, v in tool_params.items() if k != "subtool"}
 
         # Call codemcp.main.codemcp directly instead of using the client session
-        result = await codemcp.main.codemcp(subtool, **kwargs)
-        # Return the normalized, extracted text result
-        normalized_result = self.normalize_path(result)
-        return self.extract_text_from_result(normalized_result)
+        if self.in_process:
+            result = await codemcp.main.codemcp(subtool, **kwargs)
+            # Return the normalized, extracted text result
+            normalized_result = self.normalize_path(result)
+            return self.extract_text_from_result(normalized_result)
+        else:
+            result = await session.call_tool("codemcp", tool_params)
+            self.assertFalse(result.isError, result)
+            error_message = self.extract_text_from_result(result.content)
+            return self.normalize_path(error_message)
 
     async def get_chat_id(self, session):
         """Initialize project and get chat_id.
@@ -262,6 +276,10 @@ class MCPEndToEndTestCase(TestCase, unittest.IsolatedAsyncioTestCase):
     @asynccontextmanager
     async def create_client_session(self):
         """Create an MCP client session connected to codemcp server."""
+        if self.in_process:
+            yield None
+            return
+
         # Set up server parameters for the codemcp MCP server
         server_params = StdioServerParameters(
             command=sys.executable,  # Current Python executable

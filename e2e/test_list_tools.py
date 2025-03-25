@@ -10,6 +10,8 @@ from codemcp.testing import MCPEndToEndTestCase
 class ListToolsTest(MCPEndToEndTestCase):
     """Test listing available tools."""
 
+    in_process = False
+
     async def test_list_tools(self):
         """Test listing available tools."""
         async with self.create_client_session() as session:

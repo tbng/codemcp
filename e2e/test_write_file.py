@@ -532,5 +532,9 @@ codemcp-id: test-chat-id""",
             )
 
 
+class OutOfProcessWriteFileTest(WriteFileTest):
+    in_process = False
+
+
 if __name__ == "__main__":
     unittest.main()

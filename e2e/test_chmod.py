@@ -81,7 +81,9 @@ class ChmodTest(MCPEndToEndTestCase):
             # Verify file is no longer executable
             mode = os.stat(test_file_path).st_mode
             is_executable = bool(mode & stat.S_IXUSR)
-            self.assertFalse(is_executable, "File should not be executable after chmod a-x")
+            self.assertFalse(
+                is_executable, "File should not be executable after chmod a-x"
+            )
 
             # Try removing executable permission again (should be a no-op)
             result_text = await self.call_tool_assert_success(
