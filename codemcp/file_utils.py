@@ -2,10 +2,12 @@
 
 import logging
 import os
+from typing import Optional, Tuple
 
 import anyio
 
 from .access import check_edit_permission
+from .async_file_utils import OpenTextMode
 from .git import commit_changes
 from .line_endings import apply_line_endings, normalize_to_lf
 
@@ -18,7 +20,7 @@ __all__ = [
 ]
 
 
-async def check_file_path_and_permissions(file_path: str) -> tuple[bool, str | None]:
+async def check_file_path_and_permissions(file_path: str) -> Tuple[bool, Optional[str]]:
     """Check if the file path is valid and has the necessary permissions.
 
     Args:
@@ -110,7 +112,7 @@ def ensure_directory_exists(file_path: str) -> None:
 
 async def async_open_text(
     file_path: str,
-    mode: str = "r",
+    mode: OpenTextMode = "r",
     encoding: str = "utf-8",
     errors: str = "replace",
 ) -> str:
@@ -135,7 +137,7 @@ async def write_text_content(
     file_path: str,
     content: str,
     encoding: str = "utf-8",
-    line_endings: str | None = None,
+    line_endings: Optional[str] = None,
 ) -> None:
     """Write text content to a file with specified encoding and line endings.
 
@@ -156,7 +158,8 @@ async def write_text_content(
     ensure_directory_exists(file_path)
 
     # Write the content using anyio
+    write_mode: OpenTextMode = "w"
     async with await anyio.open_file(
-        file_path, "w", encoding=encoding, newline=""
+        file_path, write_mode, encoding=encoding, newline=""
     ) as f:
         await f.write(final_content)

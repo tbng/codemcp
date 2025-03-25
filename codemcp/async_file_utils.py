@@ -1,16 +1,73 @@
 #!/usr/bin/env python3
 
 import os
-from typing import List
+from typing import List, Literal
 
 import anyio
 
 from .line_endings import detect_line_endings
 
+# Define OpenTextMode and OpenBinaryMode similar to what anyio uses
+OpenTextMode = Literal[
+    "r",
+    "r+",
+    "+r",
+    "rt",
+    "rt+",
+    "r+t",
+    "+rt",
+    "tr",
+    "tr+",
+    "t+r",
+    "w",
+    "w+",
+    "+w",
+    "wt",
+    "wt+",
+    "w+t",
+    "+wt",
+    "tw",
+    "tw+",
+    "t+w",
+    "a",
+    "a+",
+    "+a",
+    "at",
+    "at+",
+    "a+t",
+    "+at",
+    "ta",
+    "ta+",
+    "t+a",
+]
+OpenBinaryMode = Literal[
+    "rb",
+    "rb+",
+    "r+b",
+    "+rb",
+    "br",
+    "br+",
+    "b+r",
+    "wb",
+    "wb+",
+    "w+b",
+    "+wb",
+    "bw",
+    "bw+",
+    "b+w",
+    "ab",
+    "ab+",
+    "a+b",
+    "+ab",
+    "ba",
+    "ba+",
+    "b+a",
+]
+
 
 async def async_open_text(
     file_path: str,
-    mode: str = "r",
+    mode: OpenTextMode = "r",
     encoding: str = "utf-8",
     errors: str = "replace",
 ) -> str:
@@ -31,7 +88,7 @@ async def async_open_text(
         return await f.read()
 
 
-async def async_open_binary(file_path: str, mode: str = "rb") -> bytes:
+async def async_open_binary(file_path: str, mode: OpenBinaryMode = "rb") -> bytes:
     """Asynchronously open and read a binary file.
 
     Args:
@@ -67,7 +124,7 @@ async def async_readlines(
 async def async_write_text(
     file_path: str,
     content: str,
-    mode: str = "w",
+    mode: OpenTextMode = "w",
     encoding: str = "utf-8",
 ) -> None:
     """Asynchronously write text to a file.
@@ -84,7 +141,9 @@ async def async_write_text(
         await f.write(content)
 
 
-async def async_write_binary(file_path: str, content: bytes, mode: str = "wb") -> None:
+async def async_write_binary(
+    file_path: str, content: bytes, mode: OpenBinaryMode = "wb"
+) -> None:
     """Asynchronously write binary data to a file.
 
     Args:
@@ -92,7 +151,7 @@ async def async_write_binary(file_path: str, content: bytes, mode: str = "wb") -
         content: The binary content to write
         mode: The file open mode (default: 'wb')
     """
-    async with await anyio.open_file(file_path, mode, newline="") as f:
+    async with await anyio.open_file(file_path, mode) as f:
         await f.write(content)
 
 

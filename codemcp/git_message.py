@@ -13,7 +13,7 @@ __all__ = [
 log = logging.getLogger(__name__)
 
 
-def append_metadata_to_message(message: str, metadata: dict) -> str:
+def append_metadata_to_message(message: str, metadata: dict[str, str]) -> str:
     """Append trailers to Git commit message
 
     Args:

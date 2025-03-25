@@ -1,0 +1,3 @@
+from collections import OrderedDict
+
+def get_properties(filename: str) -> OrderedDict[str, str]: ...

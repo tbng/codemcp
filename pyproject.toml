@@ -84,3 +84,4 @@ reportPrivateImportUsage = true
 reportUntypedFunctionDecorator = true
 reportFunctionMemberAccess = true
 reportIncompatibleMethodOverride = true
+stubPath = "./stubs"

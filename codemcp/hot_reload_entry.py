@@ -5,8 +5,8 @@ import functools
 import logging
 import os
 import sys
-from asyncio import Queue, Task
-from typing import Optional
+from asyncio import Future, Queue, Task
+from typing import Any, Optional, Tuple
 
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
@@ -33,8 +33,10 @@ class HotReloadManager:
     """
 
     def __init__(self):
-        self._task: Optional[Task] = None
-        self._request_queue: Optional[Queue] = None
+        self._task: Optional[Task[None]] = None
+        self._request_queue: Optional[Queue[Tuple[str, Any, asyncio.Future[Any]]]] = (
+            None
+        )
         self._hot_reload_file = os.path.join(
             os.path.dirname(os.path.dirname(__file__)), ".hot_reload"
         )
@@ -87,7 +89,7 @@ class HotReloadManager:
         """Stop the background task and clean up resources."""
         if self._task and not self._task.done() and self._request_queue:
             # Create a future for the stop command
-            stop_future = asyncio.Future()
+            stop_future: Future[bool] = asyncio.Future()
 
             # Get a local reference to the queue and task before clearing
             request_queue = self._request_queue
@@ -102,7 +104,7 @@ class HotReloadManager:
             await stop_future
             await task
 
-    async def call_tool(self, **kwargs) -> str:
+    async def call_tool(self, **kwargs: Any) -> str:
         """Call the codemcp tool in the subprocess."""
         # Check if we need to reload based on .hot_reload file
         if (
@@ -118,15 +120,18 @@ class HotReloadManager:
             await self.start()
 
         # Create a future for this specific request
-        response_future = asyncio.Future()
+        response_future: Future[str] = asyncio.Future()
 
         # Send the request and its associated future to the manager task
-        await self._request_queue.put(("call", kwargs, response_future))
+        if self._request_queue is not None:
+            await self._request_queue.put(("call", kwargs, response_future))
 
         # Wait for the response
         return await response_future
 
-    async def _run_manager_task(self, request_queue: Queue) -> None:
+    async def _run_manager_task(
+        self, request_queue: Queue[Tuple[str, Any, asyncio.Future[Any]]]
+    ) -> None:
         """
         Background task that owns and manages the async context managers lifecycle.
 
@@ -165,6 +170,10 @@ class HotReloadManager:
                                 match result.content:
                                     case [TextContent(text=err)]:
                                         future.set_exception(RuntimeError(err))
+                                    case _:
+                                        future.set_exception(
+                                            RuntimeError("Unknown error")
+                                        )
                             future.set_result(result.content)
 
                     except Exception as e:
@@ -184,7 +193,7 @@ async def aexit():
 
 @mcp.tool()
 @functools.wraps(original_codemcp)  # This copies the signature and docstring
-async def codemcp(**kwargs) -> str:
+async def codemcp(**kwargs: Any) -> str:
     """This is a wrapper that forwards all tool calls to the codemcp/main.py process.
     This allows for hot-reloading as main.py will be reloaded on each call.
 
