@@ -182,6 +182,7 @@ async def grep_files(
     # Sort matches
     # Use asyncio for getting file stats
     import asyncio
+
     loop = asyncio.get_event_loop()
 
     # Get file stats asynchronously
@@ -199,9 +200,7 @@ async def grep_files(
         matches_with_stats.sort(key=lambda x: x[0])
     else:
         # Sort by modification time (newest first), with filename as tiebreaker
-        matches_with_stats.sort(
-            key=lambda x: (-(x[1].st_mtime if x[1] else 0), x[0])
-        )
+        matches_with_stats.sort(key=lambda x: (-(x[1].st_mtime if x[1] else 0), x[0]))
 
     matches = [match for match, _ in matches_with_stats]
 
