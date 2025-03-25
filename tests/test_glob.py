@@ -81,51 +81,47 @@ def test_gitignore_middle_double_asterisk():
 def test_editorconfig_braces():
     """Test editorconfig brace expansion."""
     # {s1,s2,s3} should match any of the strings
-    assert glob.match("file.{txt,py}", "file.txt", editorconfig_braces=True)
-    assert glob.match("file.{txt,py}", "file.py", editorconfig_braces=True)
-    assert not glob.match("file.{txt,py}", "file.md", editorconfig_braces=True)
+    assert glob.match("file.{txt,py}", "file.txt", editorconfig=True)
+    assert glob.match("file.{txt,py}", "file.py", editorconfig=True)
+    assert not glob.match("file.{txt,py}", "file.md", editorconfig=True)
 
     # {num1..num2} should match any integer in the range
-    assert glob.match("file{1..3}.txt", "file1.txt", editorconfig_braces=True)
-    assert glob.match("file{1..3}.txt", "file2.txt", editorconfig_braces=True)
-    assert glob.match("file{1..3}.txt", "file3.txt", editorconfig_braces=True)
-    assert not glob.match("file{1..3}.txt", "file4.txt", editorconfig_braces=True)
-    assert not glob.match("file{1..3}.txt", "file0.txt", editorconfig_braces=True)
+    assert glob.match("file{1..3}.txt", "file1.txt", editorconfig=True)
+    assert glob.match("file{1..3}.txt", "file2.txt", editorconfig=True)
+    assert glob.match("file{1..3}.txt", "file3.txt", editorconfig=True)
+    assert not glob.match("file{1..3}.txt", "file4.txt", editorconfig=True)
+    assert not glob.match("file{1..3}.txt", "file0.txt", editorconfig=True)
 
     # Negative ranges
-    assert glob.match("file{-1..1}.txt", "file-1.txt", editorconfig_braces=True)
-    assert glob.match("file{-1..1}.txt", "file0.txt", editorconfig_braces=True)
-    assert glob.match("file{-1..1}.txt", "file1.txt", editorconfig_braces=True)
+    assert glob.match("file{-1..1}.txt", "file-1.txt", editorconfig=True)
+    assert glob.match("file{-1..1}.txt", "file0.txt", editorconfig=True)
+    assert glob.match("file{-1..1}.txt", "file1.txt", editorconfig=True)
 
     # Braces can be nested
-    assert glob.match("file{a,{b,c}}.txt", "filea.txt", editorconfig_braces=True)
-    assert glob.match("file{a,{b,c}}.txt", "fileb.txt", editorconfig_braces=True)
-    assert glob.match("file{a,{b,c}}.txt", "filec.txt", editorconfig_braces=True)
+    assert glob.match("file{a,{b,c}}.txt", "filea.txt", editorconfig=True)
+    assert glob.match("file{a,{b,c}}.txt", "fileb.txt", editorconfig=True)
+    assert glob.match("file{a,{b,c}}.txt", "filec.txt", editorconfig=True)
 
 
 def test_editorconfig_asterisk():
     """Test editorconfig asterisk behavior."""
     # * should match any string including path separators
-    assert glob.match("*.txt", "file.txt", editorconfig_asterisk=True)
-    assert glob.match("*.txt", "dir/file.txt", editorconfig_asterisk=True)
-    assert not glob.match("*.txt", "file.py", editorconfig_asterisk=True)
+    assert glob.match("*.txt", "file.txt", editorconfig=True)
+    assert glob.match("*.txt", "dir/file.txt", editorconfig=True)
+    assert not glob.match("*.txt", "file.py", editorconfig=True)
 
 
 def test_editorconfig_double_asterisk():
     """Test editorconfig ** behavior."""
     # ** should match any string
-    assert glob.match("**", "file.txt", editorconfig_double_asterisk=True)
-    assert glob.match("**", "dir/file.txt", editorconfig_double_asterisk=True)
-    assert glob.match("**", "dir/subdir/file.txt", editorconfig_double_asterisk=True)
+    assert glob.match("**", "file.txt", editorconfig=True)
+    assert glob.match("**", "dir/file.txt", editorconfig=True)
+    assert glob.match("**", "dir/subdir/file.txt", editorconfig=True)
 
     # More specific pattern with **
-    assert glob.match("a/**/file.txt", "a/file.txt", editorconfig_double_asterisk=True)
-    assert glob.match(
-        "a/**/file.txt", "a/b/file.txt", editorconfig_double_asterisk=True
-    )
-    assert glob.match(
-        "a/**/file.txt", "a/b/c/file.txt", editorconfig_double_asterisk=True
-    )
+    assert glob.match("a/**/file.txt", "a/file.txt", editorconfig=True)
+    assert glob.match("a/**/file.txt", "a/b/file.txt", editorconfig=True)
+    assert glob.match("a/**/file.txt", "a/b/c/file.txt", editorconfig=True)
 
 
 def test_escaped_characters():
@@ -144,17 +140,15 @@ def test_escaped_characters():
 def test_combined_features():
     """Test combining different pattern features."""
     # Combining various features
+    assert glob.match("**/[a-z]/{file,test}.{txt,py}", "a/file.txt", editorconfig=True)
     assert glob.match(
-        "**/[a-z]/{file,test}.{txt,py}", "a/file.txt", editorconfig_braces=True
-    )
-    assert glob.match(
-        "**/[a-z]/{file,test}.{txt,py}", "x/y/z/test.py", editorconfig_braces=True
+        "**/[a-z]/{file,test}.{txt,py}", "x/y/z/test.py", editorconfig=True
     )
     assert not glob.match(
-        "**/[a-z]/{file,test}.{txt,py}", "1/file.txt", editorconfig_braces=True
+        "**/[a-z]/{file,test}.{txt,py}", "1/file.txt", editorconfig=True
     )
     assert not glob.match(
-        "**/[a-z]/{file,test}.{txt,py}", "a/other.txt", editorconfig_braces=True
+        "**/[a-z]/{file,test}.{txt,py}", "a/other.txt", editorconfig=True
     )
 
 
@@ -253,16 +247,10 @@ def test_complex_patterns():
     assert not glob.match("**/a/**/b/**/c.txt", "a/b/d.txt")
 
     # Combinations with editorconfig features
-    assert glob.match(
-        "**/{a,b}/**/*.{txt,md}", "a/x/y/file.txt", editorconfig_braces=True
-    )
-    assert glob.match("**/{a,b}/**/*.{txt,md}", "b/file.md", editorconfig_braces=True)
-    assert not glob.match(
-        "**/{a,b}/**/*.{txt,md}", "c/file.txt", editorconfig_braces=True
-    )
-    assert not glob.match(
-        "**/{a,b}/**/*.{txt,md}", "a/file.py", editorconfig_braces=True
-    )
+    assert glob.match("**/{a,b}/**/*.{txt,md}", "a/x/y/file.txt", editorconfig=True)
+    assert glob.match("**/{a,b}/**/*.{txt,md}", "b/file.md", editorconfig=True)
+    assert not glob.match("**/{a,b}/**/*.{txt,md}", "c/file.txt", editorconfig=True)
+    assert not glob.match("**/{a,b}/**/*.{txt,md}", "a/file.py", editorconfig=True)
 
 
 def test_edge_cases():
@@ -281,7 +269,7 @@ def test_edge_cases():
 
     # Just double asterisks
     assert glob.match("**", "file.txt")
-    assert glob.match("**", "nested/file.txt", editorconfig_double_asterisk=True)
+    assert glob.match("**", "nested/file.txt", editorconfig=True)
 
     # Pattern with just a slash
     assert glob.match("/", "/")
