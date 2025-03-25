@@ -3,7 +3,6 @@
 import logging
 import os
 import subprocess
-import time
 from typing import Any
 
 from ..common import normalize_file_path
@@ -173,10 +172,9 @@ async def grep_files(
         signal: Optional abort signal to terminate the subprocess
 
     Returns:
-        A dictionary with execution stats and matched files
+        A dictionary with matched files
 
     """
-    start_time = time.time()
 
     # Execute git grep asynchronously
     matches = await git_grep(pattern, path, include, signal)
@@ -215,15 +213,9 @@ async def grep_files(
         )
         matches.sort()
 
-    # Calculate execution time
-    execution_time = int(
-        (time.time() - start_time) * 1000,
-    )  # Convert to milliseconds
-
     # Prepare output
     output = {
         "filenames": matches[:MAX_RESULTS],
-        "durationMs": execution_time,
         "numFiles": len(matches),
     }
 
