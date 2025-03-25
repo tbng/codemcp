@@ -3,7 +3,6 @@
 import asyncio
 import logging
 import os
-import time
 from pathlib import Path
 from typing import Any, Dict, Optional
 
@@ -71,35 +70,28 @@ async def glob(
         matches = [match for match in matches if match.is_file()]
 
         # Sort matches by modification time (newest first)
-        try:
-            loop = asyncio.get_event_loop()
+        loop = asyncio.get_event_loop()
 
-            # Get file stats asynchronously
-            stats = []
-            for match in matches:
-                stat = await loop.run_in_executor(
-                    None, lambda m=match: os.stat(m) if os.path.exists(m) else None
-                )
-                stats.append(stat)
-
-            matches_with_stats = list(zip(matches, stats, strict=False))
-
-            # In tests, sort by filename for deterministic results
-            if os.environ.get("NODE_ENV") == "test":
-                matches_with_stats.sort(key=lambda x: str(x[0]))
-            else:
-                # Sort by modification time (newest first), with filename as tiebreaker
-                matches_with_stats.sort(
-                    key=lambda x: (-(x[1].st_mtime if x[1] else 0), str(x[0]))
-                )
-
-            matches = [match for match, _ in matches_with_stats]
-        except Exception as e:
-            # Fall back to sorting by name if there's an error
-            logging.debug(
-                f"Error sorting by modification time, falling back to name sort: {e!s}",
+        # Get file stats asynchronously
+        stats = []
+        for match in matches:
+            stat = await loop.run_in_executor(
+                None, lambda m=match: os.stat(m) if os.path.exists(m) else None
             )
-            matches.sort(key=lambda x: str(x))
+            stats.append(stat)
+
+        matches_with_stats = list(zip(matches, stats, strict=False))
+
+        # In tests, sort by filename for deterministic results
+        if os.environ.get("NODE_ENV") == "test":
+            matches_with_stats.sort(key=lambda x: str(x[0]))
+        else:
+            # Sort by modification time (newest first), with filename as tiebreaker
+            matches_with_stats.sort(
+                key=lambda x: (-(x[1].st_mtime if x[1] else 0), str(x[0]))
+            )
+
+        matches = [match for match, _ in matches_with_stats]
 
         # Convert Path objects to strings
         file_paths = [str(match) for match in matches]
@@ -169,10 +161,8 @@ async def glob_files(
         signal: Optional abort signal to terminate the operation
 
     Returns:
-        A dictionary with execution stats and matched files
+        A dictionary with matched files
     """
-    start_time = time.time()
-
     # Use current working directory if path is not provided
     if path is None:
         path = os.getcwd()
@@ -186,16 +176,12 @@ async def glob_files(
     # Execute glob
     result = await glob(pattern, path, options, signal)
 
-    # Calculate execution time
-    execution_time = int((time.time() - start_time) * 1000)  # Convert to milliseconds
-
     # Get matching files
     files = result.get("files", [])
 
     # Prepare output
     output = {
         "filenames": files,
-        "durationMs": execution_time,
         "numFiles": len(files),
         "truncated": result.get("truncated", False),
     }
