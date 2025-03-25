@@ -78,7 +78,7 @@ def update_commit_message_with_description(
         message_after = main_message[end_marker_pos + len(END_MARKER) :]
 
         # Parse the revision list
-        rev_entries = []
+        rev_entries: list[str] = []
         if rev_list_content:
             rev_entries = [
                 line.strip() for line in rev_list_content.splitlines() if line.strip()
@@ -86,7 +86,7 @@ def update_commit_message_with_description(
 
         # Process rev_entries: replace any HEAD entries with actual commit hash
         has_base_revision = False
-        new_rev_entries = []
+        new_rev_entries: list[str] = []
 
         for entry in rev_entries:
             if "(Base revision)" in entry:
@@ -137,8 +137,8 @@ def update_commit_message_with_description(
 
         if has_head_entry or has_base_revision:
             # Old format detected, convert to new format with markers
-            new_rev_entries = []
-            filtered_lines = []
+            new_rev_entries: list[str] = []
+            filtered_lines: list[str] = []
 
             for line in lines:
                 if "(Base revision)" in line or line.strip().startswith("HEAD"):
@@ -192,7 +192,7 @@ def update_commit_message_with_description(
         else:
             # No markers or HEAD entries, handle as normal
             if description:
-                rev_entries = []
+                rev_entries: list[str] = []
 
                 # If we have a commit hash, initialize with base revision
                 if commit_hash:
