@@ -87,7 +87,9 @@ def get_edit_snippet(
     return "\n".join(result)
 
 
-def truncate_output_content(content: Union[str, bytes], prefer_end: bool = True) -> str:
+def truncate_output_content(
+    content: Union[str, bytes, None], prefer_end: bool = True
+) -> str:
     """Truncate command output content to a reasonable size.
 
     When prefer_end is True, this function prioritizes keeping content from the end
@@ -101,8 +103,10 @@ def truncate_output_content(content: Union[str, bytes], prefer_end: bool = True)
     Returns:
         The truncated content with appropriate indicators
     """
+    if content is None:
+        return ""
     if not content:
-        return "" if content is None else str(content)
+        return str(content)
 
     # Convert bytes to str if needed
     if isinstance(content, bytes):
