@@ -3,7 +3,7 @@
 import logging
 import os
 import subprocess
-from typing import Any
+from typing import Any, Dict, List, Optional, Tuple
 
 from ..common import normalize_file_path
 from ..git import is_git_repository
@@ -120,7 +120,11 @@ async def git_grep(
         matches = [line.strip() for line in result.stdout.split() if line.strip()]
 
         # Convert to absolute paths
-        matches = [os.path.join(absolute_path, match) for match in matches]
+        matches = [
+            os.path.join(absolute_path, match)
+            for match in matches
+            if isinstance(match, str)
+        ]
 
         return matches
     except subprocess.SubprocessError as e:
@@ -128,7 +132,7 @@ async def git_grep(
         raise
 
 
-def render_result_for_assistant(output: dict[str, Any]) -> str:
+def render_result_for_assistant(output: Dict[str, Any]) -> str:
     """Render the results in a format suitable for the assistant.
 
     Args:
@@ -182,14 +186,16 @@ async def grep_files(
     loop = asyncio.get_event_loop()
 
     # Get file stats asynchronously
-    stats = []
+    stats: List[Optional[os.stat_result]] = []
     for match in matches:
-        stat = await loop.run_in_executor(
+        file_stat = await loop.run_in_executor(
             None, lambda m=match: os.stat(m) if os.path.exists(m) else None
         )
-        stats.append(stat)
+        stats.append(file_stat)
 
-    matches_with_stats = list(zip(matches, stats, strict=False))
+    matches_with_stats: List[Tuple[str, Optional[os.stat_result]]] = list(
+        zip(matches, stats, strict=False)
+    )
 
     # In tests, sort by filename for deterministic results
     if os.environ.get("NODE_ENV") == "test":
@@ -201,12 +207,13 @@ async def grep_files(
     matches = [match for match, _ in matches_with_stats]
 
     # Prepare output
-    output = {
+    output: Dict[str, Any] = {
         "filenames": matches[:MAX_RESULTS],
         "numFiles": len(matches),
     }
 
     # Add formatted result for assistant
-    output["resultForAssistant"] = render_result_for_assistant(output)
+    formatted_result = render_result_for_assistant(output)
+    output["resultForAssistant"] = formatted_result
 
     return output
