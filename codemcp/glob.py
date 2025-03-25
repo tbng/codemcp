@@ -30,7 +30,7 @@ def translate_pattern(
     editorconfig_asterisk = editorconfig
     editorconfig_double_asterisk = editorconfig
     i, n = 0, len(pattern)
-    result = []
+    result: List[str] = []
 
     # Handle escaped characters
     escaped = False
@@ -178,7 +178,7 @@ def translate_pattern(
                 else:
                     # Handle comma-separated items {s1,s2,s3}
                     # Split but respect any nested braces
-                    items = []
+                    items: List[str] = []
                     start = 0
                     nested_depth = 0
 
@@ -200,7 +200,7 @@ def translate_pattern(
                         i = i - len(brace_content) - 2
                     else:
                         # Process each item recursively to handle nested braces
-                        processed_items = []
+                        processed_items: List[str] = []
                         for item in items:
                             # For nested patterns, recursively translate but without the anchors
                             if "{" in item:
@@ -324,7 +324,7 @@ def find(
     Returns:
         List of paths that match any of the patterns
     """
-    result = []
+    result: List[str] = []
     matchers = [
         make_matcher(
             pattern,
@@ -341,7 +341,7 @@ def find(
         return result
 
     # Walk filesystem
-    for dirpath, dirnames, filenames in os.walk(root):
+    for dirpath, _, filenames in os.walk(root):
         rel_dirpath = os.path.relpath(dirpath, root)
         if rel_dirpath == ".":
             rel_dirpath = ""
