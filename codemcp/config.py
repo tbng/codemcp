@@ -98,7 +98,9 @@ def _merge_configs(base: dict[str, Any], override: dict[str, Any]) -> None:
     """
     for key, value in override.items():
         if key in base and isinstance(base[key], dict) and isinstance(value, dict):
-            _merge_configs(base[key], value)
+            # Type annotation to help the type checker understand that value is dict[str, Any]
+            nested_value: dict[str, Any] = value
+            _merge_configs(base[key], nested_value)
         else:
             base[key] = value
 
