@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# pyright: reportUnknownArgumentType=false, reportUnknownMemberType=false, reportUnknownVariableType=false
+
 
 import asyncio
 import os

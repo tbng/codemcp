@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# pyright: reportUnknownMemberType=false
+
 
 import asyncio
 import functools
@@ -165,7 +165,6 @@ class HotReloadManager:
                         if command == "call":
                             # Use explicit type cast for arguments to satisfy the type checker
                             tool_args = cast(Dict[str, Any], args)
-                            # pyright: ignore[reportUnknownMemberType]
                             result = await session.call_tool(
                                 name="codemcp", arguments=tool_args
                             )
