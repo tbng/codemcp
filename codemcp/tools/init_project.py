@@ -473,7 +473,7 @@ Example:
 Args:
     subtool: The subtool to execute (ReadFile, WriteFile, EditFile, LS, InitProject, UserPrompt, RunCommand, RM, Think, Chmod)
     path: The path to the file or directory to operate on
-    content: Content for WriteFile subtool
+    content: Content for WriteFile subtool (any type will be serialized to string if needed)
     old_string: String to replace for EditFile subtool
     new_string: Replacement string for EditFile subtool
     offset: Line offset for ReadFile subtool

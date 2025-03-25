@@ -28,7 +28,7 @@ async def codemcp(
     subtool: str,
     *,
     path: str | None = None,
-    content: str | None = None,
+    content: object = None,  # Allow any type, will be serialized to string if needed
     old_string: str | None = None,
     new_string: str | None = None,
     offset: int | None = None,
@@ -178,7 +178,14 @@ async def codemcp(
             if description is None:
                 raise ValueError("description is required for WriteFile subtool")
 
-            content_str = content or ""
+            import json
+
+            # If content is not a string, serialize it to a string using json.dumps
+            if content is not None and not isinstance(content, str):
+                content_str = json.dumps(content)
+            else:
+                content_str = content or ""
+
             return await write_file_content(path, content_str, description, chat_id)
 
         if subtool == "EditFile":
