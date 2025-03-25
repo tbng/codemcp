@@ -5,7 +5,7 @@ import os
 import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Optional, Set, Tuple
+from typing import Dict, List, Optional, Set, Tuple
 
 from codemcp.glob import match as glob_match
 
@@ -51,7 +51,7 @@ def load_rule_from_file(file_path: str) -> Optional[Rule]:
         payload = frontmatter_match.group(2).strip()
 
         # We need to manually parse the frontmatter to handle unquoted glob patterns
-        frontmatter = {}
+        frontmatter: Dict[str, str] = {}
         for line in frontmatter_text.strip().split("\n"):
             if ":" in line:
                 key, value = line.split(":", 1)
@@ -60,17 +60,17 @@ def load_rule_from_file(file_path: str) -> Optional[Rule]:
                 frontmatter[key] = value
 
         # Extract rule properties
-        description = frontmatter.get("description")
+        description: Optional[str] = frontmatter.get("description")
 
         # Handle globs - can be comma-separated string or a list
         globs: List[str] = []
-        globs_value = frontmatter.get("globs")
+        globs_value: Optional[str] = frontmatter.get("globs")
         if globs_value:
             globs = [g.strip() for g in globs_value.split(",")]
 
         # Convert alwaysApply string to boolean
-        always_apply_value = frontmatter.get("alwaysApply", "false")
-        always_apply = always_apply_value.lower() == "true"
+        always_apply_value: str = frontmatter.get("alwaysApply", "false")
+        always_apply: bool = always_apply_value.lower() == "true"
 
         return Rule(
             description=description,
