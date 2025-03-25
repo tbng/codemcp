@@ -3,7 +3,6 @@
 import logging
 import os
 import stat
-import time
 from typing import Any, Literal
 
 from ..common import normalize_file_path
@@ -44,10 +43,8 @@ async def chmod(
         signal: Optional abort signal to terminate the subprocess
 
     Returns:
-        A dictionary with execution stats and chmod output
+        A dictionary with chmod output
     """
-    start_time = time.time()
-
     if not path:
         raise ValueError("File path must be provided")
 
@@ -76,14 +73,12 @@ async def chmod(
             message = f"File '{path}' is already executable"
             return {
                 "output": message,
-                "durationMs": int((time.time() - start_time) * 1000),
                 "resultForAssistant": message,
             }
         elif mode == "a-x" and not is_executable:
             message = f"File '{path}' is already non-executable"
             return {
                 "output": message,
-                "durationMs": int((time.time() - start_time) * 1000),
                 "resultForAssistant": message,
             }
 
@@ -118,19 +113,12 @@ async def chmod(
             logging.warning(f"Failed to commit chmod changes: {commit_message}")
             return {
                 "output": f"{action_msg}, but failed to commit changes: {commit_message}",
-                "durationMs": int((time.time() - start_time) * 1000),
                 "resultForAssistant": f"{action_msg}, but failed to commit changes: {commit_message}",
             }
-
-        # Calculate execution time
-        execution_time = int(
-            (time.time() - start_time) * 1000
-        )  # Convert to milliseconds
 
         # Prepare output
         output = {
             "output": f"{action_msg} and committed changes",
-            "durationMs": execution_time,
         }
 
         # Add formatted result for assistant
@@ -142,7 +130,6 @@ async def chmod(
         error_message = f"Error executing chmod: {e!s}"
         return {
             "output": error_message,
-            "durationMs": int((time.time() - start_time) * 1000),
             "resultForAssistant": error_message,
         }
 

@@ -2,7 +2,6 @@
 
 import logging
 import shlex
-import time
 from typing import Any
 
 from ..common import normalize_file_path
@@ -46,9 +45,8 @@ async def git_log(
         signal: Optional abort signal to terminate the subprocess
 
     Returns:
-        A dictionary with execution stats and git log output
+        A dictionary with git log output
     """
-    start_time = time.time()
 
     if path is None:
         raise ValueError("Path must be provided for git log")
@@ -88,19 +86,12 @@ async def git_log(
             error_message = f"Error: {result.stderr}"
             return {
                 "output": error_message,
-                "durationMs": int((time.time() - start_time) * 1000),
                 "resultForAssistant": error_message,
             }
-
-        # Calculate execution time
-        execution_time = int(
-            (time.time() - start_time) * 1000
-        )  # Convert to milliseconds
 
         # Prepare output
         output = {
             "output": result.stdout,
-            "durationMs": execution_time,
         }
 
         # Add formatted result for assistant
@@ -112,7 +103,6 @@ async def git_log(
         error_message = f"Error executing git log: {e!s}"
         return {
             "output": error_message,
-            "durationMs": int((time.time() - start_time) * 1000),
             "resultForAssistant": error_message,
         }
 
