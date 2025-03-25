@@ -3,7 +3,6 @@
 import asyncio
 import logging
 import os
-import time
 from pathlib import Path
 from typing import Any, Dict, Optional
 
@@ -169,10 +168,8 @@ async def glob_files(
         signal: Optional abort signal to terminate the operation
 
     Returns:
-        A dictionary with execution stats and matched files
+        A dictionary with matched files
     """
-    start_time = time.time()
-
     # Use current working directory if path is not provided
     if path is None:
         path = os.getcwd()
@@ -186,16 +183,12 @@ async def glob_files(
     # Execute glob
     result = await glob(pattern, path, options, signal)
 
-    # Calculate execution time
-    execution_time = int((time.time() - start_time) * 1000)  # Convert to milliseconds
-
     # Get matching files
     files = result.get("files", [])
 
     # Prepare output
     output = {
         "filenames": files,
-        "durationMs": execution_time,
         "numFiles": len(files),
         "truncated": result.get("truncated", False),
     }
