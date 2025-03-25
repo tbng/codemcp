@@ -413,20 +413,20 @@ def find_similar_lines(
         String containing the most similar lines, or empty string if none found
 
     """
-    search_lines = search_lines.splitlines()
-    content_lines = content_lines.splitlines()
+    search_lines_list = search_lines.splitlines()
+    content_lines_list = content_lines.splitlines()
 
     # Handle empty input cases
-    if not search_lines or not content_lines:
+    if not search_lines_list or not content_lines_list:
         return ""
 
     best_ratio = 0
-    best_match = []  # Initialize with empty list to avoid None checks
+    best_match: list[str] = []  # Initialize with empty list to avoid None checks
     best_match_i = 0  # Initialize to avoid unbound variable errors
 
-    for i in range(len(content_lines) - len(search_lines) + 1):
-        chunk = content_lines[i : i + len(search_lines)]
-        ratio = SequenceMatcher(None, search_lines, chunk).ratio()
+    for i in range(len(content_lines_list) - len(search_lines_list) + 1):
+        chunk = content_lines_list[i : i + len(search_lines_list)]
+        ratio = SequenceMatcher(None, search_lines_list, chunk).ratio()
         if ratio > best_ratio:
             best_ratio = ratio
             best_match = chunk
@@ -435,14 +435,19 @@ def find_similar_lines(
     if best_ratio < threshold:
         return ""
 
-    if best_match[0] == search_lines[0] and best_match[-1] == search_lines[-1]:
+    if (
+        best_match[0] == search_lines_list[0]
+        and best_match[-1] == search_lines_list[-1]
+    ):
         return "\n".join(best_match)
 
     N = 5
-    best_match_end = min(len(content_lines), best_match_i + len(search_lines) + N)
+    best_match_end = min(
+        len(content_lines_list), best_match_i + len(search_lines_list) + N
+    )
     best_match_i = max(0, best_match_i - N)
 
-    best = content_lines[best_match_i:best_match_end]
+    best = content_lines_list[best_match_i:best_match_end]
     return "\n".join(best)
 
 
@@ -584,7 +589,7 @@ async def edit_file_content(
     new_string: str,
     read_file_timestamps: dict[str, float] | None = None,
     description: str = "",
-    chat_id: str = None,
+    chat_id: str = "",
 ) -> str:
     """Edit a file by replacing old_string with new_string.
 

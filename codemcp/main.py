@@ -39,7 +39,7 @@ async def codemcp(
     pattern: str | None = None,
     include: str | None = None,
     command: str | None = None,
-    arguments: list[str] | str | None = None,
+    arguments: str | None = None,
     old_str: str | None = None,  # Added for backward compatibility
     new_str: str | None = None,  # Added for backward compatibility
     chat_id: str | None = None,  # Added for chat identification
@@ -109,28 +109,28 @@ async def codemcp(
         # We no longer need to convert string arguments to list since run_command now only accepts strings
 
         # Normalize string inputs to ensure consistent newlines
-        def normalize_newlines(s):
+        def normalize_newlines(s: object) -> object:
             """Normalize string to use \n for all newlines."""
             return s.replace("\r\n", "\n") if isinstance(s, str) else s
 
         # Normalize content, old_string, and new_string to use consistent \n newlines
-        content = normalize_newlines(content)
-        old_string = normalize_newlines(old_string)
-        new_string = normalize_newlines(new_string)
+        content_norm = normalize_newlines(content)
+        old_string_norm = normalize_newlines(old_string)
+        new_string_norm = normalize_newlines(new_string)
         # Also normalize backward compatibility parameters
-        old_str = normalize_newlines(old_str)
-        new_str = normalize_newlines(new_str)
+        old_str_norm = normalize_newlines(old_str)
+        new_str_norm = normalize_newlines(new_str)
         # And user prompt which might contain code blocks
-        user_prompt = normalize_newlines(user_prompt)
+        user_prompt_norm = normalize_newlines(user_prompt)
 
         # Get all provided non-None parameters
         provided_params = {
             param: value
             for param, value in {
                 "path": path,
-                "content": content,
-                "old_string": old_string,
-                "new_string": new_string,
+                "content": content_norm,
+                "old_string": old_string_norm,
+                "new_string": new_string_norm,
                 "offset": offset,
                 "limit": limit,
                 "description": description,
@@ -139,12 +139,12 @@ async def codemcp(
                 "command": command,
                 "arguments": arguments,
                 # Include backward compatibility parameters
-                "old_str": old_str,
-                "new_str": new_str,
+                "old_str": old_str_norm,
+                "new_str": new_str_norm,
                 # Chat ID for session identification
                 "chat_id": chat_id,
                 # InitProject commit message parameters
-                "user_prompt": user_prompt,
+                "user_prompt": user_prompt_norm,
                 "subject_line": subject_line,
                 # Whether to reuse the chat ID from the HEAD commit
                 "reuse_head_chat_id": reuse_head_chat_id,
@@ -188,6 +188,8 @@ async def codemcp(
             else:
                 content_str = content or ""
 
+            if chat_id is None:
+                raise ValueError("chat_id is required for WriteFile subtool")
             return await write_file_content(path, content_str, description, chat_id)
 
         if subtool == "EditFile":
@@ -205,6 +207,8 @@ async def codemcp(
             old_content = old_string or old_str or ""
             # Accept either new_string or new_str (prefer new_string if both are provided)
             new_content = new_string or new_str or ""
+            if chat_id is None:
+                raise ValueError("chat_id is required for EditFile subtool")
             return await edit_file_content(
                 path, old_content, new_content, None, description, chat_id
             )
@@ -242,10 +246,20 @@ async def codemcp(
             if command is None:
                 raise ValueError("command is required for RunCommand subtool")
 
+            # Ensure chat_id is provided
+            if chat_id is None:
+                raise ValueError("chat_id is required for RunCommand subtool")
+
+            # Ensure arguments is a string for run_command
+            args_str = (
+                arguments
+                if isinstance(arguments, str) or arguments is None
+                else " ".join(arguments)
+            )
             return await run_command(
                 path,
                 command,
-                arguments,
+                args_str,
                 chat_id,
             )
 
@@ -303,6 +317,8 @@ async def codemcp(
             if description is None:
                 raise ValueError("description is required for RM subtool")
 
+            if chat_id is None:
+                raise ValueError("chat_id is required for RM subtool")
             return await rm_file(path, description, chat_id)
 
         if subtool == "Think":
@@ -317,14 +333,27 @@ async def codemcp(
             if mode is None:
                 raise ValueError("mode is required for Chmod subtool")
 
-            result = await chmod(path, mode, chat_id)
+            if chat_id is None:
+                raise ValueError("chat_id is required for Chmod subtool")
+
+            # Ensure mode is one of the valid literals
+            if mode not in ["a+x", "a-x"]:
+                raise ValueError("mode must be either 'a+x' or 'a-x' for Chmod subtool")
+
+            from typing import Literal, cast
+
+            chmod_mode = cast(Literal["a+x", "a-x"], mode)
+            result = await chmod(path, chmod_mode, chat_id)
             return result.get("resultForAssistant", "Chmod operation completed")
     except Exception:
         logging.error("Exception", exc_info=True)
         raise
 
+    # This should never be reached, but adding for type safety
+    return "Unknown subtool or operation"
 
-def configure_logging(log_file="codemcp.log"):
+
+def configure_logging(log_file: str = "codemcp.log") -> None:
     """Configure logging to write to both a file and the console.
 
     The log level is determined from the configuration file.
@@ -388,7 +417,7 @@ def configure_logging(log_file="codemcp.log"):
 
     # Set up filter to exclude logs from 'mcp' module unless in debug mode
     class ModuleFilter(logging.Filter):
-        def filter(self, record):
+        def filter(self, record: logging.LogRecord) -> bool:
             # Allow all logs in debug mode, otherwise filter 'mcp' module
             if debug_mode or not record.name.startswith("mcp"):
                 return True
@@ -478,7 +507,7 @@ def init_codemcp_project(path: str) -> str:
 
 @click.group(invoke_without_command=True)
 @click.pass_context
-def cli(ctx):
+def cli(ctx: click.Context) -> None:
     """CodeMCP: Command-line interface for MCP server and project management."""
     # If no subcommand is provided, run the MCP server (for backwards compatibility)
     if ctx.invoked_subcommand is None:
@@ -487,13 +516,13 @@ def cli(ctx):
 
 @cli.command()
 @click.argument("path", type=click.Path(), default=".")
-def init(path):
+def init(path: str) -> None:
     """Initialize a new codemcp project with an empty codemcp.toml file and git repository."""
     result = init_codemcp_project(path)
     click.echo(result)
 
 
-def run():
+def run() -> None:
     """Run the MCP server."""
     configure_logging()
     mcp.run()
