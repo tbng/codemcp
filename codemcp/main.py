@@ -2,7 +2,11 @@
 
 import logging
 import os
+import sys
+from pathlib import Path
+from typing import Optional
 
+import click
 from mcp.server.fastmcp import FastMCP
 
 from .tools.chmod import chmod
@@ -404,6 +408,91 @@ def configure_logging(log_file="codemcp.log"):
     logging.info(f"Log level set to: {logging.getLevelName(log_level)}")
     if not debug_mode:
         logging.info("Logs from 'mcp' module are being filtered")
+
+
+def init_codemcp_project(path: str) -> str:
+    """Initialize a new codemcp project.
+    
+    Args:
+        path: Path to initialize the project in
+    
+    Returns:
+        Message indicating success or failure
+    """
+    import subprocess
+    
+    try:
+        # Convert to Path object and resolve to absolute path
+        project_path = Path(path).resolve()
+        
+        # Create directory if it doesn't exist
+        project_path.mkdir(parents=True, exist_ok=True)
+        
+        # Check if git repository already exists
+        git_dir = project_path / ".git"
+        if not git_dir.exists():
+            # Initialize git repository
+            subprocess.run(["git", "init"], cwd=project_path, check=True)
+            print(f"Initialized git repository in {project_path}")
+        else:
+            print(f"Git repository already exists in {project_path}")
+        
+        # Create empty codemcp.toml file if it doesn't exist
+        config_file = project_path / "codemcp.toml"
+        if not config_file.exists():
+            with open(config_file, "w") as f:
+                f.write("# codemcp configuration file\n\n")
+            print(f"Created empty codemcp.toml file in {project_path}")
+        else:
+            print(f"codemcp.toml file already exists in {project_path}")
+        
+        # Make initial commit if there are no commits yet
+        try:
+            # Check if there are any commits
+            result = subprocess.run(
+                ["git", "rev-parse", "HEAD"], 
+                cwd=project_path, 
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+            
+            if result.returncode != 0:
+                # No commits yet, add codemcp.toml and make initial commit
+                subprocess.run(
+                    ["git", "add", "codemcp.toml"], cwd=project_path, check=True
+                )
+                subprocess.run(
+                    ["git", "commit", "-m", "chore: initialize codemcp project"],
+                    cwd=project_path,
+                    check=True,
+                )
+                print("Created initial commit with codemcp.toml")
+            else:
+                print("Repository already has commits, not creating initial commit")
+        except subprocess.CalledProcessError as e:
+            print(f"Warning: Failed to create initial commit: {e}")
+        
+        return f"Successfully initialized codemcp project in {project_path}"
+    except Exception as e:
+        return f"Error initializing project: {e}"
+
+
+@click.group(invoke_without_command=True)
+@click.pass_context
+def cli(ctx):
+    """CodeMCP: Command-line interface for MCP server and project management."""
+    # If no subcommand is provided, run the MCP server (for backwards compatibility)
+    if ctx.invoked_subcommand is None:
+        run()
+
+
+@cli.command()
+@click.argument("path", type=click.Path(), default=".")
+def init(path):
+    """Initialize a new codemcp project with an empty codemcp.toml file and git repository."""
+    result = init_codemcp_project(path)
+    click.echo(result)
 
 
 def run():
