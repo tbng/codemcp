@@ -91,7 +91,7 @@ async def create_commit_reference(
             text=True,
             check=True,
         )
-        tree_hash = tree_result.stdout.strip()
+        tree_hash = str(tree_result.stdout.strip())
     else:
         # Create an empty tree if no HEAD exists
         empty_tree_result = await run_command(
@@ -102,7 +102,7 @@ async def create_commit_reference(
             text=True,
             check=True,
         )
-        tree_hash = empty_tree_result.stdout.strip()
+        tree_hash = str(empty_tree_result.stdout.strip())
 
     commit_message = commit_msg
 
@@ -116,7 +116,7 @@ async def create_commit_reference(
             text=True,
             check=True,
         )
-        head_hash = head_hash_result.stdout.strip()
+        head_hash = str(head_hash_result.stdout.strip())
         parent_arg = ["-p", head_hash]
 
     # Create the commit object (with GPG signing explicitly disabled)
@@ -135,7 +135,7 @@ async def create_commit_reference(
         text=True,
         check=True,
     )
-    commit_hash = commit_result.stdout.strip()
+    commit_hash = str(commit_result.stdout.strip())
 
     ref_name = f"refs/codemcp/{chat_id}"
 
@@ -309,7 +309,7 @@ async def commit_changes(
                 text=True,
                 check=True,
             )
-            tree_hash = tree_result.stdout.strip()
+            tree_hash = str(tree_result.stdout.strip())
 
             # Get the commit message from the reference
             ref_message_result = await run_command(
@@ -319,7 +319,7 @@ async def commit_changes(
                 text=True,
                 check=True,
             )
-            ref_message = ref_message_result.stdout.strip()
+            ref_message = str(ref_message_result.stdout.strip())
 
             # Create a new commit with the same tree as HEAD but message from the reference
             # This effectively creates the commit without changing the working tree
@@ -339,7 +339,7 @@ async def commit_changes(
                 text=True,
                 check=True,
             )
-            new_commit_hash = new_commit_result.stdout.strip()
+            new_commit_hash = str(new_commit_result.stdout.strip())
 
             # Update HEAD to point to the new commit
             await run_command(

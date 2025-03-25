@@ -4,30 +4,33 @@ Generic fnmatch-based glob implementation supporting both gitignore and editorco
 
 import os
 import re
-from typing import Callable, List
+from typing import Callable, List, Optional
 
 
 def translate_pattern(
     pattern: str,
-    editorconfig_braces: bool = False,
-    editorconfig_asterisk: bool = False,
-    editorconfig_double_asterisk: bool = False,
+    editorconfig: bool = False,
 ) -> str:
     """
     Translate a glob pattern to a regular expression pattern.
 
     Args:
         pattern: The glob pattern to translate
-        editorconfig_braces: Enable editorconfig brace expansion {s1,s2,s3} and {n1..n2}
-        editorconfig_asterisk: If True, '*' matches any string including path separators
-        editorconfig_double_asterisk: If True, '**' matches any string (editorconfig behavior)
-                                     If False, uses gitignore behavior for '**'
+        editorconfig: If True, uses editorconfig glob syntax rules:
+                      - Enables brace expansion {s1,s2,s3} and {n1..n2}
+                      - '*' matches any string including path separators
+                      - '**' matches any string
+                      If False, uses gitignore glob syntax rules
 
     Returns:
         Regular expression pattern string
     """
+    # For backward compatibility, set individual features based on the single parameter
+    editorconfig_braces = editorconfig
+    editorconfig_asterisk = editorconfig
+    editorconfig_double_asterisk = editorconfig
     i, n = 0, len(pattern)
-    result = []
+    result: List[str] = []
 
     # Handle escaped characters
     escaped = False
@@ -175,7 +178,7 @@ def translate_pattern(
                 else:
                     # Handle comma-separated items {s1,s2,s3}
                     # Split but respect any nested braces
-                    items = []
+                    items: List[str] = []
                     start = 0
                     nested_depth = 0
 
@@ -197,15 +200,13 @@ def translate_pattern(
                         i = i - len(brace_content) - 2
                     else:
                         # Process each item recursively to handle nested braces
-                        processed_items = []
+                        processed_items: List[str] = []
                         for item in items:
                             # For nested patterns, recursively translate but without the anchors
                             if "{" in item:
                                 item_pattern = translate_pattern(
                                     item,
-                                    editorconfig_braces=True,
-                                    editorconfig_asterisk=editorconfig_asterisk,
-                                    editorconfig_double_asterisk=editorconfig_double_asterisk,
+                                    editorconfig=True,
                                 )
                                 # Remove the anchors (^ and $)
                                 if item_pattern.startswith("^"):
@@ -226,18 +227,25 @@ def translate_pattern(
     return "^" + "".join(result) + "$"
 
 
-def make_matcher(pattern: str, **kwargs) -> Callable[[str], bool]:
+def make_matcher(
+    pattern: str,
+    *,
+    editorconfig: bool = False,
+) -> Callable[[str], bool]:
     """
     Create a matcher function that matches paths against the given pattern.
 
     Args:
         pattern: The glob pattern to match against
-        **kwargs: Optional features to enable
+        editorconfig: If True, uses editorconfig glob syntax rules for matching
 
     Returns:
         A function that takes a path string and returns True if it matches
     """
-    regex_pattern = translate_pattern(pattern, **kwargs)
+    regex_pattern = translate_pattern(
+        pattern,
+        editorconfig=editorconfig,
+    )
     regex = re.compile(regex_pattern)
 
     def matcher(path: str) -> bool:
@@ -246,40 +254,63 @@ def make_matcher(pattern: str, **kwargs) -> Callable[[str], bool]:
     return matcher
 
 
-def match(pattern: str, path: str, **kwargs) -> bool:
+def match(
+    pattern: str,
+    path: str,
+    *,
+    editorconfig: bool = False,
+) -> bool:
     """
     Test whether a path matches the given pattern.
 
     Args:
         pattern: The glob pattern to match against
         path: The path to test
-        **kwargs: Optional features to enable
+        editorconfig: If True, uses editorconfig glob syntax rules for matching
 
     Returns:
         True if the path matches the pattern, False otherwise
     """
-    matcher = make_matcher(pattern, **kwargs)
+    matcher = make_matcher(
+        pattern,
+        editorconfig=editorconfig,
+    )
     return matcher(path)
 
 
-def filter(patterns: List[str], paths: List[str], **kwargs) -> List[str]:
+def filter(
+    patterns: List[str],
+    paths: List[str],
+    *,
+    editorconfig: bool = False,
+) -> List[str]:
     """
     Filter a list of paths to those that match any of the given patterns.
 
     Args:
         patterns: List of glob patterns
         paths: List of paths to filter
-        **kwargs: Optional features to enable
+        editorconfig: If True, uses editorconfig glob syntax rules for matching
 
     Returns:
         List of paths that match any of the patterns
     """
-    matchers = [make_matcher(pattern, **kwargs) for pattern in patterns]
+    matchers = [
+        make_matcher(
+            pattern,
+            editorconfig=editorconfig,
+        )
+        for pattern in patterns
+    ]
     return [path for path in paths if any(matcher(path) for matcher in matchers)]
 
 
 def find(
-    patterns: List[str], root: str, paths: List[str] = None, **kwargs
+    patterns: List[str],
+    root: str,
+    paths: Optional[List[str]] = None,
+    *,
+    editorconfig: bool = False,
 ) -> List[str]:
     """
     Find all files that match any of the given patterns.
@@ -288,13 +319,19 @@ def find(
         patterns: List of glob patterns
         root: Root directory to search (used when paths is None)
         paths: Optional list of paths to check instead of walking filesystem
-        **kwargs: Optional features to enable
+        editorconfig: If True, uses editorconfig glob syntax rules for matching
 
     Returns:
         List of paths that match any of the patterns
     """
-    result = []
-    matchers = [make_matcher(pattern, **kwargs) for pattern in patterns]
+    result: List[str] = []
+    matchers = [
+        make_matcher(
+            pattern,
+            editorconfig=editorconfig,
+        )
+        for pattern in patterns
+    ]
 
     if paths is not None:
         # Use provided paths instead of walking filesystem
@@ -304,7 +341,7 @@ def find(
         return result
 
     # Walk filesystem
-    for dirpath, dirnames, filenames in os.walk(root):
+    for dirpath, _, filenames in os.walk(root):
         rel_dirpath = os.path.relpath(dirpath, root)
         if rel_dirpath == ".":
             rel_dirpath = ""
