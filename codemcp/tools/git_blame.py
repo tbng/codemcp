@@ -34,7 +34,6 @@ async def git_blame(
     arguments: str | None = None,
     path: str | None = None,
     chat_id: str | None = None,
-    signal=None,
 ) -> dict[str, Any]:
     """Execute git blame with the provided arguments.
 
@@ -42,7 +41,6 @@ async def git_blame(
         arguments: Optional arguments to pass to git blame as a string
         path: The directory to execute the command in (must be in a git repository)
         chat_id: The unique ID of the current chat session
-        signal: Optional abort signal to terminate the subprocess
 
     Returns:
         A dictionary with git blame output

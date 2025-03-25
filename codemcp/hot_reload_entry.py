@@ -162,7 +162,9 @@ class HotReloadManager:
                             break
 
                         if command == "call":
-                            result = await session.call_tool("codemcp", arguments=args)
+                            result = await session.call_tool(
+                                name="codemcp", arguments=args
+                            )
                             # This is the only error case FastMCP can
                             # faithfully re-propagate, see
                             # https://github.com/modelcontextprotocol/python-sdk/issues/348

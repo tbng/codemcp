@@ -16,7 +16,7 @@ __all__ = [
 async def rm_file(
     path: str,
     description: str,
-    chat_id: str = None,
+    chat_id: str = "",
 ) -> str:
     """Remove a file using git rm.
 

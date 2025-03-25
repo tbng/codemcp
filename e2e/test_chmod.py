@@ -135,7 +135,12 @@ class ChmodTest(MCPEndToEndTestCase):
                     "chat_id": chat_id,
                 },
             )
-            self.assertIn("unsupported chmod mode", error_text.lower())
+            # Check for either error message (from main.py or chmod.py)
+            self.assertTrue(
+                "unsupported chmod mode" in error_text.lower() or
+                "mode must be either 'a+x' or 'a-x'" in error_text.lower(),
+                f"Expected an error about invalid mode, but got: {error_text}"
+            )
 
 
 if __name__ == "__main__":

@@ -16,7 +16,7 @@ __all__ = [
 
 
 async def write_file_content(
-    file_path: str, content: str, description: str = "", chat_id: str = None
+    file_path: str, content: str, description: str = "", chat_id: str = ""
 ) -> str:
     """Write content to a file.
 
