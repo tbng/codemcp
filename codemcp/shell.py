@@ -3,7 +3,7 @@
 import asyncio
 import logging
 import subprocess
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Union
 
 __all__ = [
     "run_command",
@@ -31,7 +31,7 @@ async def run_command(
     wait_time: Optional[float] = None,  # Renamed from timeout to avoid ASYNC109
     shell: bool = False,
     input: Optional[str] = None,
-) -> subprocess.CompletedProcess:
+) -> subprocess.CompletedProcess[Union[str, bytes]]:
     """
     Run a subprocess command with consistent logging asynchronously.
 
@@ -67,7 +67,7 @@ async def run_command(
     # Convert input to bytes if provided
     input_bytes = None
     if input is not None:
-        input_bytes = input.encode() if isinstance(input, str) else input
+        input_bytes = input.encode()
 
     # Run the subprocess asynchronously
     process = await asyncio.create_subprocess_exec(
@@ -87,7 +87,9 @@ async def run_command(
     except asyncio.TimeoutError:
         process.kill()
         await process.wait()
-        raise subprocess.TimeoutExpired(cmd, wait_time)
+        raise subprocess.TimeoutExpired(
+            cmd, float(wait_time) if wait_time is not None else 0.0
+        )
 
     # Handle text conversion
     stdout = ""
@@ -112,8 +114,11 @@ async def run_command(
     logging.debug(f"Command return code: {returncode}")
 
     # Create a CompletedProcess object to maintain compatibility
-    result = subprocess.CompletedProcess(
-        args=cmd, returncode=returncode, stdout=stdout, stderr=stderr
+    result = subprocess.CompletedProcess[Union[str, bytes]](
+        args=cmd,
+        returncode=0 if returncode is None else returncode,
+        stdout=stdout,
+        stderr=stderr,
     )
 
     # Raise RuntimeError if check is True and command failed
