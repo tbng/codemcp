@@ -412,22 +412,22 @@ def configure_logging(log_file="codemcp.log"):
 
 def init_codemcp_project(path: str) -> str:
     """Initialize a new codemcp project.
-    
+
     Args:
         path: Path to initialize the project in
-    
+
     Returns:
         Message indicating success or failure
     """
     import subprocess
-    
+
     try:
         # Convert to Path object and resolve to absolute path
         project_path = Path(path).resolve()
-        
+
         # Create directory if it doesn't exist
         project_path.mkdir(parents=True, exist_ok=True)
-        
+
         # Check if git repository already exists
         git_dir = project_path / ".git"
         if not git_dir.exists():
@@ -436,7 +436,7 @@ def init_codemcp_project(path: str) -> str:
             print(f"Initialized git repository in {project_path}")
         else:
             print(f"Git repository already exists in {project_path}")
-        
+
         # Create empty codemcp.toml file if it doesn't exist
         config_file = project_path / "codemcp.toml"
         if not config_file.exists():
@@ -445,18 +445,18 @@ def init_codemcp_project(path: str) -> str:
             print(f"Created empty codemcp.toml file in {project_path}")
         else:
             print(f"codemcp.toml file already exists in {project_path}")
-        
+
         # Make initial commit if there are no commits yet
         try:
             # Check if there are any commits
             result = subprocess.run(
-                ["git", "rev-parse", "HEAD"], 
-                cwd=project_path, 
+                ["git", "rev-parse", "HEAD"],
+                cwd=project_path,
                 check=False,
                 capture_output=True,
                 text=True,
             )
-            
+
             if result.returncode != 0:
                 # No commits yet, add codemcp.toml and make initial commit
                 subprocess.run(
@@ -472,7 +472,7 @@ def init_codemcp_project(path: str) -> str:
                 print("Repository already has commits, not creating initial commit")
         except subprocess.CalledProcessError as e:
             print(f"Warning: Failed to create initial commit: {e}")
-        
+
         return f"Successfully initialized codemcp project in {project_path}"
     except Exception as e:
         return f"Error initializing project: {e}"
