@@ -407,6 +407,7 @@ class MCPEndToEndTestCase(TestCase, unittest.IsolatedAsyncioTestCase):
             )
 
         # Return the appropriate result type
-        if capture_output and text and stdout:  # stdout is bytes or None
-            return stdout.decode().strip()
+        if capture_output and text:
+            # Always decode to string when text=True even if stdout is empty
+            return stdout.decode().strip() if stdout else ""
         return result
