@@ -2,7 +2,6 @@
 
 import logging
 import shlex
-import time
 from typing import Any
 
 from ..common import normalize_file_path
@@ -46,9 +45,8 @@ async def git_blame(
         signal: Optional abort signal to terminate the subprocess
 
     Returns:
-        A dictionary with execution stats and git blame output
+        A dictionary with git blame output
     """
-    start_time = time.time()
 
     if path is None:
         raise ValueError("Path must be provided for git blame")
@@ -70,51 +68,24 @@ async def git_blame(
 
     logging.debug(f"Executing git blame command: {' '.join(cmd)}")
 
-    try:
-        # Execute git blame command asynchronously
-        result = await run_command(
-            cmd=cmd,
-            cwd=absolute_path,
-            capture_output=True,
-            text=True,
-            check=False,  # Don't raise exception if git blame fails
-        )
+    # Execute git blame command asynchronously
+    result = await run_command(
+        cmd=cmd,
+        cwd=absolute_path,
+        capture_output=True,
+        text=True,
+        check=True,  # Allow exception if git blame fails to propagate up
+    )
 
-        # Process results
-        if result.returncode != 0:
-            logging.error(
-                f"git blame failed with exit code {result.returncode}: {result.stderr}"
-            )
-            error_message = f"Error: {result.stderr}"
-            return {
-                "output": error_message,
-                "durationMs": int((time.time() - start_time) * 1000),
-                "resultForAssistant": error_message,
-            }
+    # Prepare output
+    output = {
+        "output": result.stdout,
+    }
 
-        # Calculate execution time
-        execution_time = int(
-            (time.time() - start_time) * 1000
-        )  # Convert to milliseconds
+    # Add formatted result for assistant
+    output["resultForAssistant"] = render_result_for_assistant(output)
 
-        # Prepare output
-        output = {
-            "output": result.stdout,
-            "durationMs": execution_time,
-        }
-
-        # Add formatted result for assistant
-        output["resultForAssistant"] = render_result_for_assistant(output)
-
-        return output
-    except Exception as e:
-        logging.exception(f"Error executing git blame: {e!s}")
-        error_message = f"Error executing git blame: {e!s}"
-        return {
-            "output": error_message,
-            "durationMs": int((time.time() - start_time) * 1000),
-            "resultForAssistant": error_message,
-        }
+    return output
 
 
 def render_result_for_assistant(output: dict[str, Any]) -> str:

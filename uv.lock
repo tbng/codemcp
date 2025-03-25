@@ -76,6 +76,7 @@ version = "0.5.0"
 source = { editable = "." }
 dependencies = [
     { name = "anyio" },
+    { name = "click" },
     { name = "editorconfig" },
     { name = "mcp", extra = ["cli"] },
     { name = "pytest-xdist" },
@@ -99,6 +100,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "anyio", specifier = ">=3.7.0" },
+    { name = "click", specifier = ">=8.1.8" },
     { name = "editorconfig", specifier = ">=0.17.0" },
     { name = "mcp", extras = ["cli"], specifier = ">=1.2.0" },
     { name = "pytest-xdist", specifier = ">=3.6.1" },

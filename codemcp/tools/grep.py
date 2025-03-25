@@ -3,7 +3,6 @@
 import logging
 import os
 import subprocess
-import time
 from typing import Any
 
 from ..common import normalize_file_path
@@ -173,57 +172,42 @@ async def grep_files(
         signal: Optional abort signal to terminate the subprocess
 
     Returns:
-        A dictionary with execution stats and matched files
+        A dictionary with matched files
 
     """
-    start_time = time.time()
 
     # Execute git grep asynchronously
     matches = await git_grep(pattern, path, include, signal)
 
     # Sort matches
-    try:
-        # First try sorting by modification time
-        import asyncio
+    # Use asyncio for getting file stats
+    import asyncio
+    loop = asyncio.get_event_loop()
 
-        loop = asyncio.get_event_loop()
-
-        # Get file stats asynchronously
-        stats = []
-        for match in matches:
-            stat = await loop.run_in_executor(
-                None, lambda m=match: os.stat(m) if os.path.exists(m) else None
-            )
-            stats.append(stat)
-
-        matches_with_stats = list(zip(matches, stats, strict=False))
-
-        # In tests, sort by filename for deterministic results
-        if os.environ.get("NODE_ENV") == "test":
-            matches_with_stats.sort(key=lambda x: x[0])
-        else:
-            # Sort by modification time (newest first), with filename as tiebreaker
-            matches_with_stats.sort(
-                key=lambda x: (-(x[1].st_mtime if x[1] else 0), x[0])
-            )
-
-        matches = [match for match, _ in matches_with_stats]
-    except Exception as e:
-        # Fall back to sorting by name if there's an error
-        logging.debug(
-            f"Error sorting by modification time, falling back to name sort: {e!s}",
+    # Get file stats asynchronously
+    stats = []
+    for match in matches:
+        stat = await loop.run_in_executor(
+            None, lambda m=match: os.stat(m) if os.path.exists(m) else None
         )
-        matches.sort()
+        stats.append(stat)
 
-    # Calculate execution time
-    execution_time = int(
-        (time.time() - start_time) * 1000,
-    )  # Convert to milliseconds
+    matches_with_stats = list(zip(matches, stats, strict=False))
+
+    # In tests, sort by filename for deterministic results
+    if os.environ.get("NODE_ENV") == "test":
+        matches_with_stats.sort(key=lambda x: x[0])
+    else:
+        # Sort by modification time (newest first), with filename as tiebreaker
+        matches_with_stats.sort(
+            key=lambda x: (-(x[1].st_mtime if x[1] else 0), x[0])
+        )
+
+    matches = [match for match, _ in matches_with_stats]
 
     # Prepare output
     output = {
         "filenames": matches[:MAX_RESULTS],
-        "durationMs": execution_time,
         "numFiles": len(matches),
     }
 
