@@ -42,7 +42,7 @@ async def get_head_commit_message(directory: str) -> str:
         text=True,
     )
 
-    return result.stdout.strip()
+    return str(result.stdout.strip())
 
 
 async def get_head_commit_hash(directory: str, short: bool = True) -> str:
@@ -73,7 +73,7 @@ async def get_head_commit_hash(directory: str, short: bool = True) -> str:
         text=True,
     )
 
-    return result.stdout.strip()
+    return str(result.stdout.strip())
 
 
 async def get_head_commit_chat_id(directory: str) -> str | None:
@@ -150,7 +150,7 @@ async def get_repository_root(path: str) -> str:
         text=True,
     )
 
-    return result.stdout.strip()
+    return str(result.stdout.strip())
 
 
 async def is_git_repository(path: str) -> bool:
@@ -207,7 +207,7 @@ async def get_ref_commit_chat_id(directory: str, ref_name: str) -> str | None:
             capture_output=True,
             text=True,
         )
-        commit_message = message_result.stdout.strip()
+        commit_message = str(message_result.stdout.strip())
 
         # Use regex to find the last occurrence of codemcp-id: XXX
         # The pattern looks for "codemcp-id: " followed by any characters up to a newline or end of string

@@ -3,7 +3,7 @@
 import logging
 import os
 import subprocess
-from typing import List, Optional
+from typing import List, Optional, Union
 
 import tomli
 
@@ -92,7 +92,7 @@ async def run_code_command(
     command_name: str,
     command: List[str],
     commit_message: str,
-    chat_id: str = None,
+    chat_id: Optional[str] = None,
 ) -> str:
     """Run a code command (lint, format, etc.) and handle git operations.
 
@@ -131,10 +131,11 @@ async def run_code_command(
         # If it's a git repo, commit any pending changes before running the command
         if is_git_repo:
             logging.info(f"Committing any pending changes before {command_name}")
+            chat_id_str = str(chat_id) if chat_id is not None else ""
             commit_result = await commit_changes(
                 full_dir_path,
                 f"Snapshot before auto-{command_name}",
-                chat_id,
+                chat_id_str,
                 commit_all=True,
             )
             if not commit_result[0]:
@@ -160,8 +161,9 @@ async def run_code_command(
                 has_changes = await check_for_changes(full_dir_path)
                 if has_changes:
                     logging.info(f"Changes detected after {command_name}, committing")
+                    chat_id_str = str(chat_id) if chat_id is not None else ""
                     success, commit_result_message = await commit_changes(
-                        full_dir_path, commit_message, chat_id, commit_all=True
+                        full_dir_path, commit_message, chat_id_str, commit_all=True
                     )
 
                     if success:
