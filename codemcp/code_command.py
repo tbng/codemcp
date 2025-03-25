@@ -3,7 +3,7 @@
 import logging
 import os
 import subprocess
-from typing import List, Optional, Union
+from typing import List, Optional
 
 import tomli
 
@@ -43,9 +43,9 @@ def get_command_from_config(project_dir: str, command_name: str) -> Optional[Lis
             cmd_config = config["commands"][command_name]
             # Handle both direct command lists and dictionaries with 'command' field
             if isinstance(cmd_config, list):
-                return cmd_config
+                return cmd_config  # type: ignore
             elif isinstance(cmd_config, dict) and "command" in cmd_config:
-                return cmd_config["command"]
+                return cmd_config["command"]  # type: ignore
 
         return None
     except Exception as e:
