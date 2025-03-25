@@ -4,6 +4,7 @@ import asyncio
 import logging
 import os
 import re
+from typing import Dict, Optional
 
 import tomli
 
@@ -37,7 +38,7 @@ def _slugify(text: str) -> str:
     return text[:50]
 
 
-def _generate_command_docs(command_docs: dict) -> str:
+def _generate_command_docs(command_docs: Dict[str, str]) -> str:
     """Generate documentation for commands from the command_docs dictionary.
 
     Args:
@@ -56,7 +57,7 @@ def _generate_command_docs(command_docs: dict) -> str:
     return "\n\nCommand documentation:" + "".join(docs)
 
 
-async def _generate_chat_id(directory: str, description: str = None) -> str:
+async def _generate_chat_id(directory: str, description: Optional[str] = None) -> str:
     """Generate a unique chat ID based on a counter stored in the git repository.
 
     Args:
@@ -198,7 +199,7 @@ async def init_project(
 
         # Create a commit reference instead of creating a regular commit
         # This will not advance HEAD but store the commit in refs/codemcp/<chat_id>
-        message, commit_hash = await create_commit_reference(
+        _, _ = await create_commit_reference(
             full_dir_path,
             chat_id=chat_id,
             commit_msg=commit_msg,
