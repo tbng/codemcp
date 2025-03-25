@@ -7,9 +7,9 @@ from typing import Optional, Tuple
 import anyio
 
 from .access import check_edit_permission
+from .async_file_utils import OpenTextMode
 from .git import commit_changes
 from .line_endings import apply_line_endings, normalize_to_lf
-from .async_file_utils import OpenTextMode
 
 __all__ = [
     "check_file_path_and_permissions",
