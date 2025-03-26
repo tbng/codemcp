@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 
+
 import asyncio
 import functools
 import logging
 import os
 import sys
 from asyncio import Future, Queue, Task
-from typing import Any, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple, cast
 
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
@@ -162,7 +163,11 @@ class HotReloadManager:
                             break
 
                         if command == "call":
-                            result = await session.call_tool("codemcp", arguments=args)
+                            # Use explicit type cast for arguments to satisfy the type checker
+                            tool_args = cast(Dict[str, Any], args)
+                            result = await session.call_tool(
+                                name="codemcp", arguments=tool_args
+                            )
                             # This is the only error case FastMCP can
                             # faithfully re-propagate, see
                             # https://github.com/modelcontextprotocol/python-sdk/issues/348
