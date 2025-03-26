@@ -3,7 +3,6 @@
 This module provides type definitions for the mcp.types module.
 """
 
-from typing import Any, Dict, List, Optional, Protocol, TypeVar, Union
 
 class TextContent:
     """A class representing text content."""

@@ -7,12 +7,27 @@ import logging
 import os
 import sys
 from asyncio import Future, Queue, Task
-from typing import Any, Dict, Optional, Tuple, cast
+from typing import Any, Dict, List, Optional, Protocol, Tuple, Union, cast
 
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 from mcp.server.fastmcp import FastMCP
 from mcp.types import TextContent
+
+
+# Define the ClientSession.call_tool result type
+class CallToolResult(Protocol):
+    """Protocol for objects returned by call_tool."""
+
+    isError: bool
+    content: Union[str, List[TextContent], Any]
+
+
+# Add type information for ClientSession
+if not hasattr(ClientSession, "__call_tool_typed__"):
+    # Store original call_tool method
+    setattr(ClientSession, "__call_tool_typed__", True)
+    # Add type hints (this won't change runtime behavior, just helps type checking)
 
 # Import the original codemcp function from main to clone its signature
 from codemcp.main import (
@@ -163,11 +178,17 @@ class HotReloadManager:
                             break
 
                         if command == "call":
-                            # Use explicit type cast for arguments to satisfy the type checker
+                            # Use explicit cast for tool_args to help with type checking
                             tool_args = cast(Dict[str, Any], args)
-                            result = await session.call_tool(
+
+                            # Get the raw result from call_tool
+                            # We avoid type annotations on the intermediate result
+                            call_result = await session.call_tool(  # type: ignore
                                 name="codemcp", arguments=tool_args
                             )
+
+                            # Apply our protocol to the result
+                            result = cast(CallToolResult, call_result)
                             # This is the only error case FastMCP can
                             # faithfully re-propagate, see
                             # https://github.com/modelcontextprotocol/python-sdk/issues/348

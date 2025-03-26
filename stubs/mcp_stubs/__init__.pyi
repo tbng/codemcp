@@ -9,22 +9,10 @@ from typing import (
     Dict,
     List,
     Optional,
-    Protocol,
-    TypeVar,
     Union,
-    AsyncContextManager,
-    Callable,
-    Awaitable,
-    Tuple,
-    Generic,
-    Coroutine,
 )
-import asyncio
-from pathlib import Path
-import os
 
 # Export ClientSession at the top level
-from .ClientSession import ClientSession
 
 # Export StdioServerParameters at the top level
 class StdioServerParameters:
@@ -48,7 +36,6 @@ class StdioServerParameters:
         ...
 
 # Re-export from client.stdio
-from .client.stdio import stdio_client
 
 # Type for MCP content items
 class TextContent:

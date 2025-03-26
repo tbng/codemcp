@@ -5,16 +5,11 @@ type checking when parsing TOML files.
 """
 
 from typing import (
+    IO,
     Any,
     Dict,
     List,
     Union,
-    IO,
-    Callable,
-    Optional,
-    TypeVar,
-    overload,
-    cast,
 )
 
 # Define more specific types for TOML data structures

@@ -5,19 +5,10 @@ This module provides type definitions for the mcp.client.stdio module.
 
 from typing import (
     Any,
-    Dict,
-    List,
-    Optional,
-    Protocol,
-    TypeVar,
-    Union,
     AsyncContextManager,
-    Callable,
-    Awaitable,
     Tuple,
-    AsyncGenerator,
 )
-import asyncio
+
 from .. import StdioServerParameters
 
 async def stdio_client(
