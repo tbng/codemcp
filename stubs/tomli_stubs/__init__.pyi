@@ -4,11 +4,22 @@ This module provides type definitions for the tomli package to help with
 type checking when parsing TOML files.
 """
 
-from typing import Any, Dict, List, Union, IO, Callable, Optional, TypeVar, overload, cast
+from typing import (
+    Any,
+    Dict,
+    List,
+    Union,
+    IO,
+    Callable,
+    Optional,
+    TypeVar,
+    overload,
+    cast,
+)
 
 # Define more specific types for TOML data structures
 TOMLPrimitive = Union[str, int, float, bool, None]
-TOMLArray = List["TOMLValue"] 
+TOMLArray = List["TOMLValue"]
 TOMLTable = Dict[str, "TOMLValue"]
 TOMLValue = Union[TOMLPrimitive, TOMLArray, TOMLTable]
 
@@ -49,4 +60,5 @@ def loads(s: str) -> Dict[str, Any]:
 
 class TOMLDecodeError(ValueError):
     """Error raised when decoding TOML fails."""
+
     pass

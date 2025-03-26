@@ -3,4 +3,16 @@
 This module provides type definitions for the mcp.client package.
 """
 
-from typing import Any, Dict, List, Optional, Protocol, TypeVar, Union, AsyncContextManager, Callable, Awaitable, Tuple
+from typing import (
+    Any,
+    Dict,
+    List,
+    Optional,
+    Protocol,
+    TypeVar,
+    Union,
+    AsyncContextManager,
+    Callable,
+    Awaitable,
+    Tuple,
+)

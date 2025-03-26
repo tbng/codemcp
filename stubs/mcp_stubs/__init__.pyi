@@ -4,7 +4,21 @@ This module provides type definitions for the mcp package to help with
 type checking when using the MCP SDK.
 """
 
-from typing import Any, Dict, List, Optional, Protocol, TypeVar, Union, AsyncContextManager, Callable, Awaitable, Tuple, Generic, Coroutine
+from typing import (
+    Any,
+    Dict,
+    List,
+    Optional,
+    Protocol,
+    TypeVar,
+    Union,
+    AsyncContextManager,
+    Callable,
+    Awaitable,
+    Tuple,
+    Generic,
+    Coroutine,
+)
 import asyncio
 from pathlib import Path
 import os
@@ -15,16 +29,16 @@ from .ClientSession import ClientSession
 # Export StdioServerParameters at the top level
 class StdioServerParameters:
     """Parameters for connecting to an MCP server via stdio."""
-    
+
     def __init__(
-        self, 
+        self,
         command: str,
         args: List[str],
         env: Optional[Dict[str, str]] = None,
-        cwd: Optional[str] = None
+        cwd: Optional[str] = None,
     ) -> None:
         """Initialize parameters for connecting to an MCP server.
-        
+
         Args:
             command: The command to run
             args: Arguments to pass to the command
@@ -39,12 +53,12 @@ from .client.stdio import stdio_client
 # Type for MCP content items
 class TextContent:
     """A class representing text content."""
-    
+
     text: str
-    
+
     def __init__(self, text: str) -> None:
         """Initialize a new TextContent instance.
-        
+
         Args:
             text: The text content
         """
@@ -53,6 +67,6 @@ class TextContent:
 # Type for API call results
 class CallToolResult:
     """Result of calling a tool via MCP."""
-    
+
     isError: bool
     content: Union[str, List[TextContent], Any]
