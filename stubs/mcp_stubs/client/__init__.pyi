@@ -2,4 +2,3 @@
 
 This module provides type definitions for the mcp.client package.
 """
-

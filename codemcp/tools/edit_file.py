@@ -38,6 +38,12 @@ def find_similar_file(file_path: str) -> str | None:
         The path to a similar file, or None if none found
 
     """
+    # Import normalize_file_path for tilde expansion
+    from ..common import normalize_file_path
+
+    # Normalize the path with tilde expansion
+    file_path = normalize_file_path(file_path)
+
     # Simple implementation - in a real app, would check for files with different extensions
     directory = os.path.dirname(file_path)
     if not os.path.exists(directory):
@@ -66,6 +72,12 @@ async def apply_edit(
         A tuple of (patch, updated_file)
 
     """
+    # Import normalize_file_path for tilde expansion
+    from ..common import normalize_file_path
+
+    # Normalize the path with tilde expansion
+    file_path = normalize_file_path(file_path)
+
     if os.path.exists(file_path):
         content = await async_open_text(file_path, encoding="utf-8")
     else:
@@ -619,10 +631,10 @@ async def edit_file_content(
     if os.path.basename(file_path) == "codemcp.toml":
         raise ValueError("Editing codemcp.toml is not allowed for security reasons.")
 
-    # Convert to absolute path if needed
-    full_file_path = (
-        file_path if os.path.isabs(file_path) else os.path.abspath(file_path)
-    )
+    # Convert to absolute path if needed, with tilde expansion
+    from ..common import normalize_file_path
+
+    full_file_path = normalize_file_path(file_path)
 
     # Check file path and permissions
     is_valid, error_message = await check_file_path_and_permissions(full_file_path)
