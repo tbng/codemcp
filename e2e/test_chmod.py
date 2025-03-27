@@ -137,9 +137,9 @@ class ChmodTest(MCPEndToEndTestCase):
             )
             # Check for either error message (from main.py or chmod.py)
             self.assertTrue(
-                "unsupported chmod mode" in error_text.lower() or
-                "mode must be either 'a+x' or 'a-x'" in error_text.lower(),
-                f"Expected an error about invalid mode, but got: {error_text}"
+                "unsupported chmod mode" in error_text.lower()
+                or "mode must be either 'a+x' or 'a-x'" in error_text.lower(),
+                f"Expected an error about invalid mode, but got: {error_text}",
             )
 
 

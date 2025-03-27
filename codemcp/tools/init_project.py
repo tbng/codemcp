@@ -4,7 +4,7 @@ import asyncio
 import logging
 import os
 import re
-from typing import Dict, Optional
+from typing import Any, Dict, List, Optional
 
 import tomli
 
@@ -50,7 +50,7 @@ def _generate_command_docs(command_docs: Dict[str, str]) -> str:
     if not command_docs:
         return ""
 
-    docs = []
+    docs: List[str] = []
     for cmd_name, doc in command_docs.items():
         docs.append(f"\n- {cmd_name}: {doc}")
 
@@ -207,8 +207,8 @@ async def init_project(
 
         project_prompt = ""
         command_help = ""
-        command_docs = {}
-        rules_config = {}
+        command_docs: Dict[str, str] = {}
+        rules_config: Dict[str, Any] = {}
 
         # We've already confirmed that codemcp.toml exists
         try:

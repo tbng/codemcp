@@ -4,7 +4,7 @@ import asyncio
 import logging
 import os
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from ..common import normalize_file_path
 
@@ -71,14 +71,16 @@ async def glob(
         loop = asyncio.get_event_loop()
 
         # Get file stats asynchronously
-        stats = []
+        stats: List[Optional[os.stat_result]] = []
         for match in matches:
-            stat = await loop.run_in_executor(
+            file_stat = await loop.run_in_executor(
                 None, lambda m=match: os.stat(m) if os.path.exists(m) else None
             )
-            stats.append(stat)
+            stats.append(file_stat)
 
-        matches_with_stats = list(zip(matches, stats, strict=False))
+        matches_with_stats: List[Tuple[Path, Optional[os.stat_result]]] = list(
+            zip(matches, stats, strict=False)
+        )
 
         # In tests, sort by filename for deterministic results
         if os.environ.get("NODE_ENV") == "test":

@@ -7,7 +7,7 @@ import math
 import os
 import re
 from difflib import SequenceMatcher
-from typing import Any
+from typing import Any, Dict, List, Tuple
 
 from ..common import get_edit_snippet
 from ..file_utils import (
@@ -54,7 +54,7 @@ async def apply_edit(
     file_path: str,
     old_string: str,
     new_string: str,
-) -> tuple[list[dict[str, Any]], str]:
+) -> Tuple[List[Dict[str, Any]], str]:
     """Apply an edit to a file using robust matching strategies.
 
     Args:
@@ -74,11 +74,11 @@ async def apply_edit(
     # For creating a new file, just return the new content
     if not old_string.strip():
         updated_file = new_string
-        old_lines = []
+        old_lines: List[str] = []
         new_lines = new_string.split("\n")
 
         # Create a simple patch structure
-        patch = [
+        patch: List[Dict[str, Any]] = [
             {
                 "oldStart": 1,
                 "oldLines": 0,
@@ -98,7 +98,7 @@ async def apply_edit(
         updated_file = content
 
     # Create a useful diff/patch structure
-    patch = []
+    patch: List[Dict[str, Any]] = []
     if content != updated_file:  # Only create a patch if there were actual changes
         old_lines = old_string.split("\n")
         new_lines = new_string.split("\n")
