@@ -164,6 +164,8 @@ async def write_text_content(
     line_endings: Optional[str] = None,
 ) -> None:
     """Write text content to a file with specified encoding and line endings.
+    Automatically strips trailing whitespace from each line and ensures
+    a trailing newline at the end of the file.
 
     Args:
         file_path: The path to the file
@@ -181,8 +183,17 @@ async def write_text_content(
     # First normalize content to LF line endings
     normalized_content = normalize_to_lf(content)
 
+    # Strip trailing whitespace from each line
+    stripped_content = "\n".join(
+        line.rstrip() for line in normalized_content.splitlines()
+    )
+
+    # Ensure there's always a trailing newline
+    if not stripped_content.endswith("\n"):
+        stripped_content += "\n"
+
     # Apply the requested line ending
-    final_content = apply_line_endings(normalized_content, line_endings)
+    final_content = apply_line_endings(stripped_content, line_endings)
 
     # Ensure directory exists
     ensure_directory_exists(file_path)
