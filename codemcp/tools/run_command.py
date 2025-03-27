@@ -14,7 +14,7 @@ async def run_command(
     project_dir: str,
     command: str,
     arguments: Optional[str] = None,
-    chat_id: str = None,
+    chat_id: str = "",
 ) -> str:
     """Run a command that is configured in codemcp.toml.
 
@@ -38,6 +38,9 @@ async def run_command(
         parsed_args = shlex.split(arguments)
         command_list.extend(parsed_args)
 
+    # Don't pass None to run_code_command
+    actual_command = command_list if command_list is not None else []
+
     return await run_code_command(
-        project_dir, command, command_list, f"Auto-commit {command} changes", chat_id
+        project_dir, command, actual_command, f"Auto-commit {command} changes", chat_id
     )

@@ -3,7 +3,7 @@
 import logging
 import os
 import subprocess
-from typing import Any
+from typing import Any, Dict, List, Optional, Tuple
 
 from ..common import normalize_file_path
 from ..git import is_git_repository
@@ -36,7 +36,6 @@ async def git_grep(
     pattern: str,
     path: str | None = None,
     include: str | None = None,
-    signal=None,
 ) -> list[str]:
     """Execute git grep to search for pattern in files.
 
@@ -44,7 +43,6 @@ async def git_grep(
         pattern: The regular expression pattern to search for
         path: The directory or file to search in (must be in a git repository)
         include: Optional file pattern to filter the search
-        signal: Optional abort signal to terminate the subprocess
 
     Returns:
         A list of file paths with matches
@@ -119,10 +117,14 @@ async def git_grep(
             raise subprocess.SubprocessError(f"git grep failed: {result.stderr}")
 
         # Process results - split by newline and filter empty lines
-        matches = [line.strip() for line in result.stdout.split("\n") if line.strip()]
+        matches = [line.strip() for line in result.stdout.split() if line.strip()]
 
         # Convert to absolute paths
-        matches = [os.path.join(absolute_path, match) for match in matches]
+        matches = [
+            os.path.join(absolute_path, match)
+            for match in matches
+            if isinstance(match, str)
+        ]
 
         return matches
     except subprocess.SubprocessError as e:
@@ -130,7 +132,7 @@ async def git_grep(
         raise
 
 
-def render_result_for_assistant(output: dict[str, Any]) -> str:
+def render_result_for_assistant(output: Dict[str, Any]) -> str:
     """Render the results in a format suitable for the assistant.
 
     Args:
@@ -160,7 +162,6 @@ async def grep_files(
     path: str | None = None,
     include: str | None = None,
     chat_id: str | None = None,
-    signal=None,
 ) -> dict[str, Any]:
     """Search for a pattern in files within a directory or in a specific file.
 
@@ -169,7 +170,6 @@ async def grep_files(
         path: The directory or file to search in (must be in a git repository)
         include: Optional file pattern to filter the search
         chat_id: The unique ID of the current chat session
-        signal: Optional abort signal to terminate the subprocess
 
     Returns:
         A dictionary with matched files
@@ -177,7 +177,7 @@ async def grep_files(
     """
 
     # Execute git grep asynchronously
-    matches = await git_grep(pattern, path, include, signal)
+    matches = await git_grep(pattern, path, include)
 
     # Sort matches
     # Use asyncio for getting file stats
@@ -186,14 +186,16 @@ async def grep_files(
     loop = asyncio.get_event_loop()
 
     # Get file stats asynchronously
-    stats = []
+    stats: List[Optional[os.stat_result]] = []
     for match in matches:
-        stat = await loop.run_in_executor(
+        file_stat = await loop.run_in_executor(
             None, lambda m=match: os.stat(m) if os.path.exists(m) else None
         )
-        stats.append(stat)
+        stats.append(file_stat)
 
-    matches_with_stats = list(zip(matches, stats, strict=False))
+    matches_with_stats: List[Tuple[str, Optional[os.stat_result]]] = list(
+        zip(matches, stats, strict=False)
+    )
 
     # In tests, sort by filename for deterministic results
     if os.environ.get("NODE_ENV") == "test":
@@ -205,12 +207,13 @@ async def grep_files(
     matches = [match for match, _ in matches_with_stats]
 
     # Prepare output
-    output = {
+    output: Dict[str, Any] = {
         "filenames": matches[:MAX_RESULTS],
         "numFiles": len(matches),
     }
 
     # Add formatted result for assistant
-    output["resultForAssistant"] = render_result_for_assistant(output)
+    formatted_result = render_result_for_assistant(output)
+    output["resultForAssistant"] = formatted_result
 
     return output

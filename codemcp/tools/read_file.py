@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import os
+from typing import List
 
 from ..common import (
     MAX_LINE_LENGTH,
@@ -75,7 +76,7 @@ async def read_file_content(
     selected_lines = all_lines[line_offset : line_offset + max_lines]
 
     # Process lines (truncate long lines)
-    processed_lines = []
+    processed_lines: List[str] = []
     for line in selected_lines:
         if len(line) > MAX_LINE_LENGTH:
             processed_lines.append(
@@ -85,10 +86,10 @@ async def read_file_content(
             processed_lines.append(line)
 
     # Add line numbers (1-indexed)
-    numbered_lines = []
+    numbered_lines: List[str] = []
     for i, line in enumerate(processed_lines):
-        line_num = line_offset + i + 1  # 1-indexed line number
-        numbered_lines.append(f"{line_num:6}\t{line.rstrip()}")
+        line_number = line_offset + i + 1  # 1-indexed line number
+        numbered_lines.append(f"{line_number:6}\t{line.rstrip()}")
 
     content = "\n".join(numbered_lines)
 
