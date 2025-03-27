@@ -3,7 +3,6 @@
 This module provides type definitions for the mcp.types module.
 """
 
-
 class TextContent:
     """A class representing text content."""
 

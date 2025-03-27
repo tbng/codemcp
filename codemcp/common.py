@@ -35,10 +35,16 @@ def get_image_format(file_path: str) -> str:
 
 
 def normalize_file_path(file_path: str) -> str:
-    """Normalize a file path to an absolute path."""
-    if not os.path.isabs(file_path):
-        return os.path.abspath(os.path.join(os.getcwd(), file_path))
-    return os.path.abspath(file_path)
+    """Normalize a file path to an absolute path.
+
+    Expands the tilde character (~) if present to the user's home directory.
+    """
+    # Expand tilde to home directory
+    expanded_path = os.path.expanduser(file_path)
+
+    if not os.path.isabs(expanded_path):
+        return os.path.abspath(os.path.join(os.getcwd(), expanded_path))
+    return os.path.abspath(expanded_path)
 
 
 def get_edit_snippet(
