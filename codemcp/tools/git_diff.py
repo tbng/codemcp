@@ -35,7 +35,6 @@ async def git_diff(
     arguments: str | None = None,
     path: str | None = None,
     chat_id: str | None = None,
-    signal=None,
 ) -> dict[str, Any]:
     """Execute git diff with the provided arguments.
 
@@ -43,7 +42,6 @@ async def git_diff(
         arguments: Optional arguments to pass to git diff as a string
         path: The directory to execute the command in (must be in a git repository)
         chat_id: The unique ID of the current chat session
-        signal: Optional abort signal to terminate the subprocess
 
     Returns:
         A dictionary with git diff output

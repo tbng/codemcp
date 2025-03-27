@@ -22,7 +22,6 @@ async def glob(
     pattern: str,
     path: str,
     options: Optional[Dict[str, Any]] = None,
-    signal=None,
 ) -> Dict[str, Any]:
     """Find files matching a glob pattern.
 
@@ -30,7 +29,6 @@ async def glob(
         pattern: The glob pattern to match files against
         path: The directory to search in
         options: Optional parameters for pagination (limit, offset)
-        signal: Optional abort signal to terminate the operation
 
     Returns:
         A dictionary with matched files and metadata
@@ -148,7 +146,6 @@ async def glob_files(
     limit: int = MAX_RESULTS,
     offset: int = 0,
     chat_id: str | None = None,
-    signal=None,
 ) -> Dict[str, Any]:
     """Search for files matching a glob pattern.
 
@@ -158,7 +155,6 @@ async def glob_files(
         limit: Maximum number of results to return
         offset: Number of results to skip (for pagination)
         chat_id: The unique ID of the current chat session
-        signal: Optional abort signal to terminate the operation
 
     Returns:
         A dictionary with matched files
@@ -174,7 +170,7 @@ async def glob_files(
     }
 
     # Execute glob
-    result = await glob(pattern, path, options, signal)
+    result = await glob(pattern, path, options)
 
     # Get matching files
     files = result.get("files", [])

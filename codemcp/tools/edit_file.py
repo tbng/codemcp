@@ -7,6 +7,7 @@ import math
 import os
 import re
 from difflib import SequenceMatcher
+from typing import Any
 
 from ..common import get_edit_snippet
 from ..file_utils import (
@@ -53,7 +54,7 @@ async def apply_edit(
     file_path: str,
     old_string: str,
     new_string: str,
-) -> tuple[list[dict], str]:
+) -> tuple[list[dict[str, Any]], str]:
     """Apply an edit to a file using robust matching strategies.
 
     Args:
@@ -322,7 +323,7 @@ def try_dotdotdots(whole: str, part: str, replace: str) -> str | None:
     part_pieces = [part_pieces[i] for i in range(0, len(part_pieces), 2)]
     replace_pieces = [replace_pieces[i] for i in range(0, len(replace_pieces), 2)]
 
-    pairs = zip(part_pieces, replace_pieces, strict=False)
+    pairs = list(zip(part_pieces, replace_pieces))
     for part, replace in pairs:
         if not part and not replace:
             continue
@@ -415,8 +416,13 @@ def find_similar_lines(
     search_lines = search_lines.splitlines()
     content_lines = content_lines.splitlines()
 
+    # Handle empty input cases
+    if not search_lines or not content_lines:
+        return ""
+
     best_ratio = 0
-    best_match = None
+    best_match = []  # Initialize with empty list to avoid None checks
+    best_match_i = 0  # Initialize to avoid unbound variable errors
 
     for i in range(len(content_lines) - len(search_lines) + 1):
         chunk = content_lines[i : i + len(search_lines)]
@@ -730,7 +736,7 @@ async def edit_file_content(
             )
 
     # Apply the edit with advanced matching if needed
-    patch, updated_file = await apply_edit(full_file_path, old_string, new_string)
+    _, updated_file = await apply_edit(full_file_path, old_string, new_string)
 
     # If no changes were made (which should never happen at this point),
     # log a warning but continue

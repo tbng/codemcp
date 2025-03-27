@@ -31,7 +31,6 @@ async def chmod(
     path: str,
     mode: Literal["a+x", "a-x"],
     chat_id: str | None = None,
-    signal=None,
 ) -> dict[str, Any]:
     """Change file permissions using chmod.
 
@@ -39,7 +38,6 @@ async def chmod(
         path: The absolute path to the file to modify
         mode: The chmod mode to apply, only "a+x" and "a-x" are supported
         chat_id: The unique ID of the current chat session
-        signal: Optional abort signal to terminate the subprocess
 
     Returns:
         A dictionary with chmod output
@@ -104,7 +102,7 @@ async def chmod(
     success, commit_message = await commit_changes(
         directory,
         description,
-        chat_id,
+        chat_id if chat_id is not None else "",
     )
 
     if not success:

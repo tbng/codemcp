@@ -36,7 +36,6 @@ async def git_grep(
     pattern: str,
     path: str | None = None,
     include: str | None = None,
-    signal=None,
 ) -> list[str]:
     """Execute git grep to search for pattern in files.
 
@@ -44,7 +43,6 @@ async def git_grep(
         pattern: The regular expression pattern to search for
         path: The directory or file to search in (must be in a git repository)
         include: Optional file pattern to filter the search
-        signal: Optional abort signal to terminate the subprocess
 
     Returns:
         A list of file paths with matches
@@ -119,7 +117,7 @@ async def git_grep(
             raise subprocess.SubprocessError(f"git grep failed: {result.stderr}")
 
         # Process results - split by newline and filter empty lines
-        matches = [line.strip() for line in result.stdout.split("\n") if line.strip()]
+        matches = [line.strip() for line in result.stdout.split() if line.strip()]
 
         # Convert to absolute paths
         matches = [os.path.join(absolute_path, match) for match in matches]
@@ -160,7 +158,6 @@ async def grep_files(
     path: str | None = None,
     include: str | None = None,
     chat_id: str | None = None,
-    signal=None,
 ) -> dict[str, Any]:
     """Search for a pattern in files within a directory or in a specific file.
 
@@ -169,7 +166,6 @@ async def grep_files(
         path: The directory or file to search in (must be in a git repository)
         include: Optional file pattern to filter the search
         chat_id: The unique ID of the current chat session
-        signal: Optional abort signal to terminate the subprocess
 
     Returns:
         A dictionary with matched files
@@ -177,7 +173,7 @@ async def grep_files(
     """
 
     # Execute git grep asynchronously
-    matches = await git_grep(pattern, path, include, signal)
+    matches = await git_grep(pattern, path, include)
 
     # Sort matches
     # Use asyncio for getting file stats

@@ -36,7 +36,6 @@ async def git_show(
     arguments: str | None = None,
     path: str | None = None,
     chat_id: str | None = None,
-    signal=None,
 ) -> dict[str, Any]:
     """Execute git show with the provided arguments.
 
@@ -44,7 +43,6 @@ async def git_show(
         arguments: Optional arguments to pass to git show as a string
         path: The directory to execute the command in (must be in a git repository)
         chat_id: The unique ID of the current chat session
-        signal: Optional abort signal to terminate the subprocess
 
     Returns:
         A dictionary with git show output
