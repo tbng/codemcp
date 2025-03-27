@@ -19,8 +19,8 @@ class TrailingWhitespaceTest(MCPEndToEndTestCase):
         content_with_whitespace = "Line 1  \nLine 2 \t \nLine 3\n  Line 4  \n"
 
         # Expected content after whitespace stripping
-        # Note: The trailing newline is preserved
-        expected_content = "Line 1\nLine 2\nLine 3\n  Line 4"
+        # The trailing newline is preserved
+        expected_content = "Line 1\nLine 2\nLine 3\n  Line 4\n"
 
         async with self.create_client_session() as session:
             # Initialize project to get chat_id
@@ -117,7 +117,7 @@ class TrailingWhitespaceTest(MCPEndToEndTestCase):
             with open(test_file_path) as f:
                 file_content = f.read()
 
-            expected_content = "Line 1\nLine 2\nModified Line 3\nLine 4\nLine 5"
+            expected_content = "Line 1\nLine 2\nModified Line 3\nLine 4\nLine 5\n"
             self.assertEqual(file_content, expected_content)
 
     async def test_empty_lines_preserved(self):
@@ -129,7 +129,7 @@ class TrailingWhitespaceTest(MCPEndToEndTestCase):
 
         # Expected content after whitespace stripping
         # The whitespace-only line should become an empty line
-        expected_content = "Line 1\n\n\nLine 2"
+        expected_content = "Line 1\n\n\nLine 2\n"
 
         async with self.create_client_session() as session:
             # Initialize project to get chat_id
