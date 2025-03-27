@@ -5,17 +5,8 @@ This module provides type definitions for the mcp.server.fastmcp module.
 
 from typing import (
     Any,
-    Dict,
-    List,
-    Optional,
-    Protocol,
-    TypeVar,
-    Union,
     Callable,
-    Type,
     TypeVar,
-    overload,
-    cast,
 )
 
 F = TypeVar("F", bound=Callable[..., Any])

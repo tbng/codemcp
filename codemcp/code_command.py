@@ -3,7 +3,7 @@
 import logging
 import os
 import subprocess
-from typing import List, Optional, Dict, Any, cast
+from typing import Any, Dict, List, Optional, cast
 
 import tomli
 
