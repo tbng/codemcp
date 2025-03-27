@@ -7,6 +7,7 @@ import math
 import os
 import re
 from difflib import SequenceMatcher
+from typing import Any, Dict, List, Tuple
 
 from ..common import get_edit_snippet
 from ..file_utils import (
@@ -37,6 +38,12 @@ def find_similar_file(file_path: str) -> str | None:
         The path to a similar file, or None if none found
 
     """
+    # Import normalize_file_path for tilde expansion
+    from ..common import normalize_file_path
+
+    # Normalize the path with tilde expansion
+    file_path = normalize_file_path(file_path)
+
     # Simple implementation - in a real app, would check for files with different extensions
     directory = os.path.dirname(file_path)
     if not os.path.exists(directory):
@@ -53,7 +60,7 @@ async def apply_edit(
     file_path: str,
     old_string: str,
     new_string: str,
-) -> tuple[list[dict], str]:
+) -> Tuple[List[Dict[str, Any]], str]:
     """Apply an edit to a file using robust matching strategies.
 
     Args:
@@ -65,6 +72,12 @@ async def apply_edit(
         A tuple of (patch, updated_file)
 
     """
+    # Import normalize_file_path for tilde expansion
+    from ..common import normalize_file_path
+
+    # Normalize the path with tilde expansion
+    file_path = normalize_file_path(file_path)
+
     if os.path.exists(file_path):
         content = await async_open_text(file_path, encoding="utf-8")
     else:
@@ -73,11 +86,11 @@ async def apply_edit(
     # For creating a new file, just return the new content
     if not old_string.strip():
         updated_file = new_string
-        old_lines = []
+        old_lines: List[str] = []
         new_lines = new_string.split("\n")
 
         # Create a simple patch structure
-        patch = [
+        patch: List[Dict[str, Any]] = [
             {
                 "oldStart": 1,
                 "oldLines": 0,
@@ -97,7 +110,7 @@ async def apply_edit(
         updated_file = content
 
     # Create a useful diff/patch structure
-    patch = []
+    patch: List[Dict[str, Any]] = []
     if content != updated_file:  # Only create a patch if there were actual changes
         old_lines = old_string.split("\n")
         new_lines = new_string.split("\n")
@@ -322,7 +335,7 @@ def try_dotdotdots(whole: str, part: str, replace: str) -> str | None:
     part_pieces = [part_pieces[i] for i in range(0, len(part_pieces), 2)]
     replace_pieces = [replace_pieces[i] for i in range(0, len(replace_pieces), 2)]
 
-    pairs = zip(part_pieces, replace_pieces, strict=False)
+    pairs = list(zip(part_pieces, replace_pieces))
     for part, replace in pairs:
         if not part and not replace:
             continue
@@ -412,15 +425,20 @@ def find_similar_lines(
         String containing the most similar lines, or empty string if none found
 
     """
-    search_lines = search_lines.splitlines()
-    content_lines = content_lines.splitlines()
+    search_lines_list = search_lines.splitlines()
+    content_lines_list = content_lines.splitlines()
+
+    # Handle empty input cases
+    if not search_lines_list or not content_lines_list:
+        return ""
 
     best_ratio = 0
-    best_match = None
+    best_match: list[str] = []  # Initialize with empty list to avoid None checks
+    best_match_i = 0  # Initialize to avoid unbound variable errors
 
-    for i in range(len(content_lines) - len(search_lines) + 1):
-        chunk = content_lines[i : i + len(search_lines)]
-        ratio = SequenceMatcher(None, search_lines, chunk).ratio()
+    for i in range(len(content_lines_list) - len(search_lines_list) + 1):
+        chunk = content_lines_list[i : i + len(search_lines_list)]
+        ratio = SequenceMatcher(None, search_lines_list, chunk).ratio()
         if ratio > best_ratio:
             best_ratio = ratio
             best_match = chunk
@@ -429,14 +447,19 @@ def find_similar_lines(
     if best_ratio < threshold:
         return ""
 
-    if best_match[0] == search_lines[0] and best_match[-1] == search_lines[-1]:
+    if (
+        best_match[0] == search_lines_list[0]
+        and best_match[-1] == search_lines_list[-1]
+    ):
         return "\n".join(best_match)
 
     N = 5
-    best_match_end = min(len(content_lines), best_match_i + len(search_lines) + N)
+    best_match_end = min(
+        len(content_lines_list), best_match_i + len(search_lines_list) + N
+    )
     best_match_i = max(0, best_match_i - N)
 
-    best = content_lines[best_match_i:best_match_end]
+    best = content_lines_list[best_match_i:best_match_end]
     return "\n".join(best)
 
 
@@ -578,7 +601,7 @@ async def edit_file_content(
     new_string: str,
     read_file_timestamps: dict[str, float] | None = None,
     description: str = "",
-    chat_id: str = None,
+    chat_id: str = "",
 ) -> str:
     """Edit a file by replacing old_string with new_string.
 
@@ -608,10 +631,10 @@ async def edit_file_content(
     if os.path.basename(file_path) == "codemcp.toml":
         raise ValueError("Editing codemcp.toml is not allowed for security reasons.")
 
-    # Convert to absolute path if needed
-    full_file_path = (
-        file_path if os.path.isabs(file_path) else os.path.abspath(file_path)
-    )
+    # Convert to absolute path if needed, with tilde expansion
+    from ..common import normalize_file_path
+
+    full_file_path = normalize_file_path(file_path)
 
     # Check file path and permissions
     is_valid, error_message = await check_file_path_and_permissions(full_file_path)
@@ -730,7 +753,7 @@ async def edit_file_content(
             )
 
     # Apply the edit with advanced matching if needed
-    patch, updated_file = await apply_edit(full_file_path, old_string, new_string)
+    _, updated_file = await apply_edit(full_file_path, old_string, new_string)
 
     # If no changes were made (which should never happen at this point),
     # log a warning but continue
