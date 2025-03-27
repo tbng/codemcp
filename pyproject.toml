@@ -85,3 +85,18 @@ reportUntypedFunctionDecorator = true
 reportFunctionMemberAccess = true
 reportIncompatibleMethodOverride = true
 stubPath = "./stubs"
+
+# Type stub package mappings
+stubPackages = [
+    { source = "tomli", stub = "tomli_stubs" },
+    { source = "mcp", stub = "mcp_stubs" }
+]
+
+# For testing code specific ignores
+[[tool.pyright.ignoreExtraErrors]]
+path = "codemcp/hot_reload_entry.py"
+errorCodes = ["reportUnknownMemberType"]
+
+[[tool.pyright.ignoreExtraErrors]]
+path = "codemcp/testing.py"
+errorCodes = ["reportUnknownMemberType", "reportUnknownArgumentType", "reportUnknownVariableType"]
