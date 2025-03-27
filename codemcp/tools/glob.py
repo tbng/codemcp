@@ -4,7 +4,7 @@ import asyncio
 import logging
 import os
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from ..common import normalize_file_path
 
@@ -22,7 +22,6 @@ async def glob(
     pattern: str,
     path: str,
     options: Optional[Dict[str, Any]] = None,
-    signal=None,
 ) -> Dict[str, Any]:
     """Find files matching a glob pattern.
 
@@ -30,7 +29,6 @@ async def glob(
         pattern: The glob pattern to match files against
         path: The directory to search in
         options: Optional parameters for pagination (limit, offset)
-        signal: Optional abort signal to terminate the operation
 
     Returns:
         A dictionary with matched files and metadata
@@ -73,14 +71,16 @@ async def glob(
         loop = asyncio.get_event_loop()
 
         # Get file stats asynchronously
-        stats = []
+        stats: List[Optional[os.stat_result]] = []
         for match in matches:
-            stat = await loop.run_in_executor(
+            file_stat = await loop.run_in_executor(
                 None, lambda m=match: os.stat(m) if os.path.exists(m) else None
             )
-            stats.append(stat)
+            stats.append(file_stat)
 
-        matches_with_stats = list(zip(matches, stats, strict=False))
+        matches_with_stats: List[Tuple[Path, Optional[os.stat_result]]] = list(
+            zip(matches, stats, strict=False)
+        )
 
         # In tests, sort by filename for deterministic results
         if os.environ.get("NODE_ENV") == "test":
@@ -148,7 +148,6 @@ async def glob_files(
     limit: int = MAX_RESULTS,
     offset: int = 0,
     chat_id: str | None = None,
-    signal=None,
 ) -> Dict[str, Any]:
     """Search for files matching a glob pattern.
 
@@ -158,7 +157,6 @@ async def glob_files(
         limit: Maximum number of results to return
         offset: Number of results to skip (for pagination)
         chat_id: The unique ID of the current chat session
-        signal: Optional abort signal to terminate the operation
 
     Returns:
         A dictionary with matched files
@@ -174,7 +172,7 @@ async def glob_files(
     }
 
     # Execute glob
-    result = await glob(pattern, path, options, signal)
+    result = await glob(pattern, path, options)
 
     # Get matching files
     files = result.get("files", [])

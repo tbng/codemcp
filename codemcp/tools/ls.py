@@ -2,6 +2,7 @@
 
 import asyncio
 import os
+from typing import List, Optional
 
 from ..access import check_edit_permission
 from ..common import normalize_file_path
@@ -67,7 +68,7 @@ async def ls_directory(directory_path: str, chat_id: str | None = None) -> str:
     return f"{TRUNCATED_MESSAGE}{tree_output}"
 
 
-async def list_directory(initial_path: str) -> list[str]:
+async def list_directory(initial_path: str) -> List[str]:
     """List all files and directories recursively.
 
     Args:
@@ -77,12 +78,12 @@ async def list_directory(initial_path: str) -> list[str]:
         A list of relative paths to files and directories
 
     """
-    results = []
+    results: List[str] = []
     loop = asyncio.get_event_loop()
 
     # Use a function to perform the directory listing asynchronously
-    async def list_dir_async():
-        queue = [initial_path]
+    async def list_dir_async() -> List[str]:
+        queue: List[str] = [initial_path]
         while queue and len(results) <= MAX_FILES:
             path = queue.pop(0)
 
@@ -145,10 +146,10 @@ class TreeNode:
         self.name = name
         self.path = path
         self.type = node_type
-        self.children = []
+        self.children: List[TreeNode] = []
 
 
-def create_file_tree(sorted_paths: list[str]) -> list[TreeNode]:
+def create_file_tree(sorted_paths: List[str]) -> List[TreeNode]:
     """Create a file tree from a list of paths.
 
     Args:
@@ -158,7 +159,7 @@ def create_file_tree(sorted_paths: list[str]) -> list[TreeNode]:
         A list of TreeNode objects representing the root of the tree
 
     """
-    root = []
+    root: List[TreeNode] = []
 
     for path in sorted_paths:
         parts = path.split(os.sep)
@@ -173,7 +174,7 @@ def create_file_tree(sorted_paths: list[str]) -> list[TreeNode]:
             is_last_part = i == len(parts) - 1
 
             # Check if this node already exists at this level
-            existing_node = None
+            existing_node: Optional[TreeNode] = None
             for node in current_level:
                 if node.name == part:
                     existing_node = node
@@ -196,7 +197,7 @@ def create_file_tree(sorted_paths: list[str]) -> list[TreeNode]:
 
 
 def print_tree(
-    tree: list[TreeNode],
+    tree: List[TreeNode],
     level: int = 0,
     prefix: str = "",
     cwd: str = "",

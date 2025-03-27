@@ -31,7 +31,13 @@ async def check_file_path_and_permissions(file_path: str) -> Tuple[bool, Optiona
         If is_valid is True, error_message will be None
 
     """
-    # Check that the path is absolute
+    # Import normalize_file_path for tilde expansion
+    from .common import normalize_file_path
+
+    # Normalize the path with tilde expansion
+    file_path = normalize_file_path(file_path)
+
+    # Check that the path is absolute (it should be after normalization)
     if not os.path.isabs(file_path):
         return False, f"File path must be absolute, not relative: {file_path}"
 
@@ -58,6 +64,12 @@ async def check_git_tracking_for_existing_file(
         If success is True, error_message will be None
 
     """
+    # Import normalize_file_path for tilde expansion
+    from .common import normalize_file_path
+
+    # Normalize the path with tilde expansion
+    file_path = normalize_file_path(file_path)
+
     # Check if the file exists
     file_exists = os.path.exists(file_path)
 
@@ -105,6 +117,12 @@ def ensure_directory_exists(file_path: str) -> None:
         file_path: The absolute path to the file
 
     """
+    # Import normalize_file_path for tilde expansion
+    from .common import normalize_file_path
+
+    # Normalize the path with tilde expansion
+    file_path = normalize_file_path(file_path)
+
     directory = os.path.dirname(file_path)
     if not os.path.exists(directory):
         os.makedirs(directory, exist_ok=True)
@@ -127,6 +145,12 @@ async def async_open_text(
     Returns:
         The file content as a string
     """
+    # Import normalize_file_path for tilde expansion
+    from .common import normalize_file_path
+
+    # Normalize the path with tilde expansion
+    file_path = normalize_file_path(file_path)
+
     async with await anyio.open_file(
         file_path, mode, encoding=encoding, errors=errors
     ) as f:
@@ -148,6 +172,12 @@ async def write_text_content(
         line_endings: The line endings to use ('CRLF', 'LF', '\r\n', or '\n').
                      If None, uses the system default.
     """
+    # Import normalize_file_path for tilde expansion
+    from .common import normalize_file_path
+
+    # Normalize the path with tilde expansion
+    file_path = normalize_file_path(file_path)
+
     # First normalize content to LF line endings
     normalized_content = normalize_to_lf(content)
 
