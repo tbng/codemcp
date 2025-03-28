@@ -466,64 +466,70 @@ def init_codemcp_project(path: str, python: bool = False) -> str:
         else:
             print(f"Git repository already exists in {project_path}")
 
-        # Create empty codemcp.toml file if it doesn't exist
-        config_file = project_path / "codemcp.toml"
-        if not config_file.exists():
-            with open(config_file, "w") as f:
-                f.write("# codemcp configuration file\n\n")
-            print(f"Created empty codemcp.toml file in {project_path}")
-        else:
-            print(f"codemcp.toml file already exists in {project_path}")
+        # Select the appropriate template directory
+        template_name = "python" if python else "blank"
+        templates_dir = Path(__file__).parent / "templates" / template_name
 
-        # If Python option is enabled, create Python-specific files
-        files_to_add = ["codemcp.toml"]
+        # Derive project name from directory name (for replacing placeholders)
+        project_name = project_path.name
+        package_name = re.sub(r"[^a-z0-9_]", "_", project_name.lower())
+
+        # Track which files we need to add to git
+        files_to_add = []
+
+        # Function to process templates with placeholder replacement
+        def process_template(template_file, output_path):
+            # Create parent directories if they don't exist
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+
+            # Skip if the file already exists
+            if output_path.exists():
+                print(f"File already exists, skipping: {output_path}")
+                return False
+
+            with open(template_file, "r") as f:
+                content = f.read()
+
+            # Replace placeholders
+            content = content.replace("__PROJECT_NAME__", project_name)
+            content = content.replace("__PACKAGE_NAME__", package_name)
+
+            with open(output_path, "w") as f:
+                f.write(content)
+
+            rel_path = output_path.relative_to(project_path)
+            print(f"Created file: {rel_path}")
+            return rel_path
+
+        # Process all files in the template directory (except subdirectories)
+        for template_file in templates_dir.glob("*"):
+            if template_file.is_file() and template_file.name != ".gitkeep":
+                # Create output path
+                output_path = project_path / template_file.name
+
+                # Process the template and track for git add
+                rel_path = process_template(template_file, output_path)
+                if rel_path:
+                    files_to_add.append(str(rel_path))
+
+        # Special handling for Python package directory creation
         if python:
-            # Derive project name from directory name
-            project_name = project_path.name
-            package_name = re.sub(r"[^a-z0-9_]", "_", project_name.lower())
+            # Create the package directory with the derived name
+            pkg_dir = project_path / package_name
+            pkg_dir.mkdir(parents=True, exist_ok=True)
 
-            # Get the templates directory
-            templates_dir = Path(__file__).parent / "templates" / "python"
-
-            # Function to read a template and replace placeholders
-            def process_template(template_file, output_path):
-                with open(template_file, "r") as f:
-                    content = f.read()
-
-                # Replace placeholders
-                content = content.replace("__PROJECT_NAME__", project_name)
-
-                with open(output_path, "w") as f:
+            # Create __init__.py in the package directory
+            init_file = pkg_dir / "__init__.py"
+            if not init_file.exists():
+                content = (
+                    f'"""__{project_name}__ package."""\n\n__version__ = "0.1.0"\n'
+                )
+                with open(init_file, "w") as f:
                     f.write(content)
-
-            # Create pyproject.toml if it doesn't exist
-            pyproject_file = project_path / "pyproject.toml"
-            if not pyproject_file.exists():
-                process_template(templates_dir / "pyproject.toml", pyproject_file)
-                print(f"Created pyproject.toml file in {project_path}")
-                files_to_add.append("pyproject.toml")
-            else:
-                print(f"pyproject.toml file already exists in {project_path}")
-
-            # Create README.md if it doesn't exist
-            readme_file = project_path / "README.md"
-            if not readme_file.exists():
-                process_template(templates_dir / "README.md", readme_file)
-                print(f"Created README.md file in {project_path}")
-                files_to_add.append("README.md")
-            else:
-                print(f"README.md file already exists in {project_path}")
-
-            # Create basic package structure
-            package_dir = project_path / package_name
-            if not package_dir.exists():
-                package_dir.mkdir(parents=True, exist_ok=True)
-                init_file = package_dir / "__init__.py"
-                process_template(templates_dir / "__init__.py", init_file)
-                print(f"Created package structure in {package_dir}")
+                print(f"Created package structure in {pkg_dir}")
                 files_to_add.append(f"{package_name}/__init__.py")
             else:
-                print(f"Package directory {package_name} already exists")
+                print(f"__init__.py already exists in {pkg_dir}")
 
         # Make initial commit if there are no commits yet
         try:
@@ -536,7 +542,7 @@ def init_codemcp_project(path: str, python: bool = False) -> str:
                 text=True,
             )
 
-            if result.returncode != 0:
+            if result.returncode != 0 and files_to_add:
                 # No commits yet, add files and make initial commit
                 for file in files_to_add:
                     subprocess.run(["git", "add", file], cwd=project_path, check=True)
