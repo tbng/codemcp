@@ -474,62 +474,65 @@ def init_codemcp_project(path: str, python: bool = False) -> str:
         project_name = project_path.name
         package_name = re.sub(r"[^a-z0-9_]", "_", project_name.lower())
 
+        # Create a mapping for placeholder replacements
+        replacements = {
+            "__PROJECT_NAME__": project_name,
+            "__PACKAGE_NAME__": package_name,
+        }
+
         # Track which files we need to add to git
         files_to_add = []
 
-        # Function to process templates with placeholder replacement
-        def process_template(template_file, output_path):
+        # Function to replace placeholders in a string
+        def replace_placeholders(text):
+            for placeholder, value in replacements.items():
+                text = text.replace(placeholder, value)
+            return text
+
+        # Function to process a file from template directory to output directory
+        def process_file(template_file, template_root, output_root):
+            # Get the relative path from template root
+            rel_path = template_file.relative_to(template_root)
+
+            # Replace placeholders in the path components
+            path_parts = []
+            for part in rel_path.parts:
+                path_parts.append(replace_placeholders(part))
+
+            # Create the output path with replaced placeholders
+            output_path = output_root.joinpath(*path_parts)
+
             # Create parent directories if they don't exist
             output_path.parent.mkdir(parents=True, exist_ok=True)
 
             # Skip if the file already exists
             if output_path.exists():
                 print(f"File already exists, skipping: {output_path}")
-                return False
+                return None
 
+            # Read the template content
             with open(template_file, "r") as f:
                 content = f.read()
 
-            # Replace placeholders
-            content = content.replace("__PROJECT_NAME__", project_name)
-            content = content.replace("__PACKAGE_NAME__", package_name)
+            # Replace placeholders in content
+            content = replace_placeholders(content)
 
+            # Write to the output file
             with open(output_path, "w") as f:
                 f.write(content)
 
+            # Return the relative path for git tracking
             rel_path = output_path.relative_to(project_path)
             print(f"Created file: {rel_path}")
             return rel_path
 
-        # Process all files in the template directory (except subdirectories)
-        for template_file in templates_dir.glob("*"):
+        # Recursively process template directory
+        for template_file in templates_dir.glob("**/*"):
             if template_file.is_file() and template_file.name != ".gitkeep":
-                # Create output path
-                output_path = project_path / template_file.name
-
-                # Process the template and track for git add
-                rel_path = process_template(template_file, output_path)
+                # Process template file
+                rel_path = process_file(template_file, templates_dir, project_path)
                 if rel_path:
                     files_to_add.append(str(rel_path))
-
-        # Special handling for Python package directory creation
-        if python:
-            # Create the package directory with the derived name
-            pkg_dir = project_path / package_name
-            pkg_dir.mkdir(parents=True, exist_ok=True)
-
-            # Create __init__.py in the package directory
-            init_file = pkg_dir / "__init__.py"
-            if not init_file.exists():
-                content = (
-                    f'"""__{project_name}__ package."""\n\n__version__ = "0.1.0"\n'
-                )
-                with open(init_file, "w") as f:
-                    f.write(content)
-                print(f"Created package structure in {pkg_dir}")
-                files_to_add.append(f"{package_name}/__init__.py")
-            else:
-                print(f"__init__.py already exists in {pkg_dir}")
 
         # Make initial commit if there are no commits yet
         try:
