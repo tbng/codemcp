@@ -2,6 +2,7 @@
 
 import logging
 import os
+import re
 from pathlib import Path
 
 import click
@@ -477,31 +478,28 @@ def init_codemcp_project(path: str, python: bool = False) -> str:
         # If Python option is enabled, create Python-specific files
         files_to_add = ["codemcp.toml"]
         if python:
+            # Derive project name from directory name
+            project_name = project_path.name
+            package_name = re.sub(r"[^a-z0-9_]", "_", project_name.lower())
+
+            # Get the templates directory
+            templates_dir = Path(__file__).parent / "templates" / "python"
+
+            # Function to read a template and replace placeholders
+            def process_template(template_file, output_path):
+                with open(template_file, "r") as f:
+                    content = f.read()
+
+                # Replace placeholders
+                content = content.replace("__PROJECT_NAME__", project_name)
+
+                with open(output_path, "w") as f:
+                    f.write(content)
+
             # Create pyproject.toml if it doesn't exist
             pyproject_file = project_path / "pyproject.toml"
             if not pyproject_file.exists():
-                with open(pyproject_file, "w") as f:
-                    f.write("""[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
-
-[project]
-name = "project-name"
-version = "0.1.0"
-description = "Project description"
-readme = "README.md"
-requires-python = ">=3.8"
-license = {text = "MIT"}
-dependencies = []
-
-[project.optional-dependencies]
-dev = [
-    "pytest>=7.0.0",
-    "mypy>=1.0.0",
-    "black>=23.0.0",
-    "isort>=5.0.0",
-]
-""")
+                process_template(templates_dir / "pyproject.toml", pyproject_file)
                 print(f"Created pyproject.toml file in {project_path}")
                 files_to_add.append("pyproject.toml")
             else:
@@ -510,21 +508,18 @@ dev = [
             # Create README.md if it doesn't exist
             readme_file = project_path / "README.md"
             if not readme_file.exists():
-                with open(readme_file, "w") as f:
-                    f.write("# Project Name\n\nProject description\n")
+                process_template(templates_dir / "README.md", readme_file)
                 print(f"Created README.md file in {project_path}")
                 files_to_add.append("README.md")
             else:
                 print(f"README.md file already exists in {project_path}")
 
             # Create basic package structure
-            package_name = "project_name"
             package_dir = project_path / package_name
             if not package_dir.exists():
                 package_dir.mkdir(parents=True, exist_ok=True)
                 init_file = package_dir / "__init__.py"
-                with open(init_file, "w") as f:
-                    f.write('"""Project description."""\n\n__version__ = "0.1.0"\n')
+                process_template(templates_dir / "__init__.py", init_file)
                 print(f"Created package structure in {package_dir}")
                 files_to_add.append(f"{package_name}/__init__.py")
             else:
