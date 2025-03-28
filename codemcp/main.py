@@ -437,11 +437,12 @@ def configure_logging(log_file: str = "codemcp.log") -> None:
         logging.info("Logs from 'mcp' module are being filtered")
 
 
-def init_codemcp_project(path: str) -> str:
+def init_codemcp_project(path: str, python: bool = False) -> str:
     """Initialize a new codemcp project.
 
     Args:
         path: Path to initialize the project in
+        python: Whether to create Python project files
 
     Returns:
         Message indicating success or failure
@@ -473,6 +474,62 @@ def init_codemcp_project(path: str) -> str:
         else:
             print(f"codemcp.toml file already exists in {project_path}")
 
+        # If Python option is enabled, create Python-specific files
+        files_to_add = ["codemcp.toml"]
+        if python:
+            # Create pyproject.toml if it doesn't exist
+            pyproject_file = project_path / "pyproject.toml"
+            if not pyproject_file.exists():
+                with open(pyproject_file, "w") as f:
+                    f.write("""[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "project-name"
+version = "0.1.0"
+description = "Project description"
+readme = "README.md"
+requires-python = ">=3.8"
+license = {text = "MIT"}
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "mypy>=1.0.0",
+    "black>=23.0.0",
+    "isort>=5.0.0",
+]
+""")
+                print(f"Created pyproject.toml file in {project_path}")
+                files_to_add.append("pyproject.toml")
+            else:
+                print(f"pyproject.toml file already exists in {project_path}")
+
+            # Create README.md if it doesn't exist
+            readme_file = project_path / "README.md"
+            if not readme_file.exists():
+                with open(readme_file, "w") as f:
+                    f.write("# Project Name\n\nProject description\n")
+                print(f"Created README.md file in {project_path}")
+                files_to_add.append("README.md")
+            else:
+                print(f"README.md file already exists in {project_path}")
+
+            # Create basic package structure
+            package_name = "project_name"
+            package_dir = project_path / package_name
+            if not package_dir.exists():
+                package_dir.mkdir(parents=True, exist_ok=True)
+                init_file = package_dir / "__init__.py"
+                with open(init_file, "w") as f:
+                    f.write('"""Project description."""\n\n__version__ = "0.1.0"\n')
+                print(f"Created package structure in {package_dir}")
+                files_to_add.append(f"{package_name}/__init__.py")
+            else:
+                print(f"Package directory {package_name} already exists")
+
         # Make initial commit if there are no commits yet
         try:
             # Check if there are any commits
@@ -485,22 +542,27 @@ def init_codemcp_project(path: str) -> str:
             )
 
             if result.returncode != 0:
-                # No commits yet, add codemcp.toml and make initial commit
+                # No commits yet, add files and make initial commit
+                for file in files_to_add:
+                    subprocess.run(["git", "add", file], cwd=project_path, check=True)
+                commit_msg = "chore: initialize codemcp project"
+                if python:
+                    commit_msg += " with Python template"
                 subprocess.run(
-                    ["git", "add", "codemcp.toml"], cwd=project_path, check=True
-                )
-                subprocess.run(
-                    ["git", "commit", "-m", "chore: initialize codemcp project"],
+                    ["git", "commit", "-m", commit_msg],
                     cwd=project_path,
                     check=True,
                 )
-                print("Created initial commit with codemcp.toml")
+                print(f"Created initial commit with {', '.join(files_to_add)}")
             else:
                 print("Repository already has commits, not creating initial commit")
         except subprocess.CalledProcessError as e:
             print(f"Warning: Failed to create initial commit: {e}")
 
-        return f"Successfully initialized codemcp project in {project_path}"
+        success_msg = f"Successfully initialized codemcp project in {project_path}"
+        if python:
+            success_msg += " with Python project structure"
+        return success_msg
     except Exception as e:
         return f"Error initializing project: {e}"
 
@@ -516,9 +578,13 @@ def cli(ctx: click.Context) -> None:
 
 @cli.command()
 @click.argument("path", type=click.Path(), default=".")
-def init(path: str) -> None:
-    """Initialize a new codemcp project with an empty codemcp.toml file and git repository."""
-    result = init_codemcp_project(path)
+@click.option("--python", is_flag=True, help="Initialize with Python project structure")
+def init(path: str, python: bool) -> None:
+    """Initialize a new codemcp project with an empty codemcp.toml file and git repository.
+
+    Use --python flag to create Python project files including pyproject.toml and package structure.
+    """
+    result = init_codemcp_project(path, python)
     click.echo(result)
 
 

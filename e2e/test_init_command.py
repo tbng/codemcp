@@ -69,3 +69,47 @@ def test_init_command_existing_repo():
         # Check that codemcp.toml was created
         config_file = Path(temp_dir) / "codemcp.toml"
         assert config_file.exists()
+
+
+def test_init_command_with_python():
+    """Test the init command with Python option creates Python project structure."""
+    # Create a temporary directory for testing
+    with tempfile.TemporaryDirectory() as temp_dir:
+        # Run the init_codemcp_project function with Python option
+        result = init_codemcp_project(temp_dir, python=True)
+
+        # Check that the function reports success with Python message
+        assert "Successfully initialized" in result
+        assert "with Python project structure" in result
+
+        # Check that standard files were created
+        config_file = Path(temp_dir) / "codemcp.toml"
+        assert config_file.exists()
+
+        # Check that git repository was initialized
+        git_dir = Path(temp_dir) / ".git"
+        assert git_dir.is_dir()
+
+        # Check that Python-specific files were created
+        pyproject_file = Path(temp_dir) / "pyproject.toml"
+        assert pyproject_file.exists()
+
+        readme_file = Path(temp_dir) / "README.md"
+        assert readme_file.exists()
+
+        # Check package structure
+        package_dir = Path(temp_dir) / "project_name"
+        assert package_dir.is_dir()
+
+        init_file = package_dir / "__init__.py"
+        assert init_file.exists()
+
+        # Check that the commit message includes Python template reference
+        result = subprocess.run(
+            ["git", "log", "--oneline"],
+            cwd=temp_dir,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        assert "with Python template" in result.stdout
