@@ -367,81 +367,115 @@ codemcp-id: test-chat-id""",
 
     async def test_write_file_with_tilde_path(self):
         """Test that WriteFile correctly handles paths with tilde (~) expansion."""
-        # We'll create a file in a subdirectory of the temp_dir and then refer to it with tilde
-        # First, get the user's home directory
+        # Create a temporary directory in the user's home directory specifically for this test
         home_dir = os.path.expanduser("~")
+        home_temp_dir_path = os.path.join(home_dir, f"codemcp_test_tilde_{os.getpid()}")
+        os.makedirs(home_temp_dir_path, exist_ok=True)
 
-        # Check if temp_dir is in the home directory for the tilde test to work
-        temp_dir_abs = os.path.abspath(self.temp_dir.name)
-        if not temp_dir_abs.startswith(home_dir):
-            self.skipTest(
-                "Test requires temp_dir to be within the user's home directory"
+        try:
+            # Initialize a git repository in this directory
+            await self.git_run(["init", "-b", "main"], cwd=home_temp_dir_path)
+            await self.git_run(
+                ["config", "user.email", "test@example.com"], cwd=home_temp_dir_path
+            )
+            await self.git_run(
+                ["config", "user.name", "Test User"], cwd=home_temp_dir_path
             )
 
-        # Create a relative path using tilde
-        rel_path = os.path.relpath(temp_dir_abs, home_dir)
-        tilde_path = os.path.join("~", rel_path, "tilde_test_file.txt")
+            # Create initial commit
+            readme_path = os.path.join(home_temp_dir_path, "README.md")
+            with open(readme_path, "w") as f:
+                f.write("# Test Repository for tilde expansion\n")
 
-        # Expected absolute path after tilde expansion
-        expected_abs_path = os.path.expanduser(tilde_path)
-        self.assertEqual(
-            os.path.abspath(expected_abs_path), temp_dir_abs + "/tilde_test_file.txt"
-        )
+            # Create a codemcp.toml file (required for permission checks)
+            codemcp_toml_path = os.path.join(home_temp_dir_path, "codemcp.toml")
+            with open(codemcp_toml_path, "w") as f:
+                f.write("")
 
-        # Content to write
-        content = "This file was created with a tilde path"
-
-        async with self.create_client_session() as session:
-            # First initialize project to get chat_id
-            init_result_text = await self.call_tool_assert_success(
-                session,
-                "codemcp",
-                {
-                    "subtool": "InitProject",
-                    "path": self.temp_dir.name,
-                    "user_prompt": "Test initialization for tilde path test",
-                    "subject_line": "test: initialize for tilde path test",
-                    "reuse_head_chat_id": False,
-                },
+            await self.git_run(
+                ["add", "README.md", "codemcp.toml"], cwd=home_temp_dir_path
+            )
+            await self.git_run(
+                ["commit", "-m", "Initial commit"], cwd=home_temp_dir_path
             )
 
-            # Extract chat_id from the init result
-            chat_id = self.extract_chat_id_from_text(init_result_text)
+            # Create a relative path using tilde
+            rel_path = os.path.relpath(home_temp_dir_path, home_dir)
+            tilde_path = os.path.join("~", rel_path, "tilde_test_file.txt")
 
-            # Call the WriteFile tool with the tilde path
-            await self.call_tool_assert_success(
-                session,
-                "codemcp",
-                {
-                    "subtool": "WriteFile",
-                    "path": tilde_path,
-                    "content": content,
-                    "description": "Create file using tilde path",
-                    "chat_id": chat_id,
-                },
+            # Expected absolute path after tilde expansion
+            expected_abs_path = os.path.expanduser(tilde_path)
+            self.assertEqual(
+                os.path.abspath(expected_abs_path),
+                os.path.abspath(
+                    os.path.join(home_temp_dir_path, "tilde_test_file.txt")
+                ),
             )
 
-            # Verify the file was created
-            self.assertTrue(
-                os.path.exists(expected_abs_path),
-                "File should exist after writing with tilde path",
-            )
+            # Content to write
+            content = "This file was created with a tilde path"
 
-            # Verify content
-            with open(expected_abs_path) as f:
-                actual_content = f.read()
-            self.assertEqual(actual_content, content)
+            async with self.create_client_session() as session:
+                # First initialize project to get chat_id
+                init_result_text = await self.call_tool_assert_success(
+                    session,
+                    "codemcp",
+                    {
+                        "subtool": "InitProject",
+                        "path": home_temp_dir_path,
+                        "user_prompt": "Test initialization for tilde path test",
+                        "subject_line": "test: initialize for tilde path test",
+                        "reuse_head_chat_id": False,
+                    },
+                )
 
-            # Verify the file was added to git
-            ls_files_output = await self.git_run(
-                ["ls-files", expected_abs_path], capture_output=True, text=True
-            )
+                # Extract chat_id from the init result
+                chat_id = self.extract_chat_id_from_text(init_result_text)
 
-            # The file should be tracked in git
-            self.assertTrue(
-                ls_files_output,
-                "New file created with tilde path should be tracked in git",
-            )
+                # Call the WriteFile tool with the tilde path
+                await self.call_tool_assert_success(
+                    session,
+                    "codemcp",
+                    {
+                        "subtool": "WriteFile",
+                        "path": tilde_path,
+                        "content": content,
+                        "description": "Create file using tilde path",
+                        "chat_id": chat_id,
+                    },
+                )
+
+                # Verify the file was created
+                self.assertTrue(
+                    os.path.exists(expected_abs_path),
+                    "File should exist after writing with tilde path",
+                )
+
+                # Verify content
+                with open(expected_abs_path) as f:
+                    actual_content = f.read()
+                # WriteFile adds a newline at the end of files
+                self.assertEqual(actual_content, content + "\n")
+
+                # Verify the file was added to git
+                ls_files_output = await self.git_run(
+                    ["ls-files", "tilde_test_file.txt"],
+                    capture_output=True,
+                    text=True,
+                    cwd=home_temp_dir_path,
+                )
+
+                # The file should be tracked in git
+                self.assertTrue(
+                    ls_files_output,
+                    "New file created with tilde path should be tracked in git",
+                )
+        finally:
+            # Clean up the temporary directory
+            import shutil
+
+            if os.path.exists(home_temp_dir_path):
+                shutil.rmtree(home_temp_dir_path)
 
     async def test_user_prompt_with_markdown_code_block(self):
         """Test handling of user prompt that contains a Markdown code block with triple backticks."""
