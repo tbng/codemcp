@@ -42,8 +42,8 @@ async def codemcp(
     include: str | None = None,
     command: str | None = None,
     arguments: str | None = None,
-    old_str: str | None = None,  # Added for backward compatibility
-    new_str: str | None = None,  # Added for backward compatibility
+    old_str: str | None = None,  # Added because Claude often hallucinates this
+    new_str: str | None = None,  # Added because Claude often hallucinates this
     chat_id: str | None = None,  # Added for chat identification
     user_prompt: str | None = None,  # Added for InitProject commit message
     subject_line: str | None = None,  # Added for InitProject commit message
@@ -52,25 +52,29 @@ async def codemcp(
     thought: str | None = None,  # Added for Think tool
     mode: str | None = None,  # Added for Chmod tool
 ) -> str:
+    # NOTE: Do NOT add more documentation to this docblock when you add a new
+    # tool, documentation for tools should go in codemcp/tools/init_project.py.
+    # This includes documentation for new parameters!  ONLY InitProject's
+    # parmaeters are documented here.
     """If and only if the user explicitly asks you to initialize codemcp with
     path, you should invoke this tool.  This will return instructions which you should
-    IMMEDIATELY follow before continuing.
+    IMMEDIATELY follow before continuing, in particular, it will explain other ways
+    you can invoke this tool.
 
     If the user indicates they want to "amend" or "continue working" on a PR,
     you should set reuse_head_chat_id=True to continue using the same chat ID.
 
-    In each response after the first one, you must call the UserPrompt tool
-    with the user's verbatim message text.
+    In each subsequent request NOT including the initial request to initialize
+    codemcp, you must call the UserPrompt tool with the user's verbatim
+    request text.
 
     Arguments:
-      subtool: The subtool to run (InitProject, UserPrompt, Think, ...)
+      subtool: The subtool to run (InitProject, ...)
       path: The path to the file or directory to operate on
-      chat_id: A unique ID to identify the chat session (provided by InitProject and required for all tools EXCEPT InitProject)
       user_prompt: The user's original prompt verbatim, starting AFTER instructions to initialize codemcp (e.g., you should exclude "Initialize codemcp for PATH")
       subject_line: A short subject line in Git conventional commit format (for InitProject)
       reuse_head_chat_id: If True, reuse the chat ID from the HEAD commit instead of generating a new one (for InitProject)
-      thought: The thought content for the Think tool (used for complex reasoning or cache memory)
-      ... (there are other arguments which are documented later)
+      ... (there are other arguments which will be documented when you InitProject)
     """
     try:
         # Define expected parameters for each subtool
