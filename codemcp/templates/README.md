@@ -18,3 +18,18 @@ Reasoning behind decisions:
 
 - Version bounds on built-in dependencies: latest possible, because that is
   the 'uv add' default.  We will need to occasionally rev these though.
+
+- `--tb=native` on pytest by default because the default pytest backtraces
+  are overly long and blow out your model's context.  Actually there is
+  probably more improvement for the pytest output formatting possible here.
+
+Some especially controversial decisions:
+
+- `pytest-xdist` is enabled by default.  This is a huge QoL improvement as
+  your tests run a lot faster but you need to actually have tests that are
+  parallel-safe, which will be hit-or-miss with a model, and there won't be a
+  clear signal when you've messed up as it will be nondeterministically
+  failing tests (the worst kind).  It's easiest to enforce that running tests
+  in parallel is safe early in the project though, so we think the payoff is
+  worth it, especially since you can ask the LLM to rewrite code that is not
+  parallel safe to be parallel safe.
