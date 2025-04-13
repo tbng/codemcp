@@ -492,125 +492,125 @@ def init_codemcp_project(path: str, python: bool = False) -> str:
     """
     import subprocess
 
-    try:
-        # Convert to Path object and resolve to absolute path
-        project_path = Path(path).resolve()
+    # Convert to Path object and resolve to absolute path
+    project_path = Path(path).resolve()
 
-        # Create directory if it doesn't exist
-        project_path.mkdir(parents=True, exist_ok=True)
+    # Create directory if it doesn't exist
+    project_path.mkdir(parents=True, exist_ok=True)
 
-        # Check if git repository already exists
-        git_dir = project_path / ".git"
-        if not git_dir.exists():
-            # Initialize git repository
-            subprocess.run(["git", "init"], cwd=project_path, check=True)
-            print(f"Initialized git repository in {project_path}")
-        else:
-            print(f"Git repository already exists in {project_path}")
+    # Check if git repository already exists
+    git_dir = project_path / ".git"
+    if not git_dir.exists():
+        # Initialize git repository
+        subprocess.run(["git", "init"], cwd=project_path, check=True)
+        print(f"Initialized git repository in {project_path}")
+    else:
+        print(f"Git repository already exists in {project_path}")
 
-        # Select the appropriate template directory
-        template_name = "python" if python else "blank"
-        templates_dir = Path(__file__).parent / "templates" / template_name
+    # Select the appropriate template directory
+    template_name = "python" if python else "blank"
+    templates_dir = Path(__file__).parent / "templates" / template_name
 
-        # Derive project name from directory name (for replacing placeholders)
-        project_name = project_path.name
-        package_name = re.sub(r"[^a-z0-9_]", "_", project_name.lower())
+    # Derive project name from directory name (for replacing placeholders)
+    project_name = project_path.name
+    package_name = re.sub(r"[^a-z0-9_]", "_", project_name.lower())
 
-        # Create a mapping for placeholder replacements
-        replacements = {
-            "__PROJECT_NAME__": project_name,
-            "__PACKAGE_NAME__": package_name,
-        }
+    # Create a mapping for placeholder replacements
+    replacements = {
+        "__PROJECT_NAME__": project_name,
+        "__PACKAGE_NAME__": package_name,
+    }
 
-        # Track which files we need to add to git
-        files_to_add = []
+    # Track which files we need to add to git
+    files_to_add = []
 
-        # Function to replace placeholders in a string
-        def replace_placeholders(text):
-            for placeholder, value in replacements.items():
-                text = text.replace(placeholder, value)
-            return text
+    # Function to replace placeholders in a string
+    def replace_placeholders(text):
+        for placeholder, value in replacements.items():
+            text = text.replace(placeholder, value)
+        return text
 
-        # Function to process a file from template directory to output directory
-        def process_file(template_file, template_root, output_root):
-            # Get the relative path from template root
-            rel_path = template_file.relative_to(template_root)
+    # Function to process a file from template directory to output directory
+    def process_file(template_file, template_root, output_root):
+        # Get the relative path from template root
+        rel_path = template_file.relative_to(template_root)
 
-            # Replace placeholders in the path components
-            path_parts = []
-            for part in rel_path.parts:
-                path_parts.append(replace_placeholders(part))
+        # Replace placeholders in the path components
+        path_parts = []
+        for part in rel_path.parts:
+            path_parts.append(replace_placeholders(part))
 
-            # Create the output path with replaced placeholders
-            output_path = output_root.joinpath(*path_parts)
+        # Create the output path with replaced placeholders
+        output_path = output_root.joinpath(*path_parts)
 
-            # Create parent directories if they don't exist
-            output_path.parent.mkdir(parents=True, exist_ok=True)
+        # Create parent directories if they don't exist
+        output_path.parent.mkdir(parents=True, exist_ok=True)
 
-            # Skip if the file already exists
-            if output_path.exists():
-                print(f"File already exists, skipping: {output_path}")
-                return None
+        # Skip if the file already exists
+        if output_path.exists():
+            print(f"File already exists, skipping: {output_path}")
+            return None
 
-            # Read the template content
-            with open(template_file, "r") as f:
-                content = f.read()
+        # Read the template content
+        with open(template_file, "r") as f:
+            content = f.read()
 
-            # Replace placeholders in content
-            content = replace_placeholders(content)
+        # Replace placeholders in content
+        content = replace_placeholders(content)
 
-            # Write to the output file
-            with open(output_path, "w") as f:
-                f.write(content)
+        # Write to the output file
+        with open(output_path, "w") as f:
+            f.write(content)
 
-            # Return the relative path for git tracking
-            rel_path = output_path.relative_to(project_path)
-            print(f"Created file: {rel_path}")
-            return rel_path
+        # Return the relative path for git tracking
+        rel_path = output_path.relative_to(project_path)
+        print(f"Created file: {rel_path}")
+        return rel_path
 
-        # Recursively process template directory
-        for template_file in templates_dir.glob("**/*"):
-            if template_file.is_file() and template_file.name != ".gitkeep":
-                # Process template file
+    # Recursively process template directory
+    for template_file in templates_dir.glob("**/*"):
+        if template_file.is_file() and template_file.name != ".gitkeep":
+            # Process template file
+            try:
                 rel_path = process_file(template_file, templates_dir, project_path)
-                if rel_path:
-                    files_to_add.append(str(rel_path))
+            except Exception as e:
+                raise RuntimeError(f"failed processing {template_file}") from e
+            if rel_path:
+                files_to_add.append(str(rel_path))
 
-        # Make initial commit if there are no commits yet
-        try:
-            # Check if there are any commits
-            result = subprocess.run(
-                ["git", "rev-parse", "HEAD"],
+    # Make initial commit if there are no commits yet
+    try:
+        # Check if there are any commits
+        result = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=project_path,
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+
+        if result.returncode != 0 and files_to_add:
+            # No commits yet, add files and make initial commit
+            for file in files_to_add:
+                subprocess.run(["git", "add", file], cwd=project_path, check=True)
+            commit_msg = "chore: initialize codemcp project"
+            if python:
+                commit_msg += " with Python template"
+            subprocess.run(
+                ["git", "commit", "-m", commit_msg],
                 cwd=project_path,
-                check=False,
-                capture_output=True,
-                text=True,
+                check=True,
             )
+            print(f"Created initial commit with {', '.join(files_to_add)}")
+        else:
+            print("Repository already has commits, not creating initial commit")
+    except subprocess.CalledProcessError as e:
+        print(f"Warning: Failed to create initial commit: {e}")
 
-            if result.returncode != 0 and files_to_add:
-                # No commits yet, add files and make initial commit
-                for file in files_to_add:
-                    subprocess.run(["git", "add", file], cwd=project_path, check=True)
-                commit_msg = "chore: initialize codemcp project"
-                if python:
-                    commit_msg += " with Python template"
-                subprocess.run(
-                    ["git", "commit", "-m", commit_msg],
-                    cwd=project_path,
-                    check=True,
-                )
-                print(f"Created initial commit with {', '.join(files_to_add)}")
-            else:
-                print("Repository already has commits, not creating initial commit")
-        except subprocess.CalledProcessError as e:
-            print(f"Warning: Failed to create initial commit: {e}")
-
-        success_msg = f"Successfully initialized codemcp project in {project_path}"
-        if python:
-            success_msg += " with Python project structure"
-        return success_msg
-    except Exception as e:
-        return f"Error initializing project: {e}"
+    success_msg = f"Successfully initialized codemcp project in {project_path}"
+    if python:
+        success_msg += " with Python project structure"
+    return success_msg
 
 
 @click.group(invoke_without_command=True)
