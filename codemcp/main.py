@@ -4,9 +4,14 @@ import logging
 import os
 import re
 from pathlib import Path
+from typing import List, Optional
 
 import click
+import uvicorn
+from fastapi.middleware.cors import CORSMiddleware
 from mcp.server.fastmcp import FastMCP
+from starlette.applications import Starlette
+from starlette.routing import Mount
 
 from .common import normalize_file_path
 from .tools.chmod import chmod
@@ -629,7 +634,69 @@ def init(path: str, python: bool) -> None:
     click.echo(result)
 
 
+def create_sse_app(allowed_origins: Optional[List[str]] = None) -> Starlette:
+    """Create an SSE app with the MCP server.
+
+    Args:
+        allowed_origins: List of origins to allow CORS for. If None, only claude.ai is allowed.
+
+    Returns:
+        A Starlette application with the MCP server mounted.
+    """
+    if allowed_origins is None:
+        allowed_origins = ["https://claude.ai"]
+
+    app = Starlette(
+        routes=[
+            Mount("/", app=mcp.sse_app()),
+        ]
+    )
+
+    # Add CORS middleware to the app
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=allowed_origins,
+        allow_credentials=True,
+        allow_methods=["GET", "POST"],
+        allow_headers=["*"],
+    )
+
+    return app
+
+
 def run() -> None:
     """Run the MCP server."""
     configure_logging()
     mcp.run()
+
+
+@cli.command()
+@click.option(
+    "--host",
+    default="127.0.0.1",
+    help="Host to bind the server to (default: 127.0.0.1)",
+)
+@click.option("--port", default=8000, help="Port to bind the server to (default: 8000)")
+@click.option(
+    "--cors-origin",
+    multiple=True,
+    help="Origins to allow CORS for (default: https://claude.ai)",
+)
+def serve(host: str, port: int, cors_origin: List[str]) -> None:
+    """Run the MCP SSE server.
+
+    This command mounts the MCP as an SSE server that can be connected to from web applications.
+    By default, it allows CORS requests from claude.ai.
+    """
+    configure_logging()
+    logging.info(f"Starting MCP SSE server on {host}:{port}")
+
+    # If no origins provided, use the default
+    allowed_origins = list(cors_origin) if cors_origin else None
+    if allowed_origins:
+        logging.info(f"Allowing CORS for: {', '.join(allowed_origins)}")
+    else:
+        logging.info("Allowing CORS for: https://claude.ai")
+
+    app = create_sse_app(allowed_origins)
+    uvicorn.run(app, host=host, port=port)
