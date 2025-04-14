@@ -3,6 +3,7 @@ import sys
 from typing import Union
 from urllib.parse import quote
 
+import click
 from agno.agent import Agent
 from agno.api.playground import PlaygroundEndpointCreate, create_playground_endpoint
 from agno.cli.console import console
@@ -60,11 +61,12 @@ async def serve_playground_app_async(
     await server.serve()
 
 
-async def main():
+async def main(hello_world: bool = False):
     async with MCPTools(f"{sys.executable} -m codemcp.hot_reload_entry") as codemcp:
         # TODO: cli-ify the model
         from agno.models.anthropic import Claude
-        #from agno.models.google import Gemini
+
+        # from agno.models.google import Gemini
         agent = Agent(
             model=Claude(id="claude-3-7-sonnet-20250219"),
             # model=Gemini(id="gemini-2.5-pro-exp-03-25"),
@@ -73,8 +75,16 @@ async def main():
             markdown=True,
             show_tool_calls=True,
         )
-        # agent.print_response("What tools do you have?", stream=True, show_full_reasoning=True, stream_intermediate_steps=True)
-        # return
+
+        # If --hello-world flag is used, run the short-circuited response and return
+        if hello_world:
+            await agent.aprint_response(
+                "What tools do you have?",
+                stream=True,
+                show_full_reasoning=True,
+                stream_intermediate_steps=True,
+            )
+            return
 
         # Comment out the playground code
         # playground = Playground(agents=[agent]).get_app()
@@ -100,7 +110,12 @@ async def main():
                 break
 
 
-if __name__ == "__main__":
+@click.command()
+@click.option(
+    "--hello-world", is_flag=True, help="Run a simple test query to see available tools"
+)
+def cli(hello_world: bool = False):
+    """CLI for the Agno agent with CodeMCP integration."""
     from agno.debug import enable_debug_mode
 
     enable_debug_mode()
@@ -111,4 +126,8 @@ if __name__ == "__main__":
     logging.getLogger("anthropic").setLevel(logging.DEBUG)
     logging.getLogger("google_genai").setLevel(logging.DEBUG)
 
-    asyncio.run(main())
+    asyncio.run(main(hello_world=hello_world))
+
+
+if __name__ == "__main__":
+    cli()
