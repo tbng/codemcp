@@ -79,12 +79,16 @@ async def main():
         # playground = Playground(agents=[agent]).get_app()
         # await serve_playground_app_async(playground)
 
-        # Replace with a simple stdin loop
+        # Replace with a simple async loop for stdin input
         print("Enter your query (Ctrl+C to exit):")
         while True:
             try:
-                user_input = input("> ")
-                agent.print_response(
+                # Use asyncio to read from stdin in an async-friendly way
+                loop = asyncio.get_event_loop()
+                user_input = await loop.run_in_executor(None, lambda: input("> "))
+
+                # Properly await the async print_response method
+                await agent.print_response(
                     user_input,
                     stream=True,
                     show_full_reasoning=True,
