@@ -7,9 +7,7 @@ from agno.agent import Agent
 from agno.api.playground import PlaygroundEndpointCreate, create_playground_endpoint
 from agno.cli.console import console
 from agno.cli.settings import agno_cli_settings
-from agno.models.anthropic import Claude
 from agno.models.google import Gemini
-from agno.playground import Playground
 from agno.tools.mcp import MCPTools
 from agno.utils.log import logger
 from fastapi import FastAPI
@@ -67,23 +65,42 @@ async def main():
     async with MCPTools(f"{sys.executable} -m codemcp.hot_reload_entry") as codemcp:
         # TODO: cli-ify the model
         agent = Agent(
-            #model=Claude(id="claude-3-7-sonnet-20250219"),
+            # model=Claude(id="claude-3-7-sonnet-20250219"),
             model=Gemini(id="gemini-2.5-pro-exp-03-25"),
             tools=[codemcp],
             instructions="",
             markdown=True,
             show_tool_calls=True,
         )
-        #agent.print_response("What tools do you have?", stream=True, show_full_reasoning=True, stream_intermediate_steps=True)
-        #return
-        playground = Playground(agents=[agent]).get_app()
-        await serve_playground_app_async(playground)
+        # agent.print_response("What tools do you have?", stream=True, show_full_reasoning=True, stream_intermediate_steps=True)
+        # return
+
+        # Comment out the playground code
+        # playground = Playground(agents=[agent]).get_app()
+        # await serve_playground_app_async(playground)
+
+        # Replace with a simple stdin loop
+        print("Enter your query (Ctrl+C to exit):")
+        while True:
+            try:
+                user_input = input("> ")
+                agent.print_response(
+                    user_input,
+                    stream=True,
+                    show_full_reasoning=True,
+                    stream_intermediate_steps=True,
+                )
+            except KeyboardInterrupt:
+                print("\nExiting...")
+                break
 
 
 if __name__ == "__main__":
     from agno.debug import enable_debug_mode
+
     enable_debug_mode()
     import logging
+
     logging.basicConfig(level=logging.DEBUG)
     logging.getLogger("httpx").setLevel(logging.DEBUG)  # For HTTP logging
     logging.getLogger("anthropic").setLevel(logging.DEBUG)

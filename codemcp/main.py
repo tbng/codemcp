@@ -67,7 +67,9 @@ async def codemcp(
     subtool: str,
     *,
     path: str | None = None,
-    content: str | dict | None = None,  # Allow any type, will be serialized to string if needed
+    content: str
+    | dict
+    | None = None,  # Allow any type, will be serialized to string if needed
     old_string: str | None = None,
     new_string: str | None = None,
     offset: int | None = None,
