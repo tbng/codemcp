@@ -288,5 +288,7 @@ async def get_current_commit_hash(directory: str, short: bool = True) -> str | N
             return str(result.stdout.strip())
         return None
     except Exception as e:
-        logging.warning(f"Exception when getting current commit hash: {e!s}", exc_info=True)
+        logging.warning(
+            f"Exception when getting current commit hash: {e!s}", exc_info=True
+        )
         return None
