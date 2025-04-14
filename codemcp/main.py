@@ -27,9 +27,34 @@ from .tools.run_command import run_command
 from .tools.think import think
 from .tools.user_prompt import user_prompt as user_prompt_tool
 from .tools.write_file import write_file_content
+from .git_query import get_current_commit_hash
 
 # Initialize FastMCP server
 mcp = FastMCP("codemcp")
+
+
+# Helper function to append the current commit hash to a result string
+async def append_commit_hash(result: str, path: str | None) -> str:
+    """Append the current Git commit hash to the result string.
+
+    Args:
+        result: The original result string to append to
+        path: Path to the Git repository (if available)
+
+    Returns:
+        The result string with the commit hash appended
+    """
+    if path is None:
+        return result
+
+    try:
+        current_hash = await get_current_commit_hash(path)
+        if current_hash:
+            return f"{result}\n\nCurrent commit hash: {current_hash}"
+    except Exception as e:
+        logging.warning(f"Failed to get current commit hash: {e}", exc_info=True)
+
+    return result
 
 
 # NB: If you edit this, also edit codemcp/tools/init_project.py
@@ -187,7 +212,8 @@ async def codemcp(
             # Normalize the path (expand tilde) before proceeding
             normalized_path = normalize_file_path(path)
 
-            return await read_file_content(normalized_path, offset, limit, chat_id)
+            result = await read_file_content(normalized_path, offset, limit, chat_id)
+            return await append_commit_hash(result, normalized_path)
 
         if subtool == "WriteFile":
             if path is None:
@@ -208,9 +234,10 @@ async def codemcp(
 
             if chat_id is None:
                 raise ValueError("chat_id is required for WriteFile subtool")
-            return await write_file_content(
+            result = await write_file_content(
                 normalized_path, content_str, description, chat_id
             )
+            return await append_commit_hash(result, normalized_path)
 
         if subtool == "EditFile":
             if path is None:
@@ -232,9 +259,10 @@ async def codemcp(
             new_content = new_string or new_str or ""
             if chat_id is None:
                 raise ValueError("chat_id is required for EditFile subtool")
-            return await edit_file_content(
+            result = await edit_file_content(
                 normalized_path, old_content, new_content, None, description, chat_id
             )
+            return await append_commit_hash(result, normalized_path)
 
         if subtool == "LS":
             if path is None:
@@ -243,7 +271,8 @@ async def codemcp(
             # Normalize the path (expand tilde) before proceeding
             normalized_path = normalize_file_path(path)
 
-            return await ls_directory(normalized_path, chat_id)
+            result = await ls_directory(normalized_path, chat_id)
+            return await append_commit_hash(result, normalized_path)
 
         if subtool == "InitProject":
             if path is None:
