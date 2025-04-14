@@ -61,17 +61,6 @@ async def serve_playground_app_async(
     await server.serve()
 
 
-# This function handles a single query
-async def process_query(agent, query):
-    """Process a single query with the agent."""
-    await agent.print_response(
-        query,
-        stream=True,
-        show_full_reasoning=True,
-        stream_intermediate_steps=True,
-    )
-
-
 async def main():
     async with MCPTools(f"{sys.executable} -m codemcp.hot_reload_entry") as codemcp:
         # TODO: cli-ify the model
@@ -90,17 +79,24 @@ async def main():
         # playground = Playground(agents=[agent]).get_app()
         # await serve_playground_app_async(playground)
 
-        # Replace with a simple CLI input loop
+        # Replace with a simple async loop for stdin input
         print("Enter your query (Ctrl+C to exit):")
-        try:
-            while True:
-                # Get input from user (non-async operation)
-                user_input = input("> ")
+        while True:
+            try:
+                # Use asyncio to read from stdin in an async-friendly way
+                loop = asyncio.get_event_loop()
+                user_input = await loop.run_in_executor(None, lambda: input("> "))
 
-                # Process the query in an async way
-                await process_query(agent, user_input)
-        except KeyboardInterrupt:
-            print("\nExiting...")
+                # Properly await the async print_response method
+                await agent.print_response(
+                    user_input,
+                    stream=True,
+                    show_full_reasoning=True,
+                    stream_intermediate_steps=True,
+                )
+            except KeyboardInterrupt:
+                print("\nExiting...")
+                break
 
 
 if __name__ == "__main__":
