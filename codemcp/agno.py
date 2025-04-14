@@ -7,7 +7,6 @@ from agno.agent import Agent
 from agno.api.playground import PlaygroundEndpointCreate, create_playground_endpoint
 from agno.cli.console import console
 from agno.cli.settings import agno_cli_settings
-from agno.models.google import Gemini
 from agno.tools.mcp import MCPTools
 from agno.utils.log import logger
 from fastapi import FastAPI
@@ -64,9 +63,11 @@ async def serve_playground_app_async(
 async def main():
     async with MCPTools(f"{sys.executable} -m codemcp.hot_reload_entry") as codemcp:
         # TODO: cli-ify the model
+        from agno.models.anthropic import Claude
+        #from agno.models.google import Gemini
         agent = Agent(
-            # model=Claude(id="claude-3-7-sonnet-20250219"),
-            model=Gemini(id="gemini-2.5-pro-exp-03-25"),
+            model=Claude(id="claude-3-7-sonnet-20250219"),
+            # model=Gemini(id="gemini-2.5-pro-exp-03-25"),
             tools=[codemcp],
             instructions="",
             markdown=True,
@@ -88,7 +89,7 @@ async def main():
                 user_input = await loop.run_in_executor(None, lambda: input("> "))
 
                 # Properly await the async print_response method
-                await agent.print_response(
+                await agent.aprint_response(
                     user_input,
                     stream=True,
                     show_full_reasoning=True,
