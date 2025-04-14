@@ -529,7 +529,7 @@ def init_codemcp_project(path: str, python: bool = False) -> str:
     def get_files_respecting_gitignore(
         dir_path: Path, pattern: str = "**/*"
     ) -> List[Path]:
-        """Get files in a directory respecting .gitignore rules.
+        """Get files in a directory respecting .gitignore rules in all subdirectories.
 
         Args:
             dir_path: The directory path to search in
@@ -538,32 +538,65 @@ def init_codemcp_project(path: str, python: bool = False) -> str:
         Returns:
             A list of Path objects for files that match the pattern and respect .gitignore
         """
-        # Check for .gitignore file
-        gitignore_path = dir_path / ".gitignore"
-        ignore_spec = None
+        # First collect all files and directories
+        all_paths = list(dir_path.glob(pattern))
+        all_files = [p for p in all_paths if p.is_file()]
+        all_dirs = [dir_path] + [p for p in all_paths if p.is_dir()]
 
-        if gitignore_path.exists():
-            with open(gitignore_path, "r") as ignore_file:
-                ignore_lines = ignore_file.readlines()
-                ignore_spec = pathspec.GitIgnoreSpec.from_lines(ignore_lines)
+        # Find all .gitignore files in the directory and subdirectories
+        gitignore_specs = {}
 
-        # First get all files using glob
-        all_files = list(dir_path.glob(pattern))
+        # Process .gitignore files from root to leaf directories
+        for directory in sorted(all_dirs, key=lambda d: str(d)):
+            gitignore_path = directory / ".gitignore"
+            if gitignore_path.exists() and gitignore_path.is_file():
+                try:
+                    with open(gitignore_path, "r") as ignore_file:
+                        ignore_lines = ignore_file.readlines()
+                        gitignore_specs[directory] = pathspec.GitIgnoreSpec.from_lines(
+                            ignore_lines
+                        )
+                except Exception as e:
+                    # Log error but continue processing
+                    logging.warning(f"Error reading .gitignore in {directory}: {e}")
 
-        # If there's no .gitignore, return all files
-        if ignore_spec is None:
+        # If no .gitignore files found, return all files
+        if not gitignore_specs:
             return [f for f in all_files if f.is_file()]
 
-        # Filter files that match .gitignore patterns
-        result = []
-        for file_path in all_files:
-            if file_path.is_file():
-                # Get relative path from the directory
-                rel_path = str(file_path.relative_to(dir_path))
-                # Check if file should be included
-                if not ignore_spec.match_file(rel_path):
-                    result.append(file_path)
+        # Helper function to check if a path is ignored by any relevant .gitignore
+        def is_ignored(path: Path) -> bool:
+            """
+            Check if a path should be ignored according to .gitignore rules.
 
+            This checks the path against all .gitignore files in its parent directories.
+            """
+            # For files, we need to check if any parent directory is ignored first
+            if path.is_file():
+                # Check if any parent directory is ignored
+                current_dir = path.parent
+                while current_dir.is_relative_to(dir_path):
+                    if is_ignored(current_dir):
+                        return True
+                    current_dir = current_dir.parent
+
+            # Now check the path against all relevant .gitignore specs
+            for spec_dir, spec in gitignore_specs.items():
+                # Only apply specs from parent directories of the path
+                if path.is_relative_to(spec_dir):
+                    # Get the path relative to the directory containing the .gitignore
+                    rel_path = str(path.relative_to(spec_dir))
+                    # Empty string means the directory itself
+                    if not rel_path:
+                        rel_path = "."
+                    # Check if path matches any pattern in the .gitignore
+                    if spec.match_file(rel_path):
+                        return True
+
+            return False
+
+        # Filter out ignored files
+        result = [f for f in all_files if not is_ignored(f)]
         return result
 
     # Function to replace placeholders in a string
