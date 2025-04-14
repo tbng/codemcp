@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import List, Optional
 
 import click
+import pathspec
 import uvicorn
 from fastapi.middleware.cors import CORSMiddleware
 from mcp.server.fastmcp import FastMCP
@@ -524,6 +525,47 @@ def init_codemcp_project(path: str, python: bool = False) -> str:
     # Track which files we need to add to git
     files_to_add = []
 
+    # Function to get files respecting .gitignore
+    def get_files_respecting_gitignore(
+        dir_path: Path, pattern: str = "**/*"
+    ) -> List[Path]:
+        """Get files in a directory respecting .gitignore rules.
+
+        Args:
+            dir_path: The directory path to search in
+            pattern: The glob pattern to match files against (default: "**/*")
+
+        Returns:
+            A list of Path objects for files that match the pattern and respect .gitignore
+        """
+        # Check for .gitignore file
+        gitignore_path = dir_path / ".gitignore"
+        ignore_spec = None
+
+        if gitignore_path.exists():
+            with open(gitignore_path, "r") as ignore_file:
+                ignore_lines = ignore_file.readlines()
+                ignore_spec = pathspec.GitIgnoreSpec.from_lines(ignore_lines)
+
+        # First get all files using glob
+        all_files = list(dir_path.glob(pattern))
+
+        # If there's no .gitignore, return all files
+        if ignore_spec is None:
+            return [f for f in all_files if f.is_file()]
+
+        # Filter files that match .gitignore patterns
+        result = []
+        for file_path in all_files:
+            if file_path.is_file():
+                # Get relative path from the directory
+                rel_path = str(file_path.relative_to(dir_path))
+                # Check if file should be included
+                if not ignore_spec.match_file(rel_path):
+                    result.append(file_path)
+
+        return result
+
     # Function to replace placeholders in a string
     def replace_placeholders(text):
         for placeholder, value in replacements.items():
@@ -567,9 +609,10 @@ def init_codemcp_project(path: str, python: bool = False) -> str:
         print(f"Created file: {rel_path}")
         return rel_path
 
-    # Recursively process template directory
-    for template_file in templates_dir.glob("**/*"):
-        if template_file.is_file() and template_file.name != ".gitkeep":
+    # Recursively process template directory respecting .gitignore
+    template_files = get_files_respecting_gitignore(templates_dir, "**/*")
+    for template_file in template_files:
+        if template_file.name != ".gitkeep":
             # Process template file
             try:
                 rel_path = process_file(template_file, templates_dir, project_path)
