@@ -45,16 +45,14 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["codemcp"]
+include = ["codemcp/templates/**/*"]
 
 [tool.hatch.build.targets.sdist]
 include = [
-    "/codemcp",
+    "/codemcp/**/*",
     "/README.md",
     "pyproject.toml",
 ]
-
-[tool.hatch.build.force-include]
-"codemcp/templates" = "codemcp/templates"
 
 [tool.uv]
 
