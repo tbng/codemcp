@@ -456,8 +456,8 @@ Args:
 
 ## Chmod chat_id path mode
 
-Changes file permissions using chmod. Unlike standard chmod, this tool only supports 
-a+x (add executable permission) and a-x (remove executable permission), because these 
+Changes file permissions using chmod. Unlike standard chmod, this tool only supports
+a+x (add executable permission) and a-x (remove executable permission), because these
 are the only bits that git knows how to track.
 
 Args:
@@ -486,9 +486,12 @@ Args:
     mode: The chmod mode to apply (a+x or a-x) for Chmod subtool
     chat_id: A unique ID to identify the chat session (required for all tools EXCEPT InitProject)
 
-# Chat ID
+# Chat ID and Git tracking
 This chat has been assigned a chat ID: {chat_id}
 When you use any tool, you MUST always include this chat ID as the chat_id parameter.
+
+# Git Commit Hash
+This project uses Git commit hashes to track changes across conversations. After each operation that modifies files, the current Git commit hash will be reported. The commit hash represents the current state of the repository.
 """
 
         # Combine system prompt, global prompt
