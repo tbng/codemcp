@@ -67,19 +67,20 @@ class TestGitDirectoryError(MCPEndToEndTestCase):
         # failed, which is what call_tool_assert_error already verifies
         self.assertTrue(len(error_message) > 0)
 
-    async def test_file_path_additional_check(self):
-        """Additional test using a file path instead of a directory."""
+    async def test_file_path_with_write_file(self):
+        """Test using WriteFile with a file path which should trigger NotADirectoryError."""
         # Get the chat ID for our test
         chat_id = await self.get_chat_id(None)
 
-        # Use a file path instead of a directory
+        # Try to use WriteFile with a file path instead of a directory
         error_message = await self.call_tool_assert_error(
             None,
             "codemcp",
             {
-                "subtool": "RunCommand",
-                "command": "test",  # Using test as a placeholder command that will invoke get_current_commit_hash
+                "subtool": "WriteFile",
                 "path": self.sample_file,  # This is a file, not a directory
+                "content": "This will fail with NotADirectoryError",
+                "description": "Should fail with NotADirectoryError",
                 "chat_id": chat_id,
             },
         )
