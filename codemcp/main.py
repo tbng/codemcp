@@ -69,6 +69,7 @@ async def codemcp(
     path: str | None = None,
     content: str
     | dict
+    | list
     | None = None,  # Allow any type, will be serialized to string if needed
     old_string: str | None = None,
     new_string: str | None = None,
