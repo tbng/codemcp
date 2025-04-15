@@ -249,14 +249,15 @@ def find_git_root(start_path: str) -> str | None:
     return None
 
 
-async def get_current_commit_hash(directory: str, short: bool = True) -> str | None:
+async def get_current_commit_hash(path: str, short: bool = True) -> str | None:
     """Get the current commit hash for the repository.
 
     This function is similar to get_head_commit_hash but designed to be used
     after operations to report the latest commit hash.
 
     Args:
-        directory: The directory to check
+        path: The file or directory path to check (if a file path is provided,
+              the directory containing the file will be used)
         short: Whether to get short hash (default) or full hash
 
     Returns:
@@ -267,6 +268,10 @@ async def get_current_commit_hash(directory: str, short: bool = True) -> str | N
         rather than raising exceptions.
     """
     try:
+        # Handle both file and directory paths by getting the appropriate directory
+        abs_path = os.path.abspath(path)
+        directory = os.path.dirname(abs_path) if os.path.isfile(abs_path) else abs_path
+
         if not await is_git_repository(directory):
             return None
 
