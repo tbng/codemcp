@@ -89,3 +89,27 @@ class TestGitDirectoryError(MCPEndToEndTestCase):
         # Since the error is caught and handled within the codebase, we just need to confirm it
         # failed, which is what call_tool_assert_error already verifies
         self.assertTrue(len(error_message) > 0)
+
+    async def test_write_file_with_file_path(self):
+        """Test using WriteFile with a file path instead of a directory (simpler test case)."""
+        # Get the chat ID for our test
+        chat_id = await self.get_chat_id(None)
+
+        # Create a file path to use - append a fake directory to our sample file
+        file_path = os.path.join(self.sample_file, "test.txt")
+
+        # Try to use WriteFile with a file path (which should fail with NotADirectoryError)
+        error_message = await self.call_tool_assert_error(
+            None,
+            "codemcp",
+            {
+                "subtool": "WriteFile",
+                "path": file_path,  # This is a file/test.txt, not a directory/test.txt
+                "content": "This should fail",
+                "description": "Test write to invalid path",
+                "chat_id": chat_id,
+            },
+        )
+
+        # Verify the error message contains NotADirectoryError and mentions the file path
+        self.assertIn("Not a directory", error_message)
