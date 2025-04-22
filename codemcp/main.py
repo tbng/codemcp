@@ -953,8 +953,18 @@ def run(command: str, args: List[str], path: str, no_stream: bool) -> None:
                     bufsize=0,  # Unbuffered
                 )
 
-                # Wait for the process to complete
-                exit_code = process.wait()
+                try:
+                    # Wait for the process to complete
+                    exit_code = process.wait()
+                except KeyboardInterrupt:
+                    # Handle Ctrl+C gracefully
+                    process.terminate()
+                    try:
+                        process.wait(timeout=1)
+                    except subprocess.TimeoutExpired:
+                        process.kill()
+                    click.echo("\nProcess terminated by user.")
+                    return
 
                 # Check if command succeeded
                 if exit_code == 0:

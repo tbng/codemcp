@@ -3,11 +3,30 @@
 import subprocess
 import tempfile
 from pathlib import Path
+from unittest.mock import MagicMock, patch
 
 import pytest
 from click.testing import CliRunner
 
+import codemcp.git
 from codemcp.main import cli
+
+
+# Create non-async mock functions to replace async ones
+def mock_is_git_repository(*args, **kwargs):
+    return False
+
+
+def mock_check_for_changes(*args, **kwargs):
+    return False
+
+
+def mock_commit_changes(*args, **kwargs):
+    return (True, "Mock commit message")
+
+
+# Patch the modules directly
+codemcp.git.is_git_repository = mock_is_git_repository
 
 
 @pytest.fixture
@@ -91,16 +110,15 @@ def test_run_command_empty_definition(test_project):
     assert "Error: Command 'invalid' not found in codemcp.toml" in result.output
 
 
-def test_run_command_stream_mode(test_project, monkeypatch):
+@patch("codemcp.git.is_git_repository", mock_is_git_repository)
+@patch("codemcp.code_command.check_for_changes", mock_check_for_changes)
+@patch("codemcp.git.commit_changes", mock_commit_changes)
+@patch(
+    "asyncio.run", lambda x: False
+)  # Mock asyncio.run to return False for all coroutines
+def test_run_command_stream_mode(test_project):
     """Test running a command with streaming mode."""
     import subprocess
-    from unittest.mock import MagicMock
-
-    # Mock necessary asyncio functions to avoid actual repository operations
-    async def mock_is_git_repo(*args, **kwargs):
-        return False
-
-    monkeypatch.setattr("codemcp.git.is_git_repository", mock_is_git_repo)
 
     # Create a mock for subprocess.Popen
     mock_process = MagicMock()
@@ -110,23 +128,34 @@ def test_run_command_stream_mode(test_project, monkeypatch):
     # Keep track of Popen calls
     popen_calls = []
 
+    # Create a safe replacement for Popen that won't leave hanging processes
+    original_popen = subprocess.Popen
+
     def mock_popen(cmd, **kwargs):
-        popen_calls.append((cmd, kwargs))
-        return mock_process
+        if (
+            isinstance(cmd, list)
+            and cmd[0] == "echo"
+            and "Hello from codemcp run!" in cmd
+        ):
+            popen_calls.append((cmd, kwargs))
+            return mock_process
+        # For any other command, create a safe echo process with proper cleanup
+        return original_popen(
+            ["echo", "Test"], stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
 
-    monkeypatch.setattr(subprocess, "Popen", mock_popen)
+    with patch("subprocess.Popen", mock_popen):
+        # Run the command with isolated stdin/stdout to prevent interference
+        runner = CliRunner(mix_stderr=False)
+        runner.invoke(cli, ["run", "echo", "--path", test_project])
 
-    # Run the command
-    runner = CliRunner()
-    runner.invoke(cli, ["run", "echo", "--path", test_project])
+        # Check that our command was executed with the right parameters
+        assert any(cmd == ["echo", "Hello from codemcp run!"] for cmd, _ in popen_calls)
 
-    # Check that our command was executed with the right parameters
-    assert any(cmd == ["echo", "Hello from codemcp run!"] for cmd, _ in popen_calls)
-
-    # Find the call for our echo command
-    for cmd, kwargs in popen_calls:
-        if cmd == ["echo", "Hello from codemcp run!"]:
-            # Verify streaming parameters
-            assert kwargs.get("stdout") is None
-            assert kwargs.get("stderr") is None
-            assert kwargs.get("bufsize") == 0
+        # Find the call for our echo command
+        for cmd, kwargs in popen_calls:
+            if cmd == ["echo", "Hello from codemcp run!"]:
+                # Verify streaming parameters
+                assert kwargs.get("stdout") is None
+                assert kwargs.get("stderr") is None
+                assert kwargs.get("bufsize") == 0
