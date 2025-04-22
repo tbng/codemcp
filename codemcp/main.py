@@ -14,6 +14,7 @@ from mcp.server.fastmcp import FastMCP
 from starlette.applications import Starlette
 from starlette.routing import Mount
 
+from .code_command import get_command_from_config
 from .common import normalize_file_path
 from .git_query import get_current_commit_hash
 from .tools.chmod import chmod
@@ -859,6 +860,52 @@ def run() -> None:
     """Run the MCP server."""
     configure_logging()
     mcp.run()
+
+
+@cli.command()
+@click.argument("command", type=str, required=True)
+@click.argument("args", nargs=-1, type=click.UNPROCESSED)
+@click.option(
+    "--path",
+    type=click.Path(exists=True),
+    default=".",
+    help="Path to the project directory (default: current directory)",
+)
+def run(command: str, args: List[str], path: str) -> None:
+    """Run a command defined in codemcp.toml.
+
+    COMMAND: The name of the command to run as defined in codemcp.toml
+    ARGS: Optional arguments to pass to the command
+    """
+    import asyncio
+    from uuid import uuid4
+
+    # Configure logging
+    configure_logging()
+
+    # Convert args tuple to a space-separated string for run_command
+    args_str = " ".join(args) if args else None
+
+    # Generate a temporary chat ID for this command
+    chat_id = str(uuid4())
+
+    # Convert to absolute path if needed
+    project_dir = normalize_file_path(path)
+
+    try:
+        # Check if command exists in config
+        command_list = get_command_from_config(project_dir, command)
+        if not command_list:
+            click.echo(
+                f"Error: Command '{command}' not found in codemcp.toml", err=True
+            )
+            return
+
+        # Run the command
+        result = asyncio.run(run_command(project_dir, command, args_str, chat_id))
+        click.echo(result)
+    except Exception as e:
+        click.echo(f"Error running command: {e}", err=True)
 
 
 @cli.command()
