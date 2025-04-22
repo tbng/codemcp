@@ -658,6 +658,45 @@ def init_codemcp_project(path: str, python: bool = False) -> str:
     else:
         print(f"Git repository already exists in {project_path}")
 
+    # Ensure Git user identity is configured for the repository
+    # This is especially important for CI environments
+    try:
+        # Check if user.name is set
+        name_result = subprocess.run(
+            ["git", "config", "user.name"],
+            cwd=project_path,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if name_result.returncode != 0:
+            # Set a default user name if not configured
+            subprocess.run(
+                ["git", "config", "user.name", "CodeMCP User"],
+                cwd=project_path,
+                check=True,
+            )
+            print("Set default Git user name")
+
+        # Check if user.email is set
+        email_result = subprocess.run(
+            ["git", "config", "user.email"],
+            cwd=project_path,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if email_result.returncode != 0:
+            # Set a default user email if not configured
+            subprocess.run(
+                ["git", "config", "user.email", "codemcp@example.com"],
+                cwd=project_path,
+                check=True,
+            )
+            print("Set default Git user email")
+    except Exception as e:
+        print(f"Warning: Could not configure Git user identity: {e}")
+
     # Select the appropriate template directory
     template_name = "python" if python else "blank"
     templates_dir = Path(__file__).parent / "templates" / template_name
