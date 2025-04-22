@@ -42,7 +42,7 @@ invalid = []
 def test_run_command_success(test_project):
     """Test running a command successfully."""
     runner = CliRunner()
-    result = runner.invoke(cli, ["run", "echo", "--path", test_project])
+    result = runner.invoke(cli, ["run", "echo", "--path", test_project, "--no-stream"])
 
     assert result.exit_code == 0
     assert "Hello from codemcp run!" in result.output
@@ -53,7 +53,17 @@ def test_run_command_with_args(test_project):
     """Test running a command with arguments."""
     runner = CliRunner()
     result = runner.invoke(
-        cli, ["run", "echo_args", "Test", "argument", "string", "--path", test_project]
+        cli,
+        [
+            "run",
+            "echo_args",
+            "Test",
+            "argument",
+            "string",
+            "--path",
+            test_project,
+            "--no-stream",
+        ],
     )
 
     assert result.exit_code == 0
@@ -64,7 +74,9 @@ def test_run_command_with_args(test_project):
 def test_run_command_not_found(test_project):
     """Test running a command that doesn't exist in config."""
     runner = CliRunner()
-    result = runner.invoke(cli, ["run", "nonexistent", "--path", test_project])
+    result = runner.invoke(
+        cli, ["run", "nonexistent", "--path", test_project, "--no-stream"]
+    )
 
     assert "Error: Command 'nonexistent' not found in codemcp.toml" in result.output
 
@@ -72,6 +84,49 @@ def test_run_command_not_found(test_project):
 def test_run_command_empty_definition(test_project):
     """Test running a command with an empty definition."""
     runner = CliRunner()
-    result = runner.invoke(cli, ["run", "invalid", "--path", test_project])
+    result = runner.invoke(
+        cli, ["run", "invalid", "--path", test_project, "--no-stream"]
+    )
 
     assert "Error: Command 'invalid' not found in codemcp.toml" in result.output
+
+
+def test_run_command_stream_mode(test_project, monkeypatch):
+    """Test running a command with streaming mode."""
+    import subprocess
+    from unittest.mock import MagicMock
+
+    # Mock necessary asyncio functions to avoid actual repository operations
+    async def mock_is_git_repo(*args, **kwargs):
+        return False
+
+    monkeypatch.setattr("codemcp.git.is_git_repository", mock_is_git_repo)
+
+    # Create a mock for subprocess.Popen
+    mock_process = MagicMock()
+    mock_process.returncode = 0
+    mock_process.wait.return_value = 0
+
+    # Keep track of Popen calls
+    popen_calls = []
+
+    def mock_popen(cmd, **kwargs):
+        popen_calls.append((cmd, kwargs))
+        return mock_process
+
+    monkeypatch.setattr(subprocess, "Popen", mock_popen)
+
+    # Run the command
+    runner = CliRunner()
+    runner.invoke(cli, ["run", "echo", "--path", test_project])
+
+    # Check that our command was executed with the right parameters
+    assert any(cmd == ["echo", "Hello from codemcp run!"] for cmd, _ in popen_calls)
+
+    # Find the call for our echo command
+    for cmd, kwargs in popen_calls:
+        if cmd == ["echo", "Hello from codemcp run!"]:
+            # Verify streaming parameters
+            assert kwargs.get("stdout") is None
+            assert kwargs.get("stderr") is None
+            assert kwargs.get("bufsize") == 0
