@@ -231,12 +231,7 @@ async def run_formatter_without_commit(file_path: str) -> Tuple[bool, str]:
         Propagates any unexpected errors during formatting
     """
     # Get the project directory (repository root)
-    project_dir = os.path.dirname(file_path)
-    try:
-        project_dir = await get_repository_root(project_dir)
-    except (subprocess.SubprocessError, OSError, ValueError):
-        # Fall back to the directory containing the file if not in a git repo
-        pass
+    project_dir = await get_repository_root(project_dir)
 
     # Get the format command from config - this is the only expected failure mode
     format_command = get_command_from_config(project_dir, "format")
