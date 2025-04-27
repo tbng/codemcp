@@ -776,13 +776,20 @@ async def edit_file_content(
 
     # Try to run the formatter on the file
     format_message = ""
-    formatter_success, formatter_output = await run_formatter_without_commit(
-        full_file_path
-    )
+    post_format_content = updated_file
+    (
+        formatter_success,
+        formatter_output,
+        post_format_content,
+    ) = await run_formatter_without_commit(full_file_path)
     if formatter_success:
         logger.info(f"Auto-formatted {full_file_path}")
         if formatter_output.strip():
-            format_message = "\nAuto-formatted the file"
+            # If the file was actually changed by the formatter
+            if post_format_content and post_format_content != updated_file:
+                # Update the content in memory (it's already updated on disk)
+                updated_file = post_format_content
+                format_message = "\nAuto-formatted the file (snippet below shows post-formatting content)"
     else:
         # Only log warning if there was actually a format command configured but it failed
         if not "No format command configured" in formatter_output:
@@ -791,7 +798,30 @@ async def edit_file_content(
             )
 
     # Generate a snippet of the edited file to show in the response
-    snippet = get_edit_snippet(content, old_string, new_string)
+    # Use the post-formatting content for the snippet
+    if post_format_content and post_format_content != updated_file:
+        # When the file was changed by formatting, show the post-format version
+        # Since we don't have direct diff information between formatted and unformatted,
+        # we'll show a relevant portion of the file
+        lines = post_format_content.split("\n")
+        context_lines = 3
+
+        # Try to find the relevant section based on the edit
+        search_text = new_string[
+            :40
+        ]  # Use part of the new string to locate where the edit was
+        for i, line in enumerate(lines):
+            if search_text in line:
+                start = max(0, i - context_lines)
+                end = min(len(lines), i + context_lines + 1)
+                snippet = "\n".join(lines[start:end])
+                break
+        else:
+            # If we can't find the edit point, just show the first few lines
+            snippet = "\n".join(lines[: min(7, len(lines))])
+    else:
+        # When no formatting changes, use the normal edit snippet
+        snippet = get_edit_snippet(content, old_string, new_string)
 
     # Commit the changes
     git_message = ""
