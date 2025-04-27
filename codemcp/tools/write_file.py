@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 
+import logging
 import os
 
+from ..code_command import run_formatter_without_commit
 from ..file_utils import (
     check_file_path_and_permissions,
     check_git_tracking_for_existing_file,
@@ -61,6 +63,18 @@ async def write_file_content(
     # Write the content with UTF-8 encoding and proper line endings
     await write_text_content(file_path, content, "utf-8", line_endings)
 
+    # Try to run the formatter on the file
+    format_message = ""
+    formatter_success, formatter_output = await run_formatter_without_commit(file_path)
+    if formatter_success:
+        logging.info(f"Auto-formatted {file_path}")
+        if formatter_output.strip():
+            format_message = f"\nAuto-formatted the file"
+    else:
+        # Only log warning if there was actually a format command configured but it failed
+        if not "No format command configured" in formatter_output:
+            logging.warning(f"Failed to auto-format {file_path}: {formatter_output}")
+
     # Commit the changes
     git_message = ""
     success, message = await commit_changes(file_path, description, chat_id)
@@ -69,4 +83,4 @@ async def write_file_content(
     else:
         git_message = f"\nFailed to commit changes to git: {message}"
 
-    return f"Successfully wrote to {file_path}{git_message}"
+    return f"Successfully wrote to {file_path}{format_message}{git_message}"
