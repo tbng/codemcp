@@ -9,6 +9,7 @@ import re
 from difflib import SequenceMatcher
 from typing import Any, Dict, List, Tuple
 
+from ..code_command import run_formatter_without_commit
 from ..common import get_edit_snippet
 from ..file_utils import (
     async_open_text,
@@ -773,6 +774,22 @@ async def edit_file_content(
     if read_file_timestamps is not None:
         read_file_timestamps[full_file_path] = os.stat(full_file_path).st_mtime
 
+    # Try to run the formatter on the file
+    format_message = ""
+    formatter_success, formatter_output = await run_formatter_without_commit(
+        full_file_path
+    )
+    if formatter_success:
+        logger.info(f"Auto-formatted {full_file_path}")
+        if formatter_output.strip():
+            format_message = "\nAuto-formatted the file"
+    else:
+        # Only log warning if there was actually a format command configured but it failed
+        if not "No format command configured" in formatter_output:
+            logger.warning(
+                f"Failed to auto-format {full_file_path}: {formatter_output}"
+            )
+
     # Generate a snippet of the edited file to show in the response
     snippet = get_edit_snippet(content, old_string, new_string)
 
@@ -787,4 +804,4 @@ async def edit_file_content(
     else:
         git_message = f"\n\nFailed to commit changes to git: {message}"
 
-    return f"Successfully edited {full_file_path}\n\nHere's a snippet of the edited file:\n{snippet}{git_message}"
+    return f"Successfully edited {full_file_path}\n\nHere's a snippet of the edited file:\n{snippet}{format_message}{git_message}"
