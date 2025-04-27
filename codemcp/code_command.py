@@ -3,7 +3,7 @@
 import logging
 import os
 import subprocess
-from typing import Any, Dict, List, Optional, cast
+from typing import Any, Dict, List, Optional, Tuple, cast
 
 import tomli
 
@@ -15,6 +15,7 @@ __all__ = [
     "get_command_from_config",
     "check_for_changes",
     "run_code_command",
+    "run_formatter_without_commit",
 ]
 
 
@@ -215,3 +216,120 @@ async def run_code_command(
         error_msg = f"Error during {command_name}: {e}"
         logging.error(error_msg)
         return f"Error: {error_msg}"
+
+
+async def run_formatter_without_commit(file_path: str) -> Tuple[bool, str]:
+    """Run the formatter on a specific file without performing pre/post commit operations.
+
+    This function attempts to be flexible in working with different formatter configurations:
+    1. If the formatter is configured to run on specific files (like black path/to/file.py)
+    2. If the formatter is configured to run on all files in a directory
+
+    Args:
+        file_path: Absolute path to the file to format
+
+    Returns:
+        A tuple containing (success_status, message)
+    """
+    try:
+        # Get the project directory (repository root)
+        project_dir = os.path.dirname(file_path)
+        try:
+            project_dir = await get_repository_root(project_dir)
+        except (subprocess.SubprocessError, OSError, ValueError) as e:
+            logging.debug(f"Not in a git repository: {e}")
+            # Fall back to the directory containing the file
+            pass
+
+        # Get the format command from config
+        format_command = get_command_from_config(project_dir, "format")
+        if not format_command:
+            return False, "No format command configured in codemcp.toml"
+
+        # Use relative path from project_dir for the formatting command
+        rel_path = os.path.relpath(file_path, project_dir)
+
+        # First try running the formatter with the specific file path
+        # This works with tools like black, prettier, etc. that accept file paths
+        try:
+            specific_command = format_command.copy() + [rel_path]
+
+            result = await run_command(
+                specific_command,
+                cwd=project_dir,
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+
+            # If we get here, the formatter successfully ran on the specific file
+            truncated_stdout = truncate_output_content(result.stdout, prefer_end=True)
+            return True, f"File formatted successfully:\n{truncated_stdout}"
+        except subprocess.CalledProcessError as e:
+            # If the specific file approach failed, try running the formatter without arguments
+            # This might work for formatters that automatically detect files to format
+            logging.debug(
+                f"Formatter failed with specific file, trying without file path"
+            )
+            try:
+                # Run the formatter without specific file arguments
+                # Some formatters automatically find and format files
+                result = await run_command(
+                    format_command,
+                    cwd=project_dir,
+                    check=True,
+                    capture_output=True,
+                    text=True,
+                )
+
+                # If we get here, the formatter ran successfully
+                truncated_stdout = truncate_output_content(
+                    result.stdout, prefer_end=True
+                )
+                return True, f"File formatted successfully:\n{truncated_stdout}"
+            except subprocess.CalledProcessError:
+                # Both approaches failed, return error from the first attempt
+                # as it's more likely to be relevant to the specific file
+                truncated_stdout = truncate_output_content(
+                    e.output if e.output else "", prefer_end=True
+                )
+                truncated_stderr = truncate_output_content(
+                    e.stderr if e.stderr else "", prefer_end=True
+                )
+
+                # Include both stdout and stderr in the error message
+                stdout_info = (
+                    f"STDOUT:\n{truncated_stdout}"
+                    if truncated_stdout
+                    else "STDOUT: <empty>"
+                )
+                stderr_info = (
+                    f"STDERR:\n{truncated_stderr}"
+                    if truncated_stderr
+                    else "STDERR: <empty>"
+                )
+                return False, f"Formatter failed: {stdout_info}\n{stderr_info}"
+    except subprocess.CalledProcessError as e:
+        # Truncate stdout and stderr if needed
+        truncated_stdout = truncate_output_content(
+            e.output if e.output else "", prefer_end=True
+        )
+        truncated_stderr = truncate_output_content(
+            e.stderr if e.stderr else "", prefer_end=True
+        )
+
+        # Include both stdout and stderr in the error message
+        stdout_info = (
+            f"STDOUT:\n{truncated_stdout}" if truncated_stdout else "STDOUT: <empty>"
+        )
+        stderr_info = (
+            f"STDERR:\n{truncated_stderr}" if truncated_stderr else "STDERR: <empty>"
+        )
+        error_msg = f"Format command failed with exit code {e.returncode}:\n{stdout_info}\n{stderr_info}"
+
+        logging.error(f"Format command failed with exit code {e.returncode}")
+        return False, f"Error: {error_msg}"
+    except Exception as e:
+        error_msg = f"Error during formatting: {e}"
+        logging.error(error_msg)
+        return False, f"Error: {error_msg}"
