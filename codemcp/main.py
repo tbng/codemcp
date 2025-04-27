@@ -846,6 +846,7 @@ def run(command: str, args: tuple, path: str) -> None:
     import tomli
 
     from .common import normalize_file_path
+    from .git_query import find_git_root
 
     # Handle the async nature of the function in a sync context
     asyncio.get_event_loop()
@@ -863,11 +864,31 @@ def run(command: str, args: tuple, path: str) -> None:
         click.echo(f"Error: Path {path} is not a directory", err=True)
         return
 
-    # Check for codemcp.toml file
+    # First try to find codemcp.toml in the current directory
     config_path = os.path.join(full_path, "codemcp.toml")
+
+    # If codemcp.toml is not in the current directory, traverse up to find the project root
     if not os.path.exists(config_path):
-        click.echo(f"Error: Config file not found: {config_path}", err=True)
-        return
+        # Use the existing find_git_root function to find the repository root
+        root_dir = find_git_root(full_path)
+        if root_dir:
+            # Check if codemcp.toml exists in the repository root
+            root_config_path = os.path.join(root_dir, "codemcp.toml")
+            if os.path.exists(root_config_path):
+                config_path = root_config_path
+                full_path = root_dir
+            else:
+                click.echo(
+                    f"Error: Config file not found in git repository root: {root_config_path}",
+                    err=True,
+                )
+                return
+        else:
+            click.echo(
+                f"Error: Not in a git repository and no codemcp.toml found in {full_path}",
+                err=True,
+            )
+            return
 
     # Load command from config
     try:
