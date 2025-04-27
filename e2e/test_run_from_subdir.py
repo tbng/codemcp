@@ -45,9 +45,11 @@ def test_run_command_from_subdir(project_dir):
         check=True,
     )
 
-    # The pwd output should be the project root, not the subdirectory
-    assert project_dir in result.stdout
-    assert "subdir" not in result.stdout
+    # The pwd output should show the project root, not the subdirectory
+    # Normalize paths for comparison (strip trailing slashes, etc.)
+    normalized_output = os.path.normpath(result.stdout.strip())
+    normalized_project_dir = os.path.normpath(project_dir)
+    assert normalized_output == normalized_project_dir
 
 
 def test_run_command_from_project_root(project_dir):

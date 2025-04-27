@@ -14,7 +14,7 @@ from mcp.server.fastmcp import FastMCP
 from starlette.applications import Starlette
 from starlette.routing import Mount
 
-from .common import find_codemcp_root, normalize_file_path
+from .common import normalize_file_path
 from .git_query import get_current_commit_hash
 from .tools.chmod import chmod
 from .tools.edit_file import edit_file_content
@@ -866,7 +866,10 @@ def run(command: str, args: tuple, path: str) -> None:
     # Find project root by traversing up to find codemcp.toml
     project_root = find_codemcp_root(full_path)
     if project_root is None:
-        click.echo(f"Error: No codemcp.toml file found in {path} or any parent directory", err=True)
+        click.echo(
+            f"Error: No codemcp.toml file found in {path} or any parent directory",
+            err=True,
+        )
         return
 
     # Use the project root for config and operations
