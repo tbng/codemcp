@@ -3,7 +3,7 @@
 import logging
 import os
 import subprocess
-from typing import Any, Dict, List, Optional, cast
+from typing import Any, Dict, List, Optional, Tuple, cast
 
 import tomli
 
@@ -15,6 +15,7 @@ __all__ = [
     "get_command_from_config",
     "check_for_changes",
     "run_code_command",
+    "run_formatter_without_commit",
 ]
 
 
@@ -215,3 +216,41 @@ async def run_code_command(
         error_msg = f"Error during {command_name}: {e}"
         logging.error(error_msg)
         return f"Error: {error_msg}"
+
+
+async def run_formatter_without_commit(file_path: str) -> Tuple[bool, str]:
+    """Run the formatter on a specific file without performing pre/post commit operations.
+
+    Args:
+        file_path: Absolute path to the file to format
+
+    Returns:
+        A tuple containing (success_status, message)
+
+    Raises:
+        Propagates any unexpected errors during formatting
+    """
+    # Get the project directory (repository root)
+    project_dir = await get_repository_root(project_dir)
+
+    # Get the format command from config - this is the only expected failure mode
+    format_command = get_command_from_config(project_dir, "format")
+    if not format_command:
+        return False, "No format command configured in codemcp.toml"
+
+    # Use relative path from project_dir for the formatting command
+    rel_path = os.path.relpath(file_path, project_dir)
+
+    # Run the formatter with the specific file path
+    command = format_command + [rel_path]
+    result = await run_command(
+        command,
+        cwd=project_dir,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    # If we get here, the formatter ran successfully
+    truncated_stdout = truncate_output_content(result.stdout, prefer_end=True)
+    return True, f"File formatted successfully:\n{truncated_stdout}"
