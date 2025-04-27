@@ -60,7 +60,16 @@ def test_run_command_with_args(project_dir):
         f.write("test content")
 
     result = subprocess.run(
-        [sys.executable, "-m", "codemcp", "run", "list", test_file, "--path", project_dir],
+        [
+            sys.executable,
+            "-m",
+            "codemcp",
+            "run",
+            "list",
+            test_file,
+            "--path",
+            project_dir,
+        ],
         capture_output=True,
         text=True,
         check=True,
@@ -72,7 +81,15 @@ def test_run_command_error_exit_code(project_dir):
     """Test that error exit codes from the command are propagated."""
     # This should return a non-zero exit code
     process = subprocess.run(
-        [sys.executable, "-m", "codemcp", "run", "exit_with_error", "--path", project_dir],
+        [
+            sys.executable,
+            "-m",
+            "codemcp",
+            "run",
+            "exit_with_error",
+            "--path",
+            project_dir,
+        ],
         capture_output=True,
         text=True,
         check=False,
