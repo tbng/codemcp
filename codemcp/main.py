@@ -14,7 +14,7 @@ from mcp.server.fastmcp import FastMCP
 from starlette.applications import Starlette
 from starlette.routing import Mount
 
-from .common import normalize_file_path
+from .common import find_codemcp_root, normalize_file_path
 from .git_query import get_current_commit_hash
 from .tools.chmod import chmod
 from .tools.edit_file import edit_file_content
@@ -845,7 +845,7 @@ def run(command: str, args: tuple, path: str) -> None:
 
     import tomli
 
-    from .common import normalize_file_path
+    from .common import find_codemcp_root, normalize_file_path
 
     # Handle the async nature of the function in a sync context
     asyncio.get_event_loop()
@@ -863,11 +863,14 @@ def run(command: str, args: tuple, path: str) -> None:
         click.echo(f"Error: Path {path} is not a directory", err=True)
         return
 
-    # Check for codemcp.toml file
-    config_path = os.path.join(full_path, "codemcp.toml")
-    if not os.path.exists(config_path):
-        click.echo(f"Error: Config file not found: {config_path}", err=True)
+    # Find project root by traversing up to find codemcp.toml
+    project_root = find_codemcp_root(full_path)
+    if project_root is None:
+        click.echo(f"Error: No codemcp.toml file found in {path} or any parent directory", err=True)
         return
+
+    # Use the project root for config and operations
+    config_path = os.path.join(project_root, "codemcp.toml")
 
     # Load command from config
     try:
@@ -898,10 +901,10 @@ def run(command: str, args: tuple, path: str) -> None:
         if args:
             cmd_list = list(cmd_list) + list(args)
 
-        # Run the command with inherited stdin/stdout/stderr
+        # Run the command with inherited stdin/stdout/stderr from the project root
         process = subprocess.run(
             cmd_list,
-            cwd=full_path,
+            cwd=project_root,  # Use project root as working directory
             stdin=None,  # inherit
             stdout=None,  # inherit
             stderr=None,  # inherit
