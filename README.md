@@ -10,155 +10,61 @@ run tests.  Say goodbye to copying code in and out of Claude's chat window!
 codemcp offers similar functionality to other AI coding software (Claude Code,
 Cursor, Cline, Aider), but it occupies a unique point in the design space:
 
-1. It's intended to be used with Claude Pro, Anthropic's $20/mo subscription
-   offering.  **Say goodbye to giant API bills**.  (Say hello to time-based rate
-   limits.)
+1. It's intended to be used with **Claude Pro**, Anthropic's $20/mo
+   subscription offering.  I like paying for my usage with a subscription plan
+   because it means **zero marginal cost** for agent actions; no more feeling
+   bad that you wasted five bucks on a changeset that doesn't work.
 
-2. It's built around **safe agentic AI** by providing a limited set of tools
-   that helpful, honest and harmless LLMs are unlikely to misuse, and enforcing
-   best practices like use of Git version control to ensure all code changes
-   can be rolled back.  As a result, you can safely **unleash the AI** and
-   only evaluate at the end if you want to accept the changes or not.
+   Note that if you have Claude Max ($100/mo), Claude Code can also be used
+   with subscription based pricing.  The value proposition for codemcp is
+   murkier in this case (and it is definitely inferior to Claude Code in some
+   respects), but you can still use codemcp with Claude Max if you prefer some
+   of the other UI decisions it makes.  (Also, it's open source, so you can
+   change it if you don't like it, unlike Claude Code!)
+
+2. It's built around **auto-accept by default**.  I want my agent to get as
+   far as it can without my supervision, so I can review everything in one go at
+   the end.  There are two key things that codemcp does differently than most
+   coding agents: we **forbid unrestricted shell**, instead requiring you to
+   predeclare commands the agent can use in ``codemcp.toml``, and we **Git
+   version all LLM edits**, so you can roll back agent changes on a
+   fine-grained basis and don't have to worry about forgetting to commit
+   changes.
 
 3. It's **IDE agnostic**: you ask Claude to make changes, it makes them, and
    then you can use your favorite IDE setup to review the changes and make
-   further edits.
-
+   further edits.  I use vim as my daily driver editor, and coding environments
+   that require VSCode or a specific editor are a turn off for me.
 
 ## Installation
 
-First, install `uv` and install git, if they are not installed already (on Windows, if you installed Git, I recommend rebooting).
+I recommend this specific way of installing and using codemcp:
 
-## Configure codemcp in your Claude Desktop
+1. Install `uv` and install git, if they are not installed already.
 
-### For macOS/Linux
+2. Install [claude-mcp](https://chromewebstore.google.com/detail/mcp-for-claudeai/jbdhaamjibfahpekpnjeikanebpdpfpb) on your browser.
+   This enables you to connect to SSE MCP servers directly from the website,
+   which means you don't need to use Claude Desktop and can easily have
+   multiple chat windows going in parallel.  We expect this extension should
+   be soon obsoleted by the rollout of
+   [Integrations](https://www.anthropic.com/news/integrations).  At time of
+   writing, however, Integrations have not yet arrived for Claude Pro subscribers.
 
-Create or edit your `~/.config/anthropic/claude/claude_desktop_config.json` file and add the following:
+3. Run codemcp using ``uvx --from git+https://github.com/ezyang/codemcp@prod codemcp serve``.
+   You can add ``--port 1234`` if you need it to listen on a non-standard port.
 
-```json
-{
-  "mcpServers": {
-    "codemcp": {
-      "command": "/Users/<USERNAME>/.local/bin/uvx",
-      "args": [
-        "--from",
-        "git+https://github.com/ezyang/codemcp@prod",
-        "codemcp"
-      ]
-    }
-  }
-}
-```
+   Pro tip: if you like to live dangerously, you can change `prod` to `main`.  If
+   you want to pin to a specific release, replace it with `0.3.0` or similar.
 
-### For Windows
+4. Configure claude-mcp with URL: ``http://127.0.0.1:8000/sse`` (replace the port if needed.)
 
-Create or edit your `%USERPROFILE%\.anthropic\claude\claude_desktop_config.json` file and add the following:
+5. Unfortunately, the web UI inconsistently displays the hammer icon.  However, you can verify
+   that the MCP server is working by looking for "[MCP codemcp] SSE connection opened" in the
+   Console, or by asking Claude what tools it has available (it should say
+   tools from codemcp are available.)
 
-```json
-{
-  "mcpServers": {
-    "codemcp": {
-      "command": "C:\\Users\\<USERNAME>\\.local\\bin\\uvx.exe",
-      "args": [
-        "--from",
-        "git+https://github.com/ezyang/codemcp@prod",
-        "codemcp"
-      ]
-    }
-  }
-}
-```
-
-### Using with WSL (recommended for Windows users)
-
-If you're using Windows Subsystem for Linux, you can configure codemcp to run within your WSL environment. This is useful if you prefer developing in a Linux environment while on Windows.
-
-Add the following configuration to your `claude_desktop_config.json` file:
-
-```json
-{
-	"mcpServers": {
-		"codemcp": {
-			"command": "wsl.exe",
-			"args": [
-				"bash",
-				"-c",
-				"/home/NameOfWSLUser/.local/bin/uvx --from git+https://github.com/ezyang/codemcp@prod codemcp"
-			]
-		}
-	}
-}
-```
-
-Replace `NameOfWSLUser` with your actual WSL username. This configuration runs the `uvx` command inside your WSL environment while allowing Claude Desktop to communicate with it.
-
-This configuration comes with the added benefit of being able to access your Linux filesystem directly. When initializing codemcp in Claude Desktop, you can use a path to your WSL project like:
-
-```
-Initialize codemcp with /home/NameOfWSLUser/project_in_wsl_to_work_on
-```
-
-Make sure you have installed Python 3.12+ and uv within your WSL distribution. You might need to run the following commands in your WSL terminal:
-
-```bash
-# Install Python 3.12 (if not already installed)
-sudo apt update
-sudo apt install python3.12
-
-# Install uv
-curl -sSf https://astral.sh/uv/install.sh | sh
-```
-
-After configuring, restart Claude Desktop. The hammer icon should appear, indicating codemcp has loaded successfully.
-
-Restart the Claude Desktop app after modifying the JSON.  If the MCP
-successfully loaded, a hammer icon will appear and when you click it "codemcp"
-will be visible.
-
-### Global install with pip
-
-If you don't want to use uv, you can also globally pip install the latest
-codemcp version, assuming your global Python install is recent enough (Python
-3.12) and doesn't have Python dependencies that conflict with codemcp.  Some
-users report this is easier to get working on Windows.
-
-1. `pip install git+https://github.com/ezyang/codemcp@prod`
-2. Add the following configuration to `claude_desktop_config.json` file
-```json
-{
-    "mcpServers": {
-         "codemcp": {
-               "command": "python",
-               "args": ["-m", "codemcp"]
-            }
-    }
-}
-```
-3. Restart Claude Desktop
-
-You will need to manually upgrade codemcp to take updates using
-`pip install --upgrade git+https://github.com/ezyang/codemcp@prod`
-
-### Other tips
-
-Pro tip: If the server fails to load, go to Settings > Developer > codemcp >
-Logs to look at the MCP logs, they're very helpful for debugging. The logs on
-Windows should be loaded `C:\Users\<user_name>\AppData\Roaming\Claude\logs`
-(replace `<user_name>` with your username.
-
-Pro tip: if on Windows, _**try using the [WSL instructions](#using-with-wsl-recommended-for-windows-users) instead**_, but if you insist on using Windows directly: if the logs say "Git executable not found. Ensure that
-Git is installed and available", and you *just* installed Git, reboot your
-machine (the PATH update hasn't propagated.)  If this still doesn't work, open
-System Properties > Environment Variables > System variables > Path and ensure
-there is an entry for Git.
-
-Pro tip: if you like to live dangerously, you can change `prod` to `main`.  If
-you want to pin to a specific release, replace it with `0.3.0` or similar.
-
-Pro tip: it is supported to specify only `uvx` as the command, but uvx must be
-in your global PATH (not just added via a shell profile); on OS X, this is
-typically not the case if you used the self installer (unless you installed
-into a system location like `/usr/local/bin`).
+If you prefer to use Claude Desktop or have unusual needs, check out [INSTALL.md](INSTALL.md) for
+installation instructions for a variety of non-standard situations.
 
 ## Usage
 
@@ -173,6 +79,8 @@ format = ["./run_format.sh"]
 test = ["./run_test.sh"]
 ```
 
+The ``format`` command is special; it is always run after every file edit.
+
 Next, in Claude Desktop, we recommend creating a Project and putting this in
 the Project Instructions:
 
@@ -184,21 +92,6 @@ Where `$PROJECT_DIR` is the path to the project you want to work on.
 
 Then chat with Claude about what changes you want to make to the project.
 Every time codemcp makes a change to your code, it will generate a commit.
-
-### Using with claude.ai web interface
-
-You can also use codemcp with the Claude web interface at claude.ai by running the SSE server:
-
-```bash
-codemcp serve
-```
-
-This will start a local SSE server on port 8000 that can be connected to from claude.ai. The server
-has CORS enabled for claude.ai by default. You can customize the host, port, and allowed CORS origins:
-
-```bash
-codemcp serve --host 0.0.0.0 --port 8765 --cors-origin https://claude.ai --cors-origin https://example.com
-```
 
 To see some sample transcripts using this tool, check out:
 
@@ -273,20 +166,3 @@ projects anyway.
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md).
-
-## Type Checking
-
-This project uses `pyright` for type checking with strict mode enabled. The type checking configuration is in `pyproject.toml`. We use a few strategies to maintain type safety:
-
-1. Type stubs for external libraries:
-   - Custom type stubs are in the `stubs/` directory
-   - The `stubPackages` configuration in `pyproject.toml` maps libraries to their stub packages
-
-2. File-specific ignores for challenging cases:
-   - For some files with complex dynamic typing patterns (particularly testing code), we use file-specific ignores via `tool.pyright.ignoreExtraErrors` in `pyproject.toml`
-   - This is preferable to inline ignores and lets us maintain type safety in most of the codebase
-
-When making changes, please ensure type checking passes by running:
-```
-./run_typecheck.sh
-```
