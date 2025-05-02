@@ -56,6 +56,14 @@ I recommend this specific way of installing and using codemcp:
    Pro tip: if you like to live dangerously, you can change `prod` to `main`.  If
    you want to pin to a specific release, replace it with `0.3.0` or similar.
 
+   Pro tip: you can run codemcp remotely!  If you use
+   [Tailscale](https://tailscale.com/) and trust all devices on your Tailnet,
+   you can do this securely by passing ``--host 100.101.102.103`` (replace the
+   IP with the Tailscale IP address of your node.  This IP typically lives in
+   the 100.64.0.0/10 range.)  **WARNING:** Anyone with access to this MCP can perform
+   arbitrary code execution on your computer, it is **EXTREMELY** unlikely you want to
+   bind to 0.0.0.0.
+
 4. Configure claude-mcp with URL: ``http://127.0.0.1:8000/sse`` (replace the port if needed.)
 
 5. Unfortunately, the web UI inconsistently displays the hammer icon.  However, you can verify
