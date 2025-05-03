@@ -449,6 +449,22 @@ Args:
     description: Short description of why the file is being removed
     chat_id: The unique ID to identify the chat session
 
+## MV chat_id source_path target_path description
+
+Moves a file using git mv and commits the change.
+Provide a short description of why the file is being moved.
+
+Before using this tool:
+1. Ensure the source file exists and is tracked by git
+2. Ensure the target directory exists within the git repository
+3. Provide a meaningful description of why the file is being moved
+
+Args:
+    source_path: The path to the file to move (can be relative to the project root or absolute)
+    target_path: The destination path where the file should be moved to (can be relative to the project root or absolute)
+    description: Short description of why the file is being moved
+    chat_id: The unique ID to identify the chat session
+
 ## Chmod chat_id path mode
 
 Changes file permissions using chmod. Unlike standard chmod, this tool only supports
@@ -467,14 +483,16 @@ Example:
 ## Summary
 
 Args:
-    subtool: The subtool to execute (ReadFile, WriteFile, EditFile, LS, InitProject, UserPrompt, RunCommand, RM, Think, Chmod)
+    subtool: The subtool to execute (ReadFile, WriteFile, EditFile, LS, InitProject, UserPrompt, RunCommand, RM, MV, Think, Chmod)
     path: The path to the file or directory to operate on
     content: Content for WriteFile subtool (any type will be serialized to string if needed)
     old_string: String to replace for EditFile subtool
     new_string: Replacement string for EditFile subtool
     offset: Line offset for ReadFile subtool
     limit: Line limit for ReadFile subtool
-    description: Short description of the change (for WriteFile/EditFile/RM)
+    description: Short description of the change (for WriteFile/EditFile/RM/MV)
+    source_path: The path to the source file for MV subtool
+    target_path: The destination path for MV subtool
     arguments: A string containing space-separated arguments for RunCommand subtool
     user_prompt: The user's verbatim text (for UserPrompt subtool)
     thought: The thought content (for Think subtool)

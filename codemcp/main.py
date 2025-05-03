@@ -22,6 +22,7 @@ from .tools.glob import MAX_RESULTS, glob_files
 from .tools.grep import grep_files
 from .tools.init_project import init_project
 from .tools.ls import ls_directory
+from .tools.mv import mv_file
 from .tools.read_file import read_file_content
 from .tools.rm import rm_file
 from .tools.run_command import run_command
@@ -89,6 +90,8 @@ async def codemcp(
     | None = None,  # Whether to reuse the chat ID from the HEAD commit
     thought: str | None = None,  # Added for Think tool
     mode: str | None = None,  # Added for Chmod tool
+    source_path: str | None = None,  # Added for MV tool
+    target_path: str | None = None,  # Added for MV tool
     commit_hash: str | None = None,  # Added for Git commit hash tracking
 ) -> str:
     # NOTE: Do NOT add more documentation to this docblock when you add a new
@@ -142,6 +145,13 @@ async def codemcp(
             "Grep": {"pattern", "path", "include", "chat_id", "commit_hash"},
             "Glob": {"pattern", "path", "limit", "offset", "chat_id", "commit_hash"},
             "RM": {"path", "description", "chat_id", "commit_hash"},
+            "MV": {
+                "source_path",
+                "target_path",
+                "description",
+                "chat_id",
+                "commit_hash",
+            },
             "Think": {"thought", "chat_id", "commit_hash"},
             "Chmod": {"path", "mode", "chat_id", "commit_hash"},
         }
@@ -198,6 +208,9 @@ async def codemcp(
                 "thought": thought,
                 # Chmod tool parameter
                 "mode": mode,
+                # MV tool parameters
+                "source_path": source_path,
+                "target_path": target_path,
                 # Git commit hash tracking
                 "commit_hash": commit_hash,
             }.items()
@@ -425,6 +438,32 @@ async def codemcp(
                 raise ValueError("chat_id is required for RM subtool")
             result = await rm_file(normalized_path, description, chat_id)
             result, new_commit_hash = await append_commit_hash(result, normalized_path)
+            return result
+
+        if subtool == "MV":
+            # Extract parameters specific to MV
+            source_path = provided_params.get("source_path")
+            target_path = provided_params.get("target_path")
+
+            if source_path is None:
+                raise ValueError("source_path is required for MV subtool")
+            if target_path is None:
+                raise ValueError("target_path is required for MV subtool")
+            if description is None:
+                raise ValueError("description is required for MV subtool")
+
+            # Normalize the paths (expand tilde) before proceeding
+            normalized_source_path = normalize_file_path(source_path)
+            normalized_target_path = normalize_file_path(target_path)
+
+            if chat_id is None:
+                raise ValueError("chat_id is required for MV subtool")
+            result = await mv_file(
+                normalized_source_path, normalized_target_path, description, chat_id
+            )
+            result, new_commit_hash = await append_commit_hash(
+                result, normalized_source_path
+            )
             return result
 
         if subtool == "Think":
