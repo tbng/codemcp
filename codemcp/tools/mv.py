@@ -7,6 +7,7 @@ import pathlib
 from ..common import normalize_file_path
 from ..git import commit_changes, get_repository_root
 from ..shell import run_command
+from .commit_utils import append_commit_hash
 
 __all__ = [
     "mv_file",
@@ -129,7 +130,12 @@ async def mv_file(
         commit_all=False,  # No need for commit_all since git mv already stages the change
     )
 
+    result = ""
     if success:
-        return f"Successfully moved file from {source_rel_path} to {target_rel_path}."
+        result = f"Successfully moved file from {source_rel_path} to {target_rel_path}."
     else:
-        return f"File was moved from {source_rel_path} to {target_rel_path} but failed to commit: {commit_message}"
+        result = f"File was moved from {source_rel_path} to {target_rel_path} but failed to commit: {commit_message}"
+
+    # Append commit hash
+    result, _ = await append_commit_hash(result, git_root_resolved)
+    return result

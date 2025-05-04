@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 
+import json
 import logging
 import os
 
 from ..code_command import run_formatter_without_commit
+from ..common import normalize_file_path
 from ..file_utils import (
     check_file_path_and_permissions,
     check_git_tracking_for_existing_file,
@@ -11,6 +13,7 @@ from ..file_utils import (
 )
 from ..git import commit_changes
 from ..line_endings import detect_line_endings, detect_repo_line_endings
+from .commit_utils import append_commit_hash
 
 __all__ = [
     "write_file_content",
@@ -18,13 +21,16 @@ __all__ = [
 
 
 async def write_file_content(
-    file_path: str, content: str, description: str = "", chat_id: str = ""
+    file_path: str,
+    content: str | dict | list | None = None,
+    description: str = "",
+    chat_id: str = "",
 ) -> str:
     """Write content to a file.
 
     Args:
         file_path: The absolute path to the file to write
-        content: The content to write to the file
+        content: The content to write to the file. Can be a string, dict, or list (will be converted to JSON)
         description: Short description of the change
         chat_id: The unique ID of the current chat session
 
@@ -37,6 +43,22 @@ async def write_file_content(
         Files must be tracked in the git repository before they can be modified.
 
     """
+    # Normalize the file path
+    file_path = normalize_file_path(file_path)
+
+    # Normalize content - if content is not a string, serialize it to a string using json.dumps
+    if content is not None and not isinstance(content, str):
+        content_str = json.dumps(content)
+    else:
+        content_str = content or ""
+
+    # Normalize newlines
+    content_str = (
+        content_str.replace("\r\n", "\n")
+        if isinstance(content_str, str)
+        else content_str
+    )
+
     # Validate file path and permissions
     is_valid, error_message = await check_file_path_and_permissions(file_path)
     if not is_valid:
@@ -61,7 +83,7 @@ async def write_file_content(
         os.makedirs(directory, exist_ok=True)
 
     # Write the content with UTF-8 encoding and proper line endings
-    await write_text_content(file_path, content, "utf-8", line_endings)
+    await write_text_content(file_path, content_str, "utf-8", line_endings)
 
     # Try to run the formatter on the file
     format_message = ""
@@ -83,4 +105,8 @@ async def write_file_content(
     else:
         git_message = f"\nFailed to commit changes to git: {message}"
 
-    return f"Successfully wrote to {file_path}{format_message}{git_message}"
+    result = f"Successfully wrote to {file_path}{format_message}{git_message}"
+
+    # Append commit hash
+    result, _ = await append_commit_hash(result, file_path)
+    return result

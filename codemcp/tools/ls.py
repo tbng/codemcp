@@ -7,6 +7,7 @@ from typing import List, Optional
 from ..access import check_edit_permission
 from ..common import normalize_file_path
 from ..git import is_git_repository
+from .commit_utils import append_commit_hash
 
 __all__ = [
     "ls_directory",
@@ -63,9 +64,13 @@ async def ls_directory(directory_path: str, chat_id: str | None = None) -> str:
     tree_output = print_tree(tree, cwd=full_directory_path)
 
     # Return the result with truncation message if needed
-    if len(results) < MAX_FILES:
-        return tree_output
-    return f"{TRUNCATED_MESSAGE}{tree_output}"
+    output = tree_output
+    if len(results) >= MAX_FILES:
+        output = f"{TRUNCATED_MESSAGE}{tree_output}"
+
+    # Append commit hash
+    result, _ = await append_commit_hash(output, full_directory_path)
+    return result
 
 
 async def list_directory(initial_path: str) -> List[str]:

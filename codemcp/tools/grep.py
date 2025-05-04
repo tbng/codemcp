@@ -8,6 +8,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from ..common import normalize_file_path
 from ..git import is_git_repository
 from ..shell import run_command
+from .commit_utils import append_commit_hash
 
 __all__ = [
     "grep_files",
@@ -143,16 +144,14 @@ def render_result_for_assistant(output: Dict[str, Any]) -> str:
 
     """
     num_files = output.get("numFiles", 0)
-    filenames = output.get("filenames", [])
+    matched_files = output.get("matchedFiles", [])
 
     if num_files == 0:
-        return "No files found"
+        return "No files found matching the pattern."
 
-    result = f"Found {num_files} file{'' if num_files == 1 else 's'}\n{os.linesep.join(filenames[:MAX_RESULTS])}"
-    if num_files > MAX_RESULTS:
-        result += (
-            "\n(Results are truncated. Consider using a more specific path or pattern.)"
-        )
+    result = f"Found {num_files} file(s) matching the pattern:\n\n"
+    for file_path in matched_files:
+        result += f"- {file_path}\n"
 
     return result
 
@@ -162,7 +161,7 @@ async def grep_files(
     path: str | None = None,
     include: str | None = None,
     chat_id: str | None = None,
-) -> dict[str, Any]:
+) -> Dict[str, Any]:
     """Search for a pattern in files within a directory or in a specific file.
 
     Args:
@@ -175,45 +174,55 @@ async def grep_files(
         A dictionary with matched files
 
     """
+    try:
+        # Normalize the path
+        normalized_path = normalize_file_path(path) if path else None
 
-    # Execute git grep asynchronously
-    matches = await git_grep(pattern, path, include)
+        # Execute git grep
+        matched_files = await git_grep(pattern, normalized_path, include)
 
-    # Sort matches
-    # Use asyncio for getting file stats
-    import asyncio
+        # Limit the number of results
+        truncated = len(matched_files) > MAX_RESULTS
+        matched_files = matched_files[:MAX_RESULTS]
 
-    loop = asyncio.get_event_loop()
+        # Prepare output
+        output = {
+            "numFiles": len(matched_files),
+            "matchedFiles": matched_files,
+            "truncated": truncated,
+            "pattern": pattern,
+            "path": path,
+            "include": include,
+        }
 
-    # Get file stats asynchronously
-    stats: List[Optional[os.stat_result]] = []
-    for match in matches:
-        file_stat = await loop.run_in_executor(
-            None, lambda m=match: os.stat(m) if os.path.exists(m) else None
-        )
-        stats.append(file_stat)
+        # Add formatted result for assistant
+        result_for_assistant = render_result_for_assistant(output)
 
-    matches_with_stats: List[Tuple[str, Optional[os.stat_result]]] = list(
-        zip(matches, stats, strict=False)
-    )
+        # Append commit hash
+        if normalized_path:
+            result_for_assistant, _ = await append_commit_hash(
+                result_for_assistant, normalized_path
+            )
 
-    # In tests, sort by filename for deterministic results
-    if os.environ.get("NODE_ENV") == "test":
-        matches_with_stats.sort(key=lambda x: x[0])
-    else:
-        # Sort by modification time (newest first), with filename as tiebreaker
-        matches_with_stats.sort(key=lambda x: (-(x[1].st_mtime if x[1] else 0), x[0]))
+        output["resultForAssistant"] = result_for_assistant
 
-    matches = [match for match, _ in matches_with_stats]
+        return output
+    except Exception as e:
+        # Log the error
+        logging.error(f"Error in grep_files: {e}", exc_info=True)
 
-    # Prepare output
-    output: Dict[str, Any] = {
-        "filenames": matches[:MAX_RESULTS],
-        "numFiles": len(matches),
-    }
+        # Prepare error output
+        error_output = {
+            "numFiles": 0,
+            "matchedFiles": [],
+            "truncated": False,
+            "pattern": pattern,
+            "path": path,
+            "include": include,
+            "error": str(e),
+        }
 
-    # Add formatted result for assistant
-    formatted_result = render_result_for_assistant(output)
-    output["resultForAssistant"] = formatted_result
+        # Add formatted result for assistant
+        error_output["resultForAssistant"] = f"Error searching for pattern: {e}"
 
-    return output
+        return error_output

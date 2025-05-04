@@ -10,7 +10,7 @@ from difflib import SequenceMatcher
 from typing import Any, Dict, List, Tuple
 
 from ..code_command import run_formatter_without_commit
-from ..common import get_edit_snippet
+from ..common import get_edit_snippet, normalize_file_path
 from ..file_utils import (
     async_open_text,
     check_file_path_and_permissions,
@@ -19,6 +19,7 @@ from ..file_utils import (
 )
 from ..git import commit_changes
 from ..line_endings import detect_line_endings
+from .commit_utils import append_commit_hash
 
 # Set up logger
 logger = logging.getLogger(__name__)
@@ -628,14 +629,16 @@ async def edit_file_content(
         Files must be tracked in the git repository before they can be modified.
 
     """
-    # Prevent editing codemcp.toml for security reasons
-    if os.path.basename(file_path) == "codemcp.toml":
-        raise ValueError("Editing codemcp.toml is not allowed for security reasons.")
-
-    # Convert to absolute path if needed, with tilde expansion
-    from ..common import normalize_file_path
-
+    # Normalize the file path
     full_file_path = normalize_file_path(file_path)
+
+    # Normalize string inputs to ensure consistent newlines
+    old_string = old_string.replace("\r\n", "\n") if isinstance(old_string, str) else ""
+    new_string = new_string.replace("\r\n", "\n") if isinstance(new_string, str) else ""
+
+    # Prevent editing codemcp.toml for security reasons
+    if os.path.basename(full_file_path) == "codemcp.toml":
+        raise ValueError("Editing codemcp.toml is not allowed for security reasons.")
 
     # Check file path and permissions
     is_valid, error_message = await check_file_path_and_permissions(full_file_path)
@@ -688,7 +691,10 @@ async def edit_file_content(
         else:
             git_message = f"\nFailed to commit changes to git: {message}"
 
-        return f"Successfully created {full_file_path}{git_message}"
+        result = f"Successfully created {full_file_path}{git_message}"
+        # Append commit hash
+        result, _ = await append_commit_hash(result, full_file_path)
+        return result
 
     # Check if file exists
     if not os.path.exists(full_file_path):
@@ -804,4 +810,8 @@ async def edit_file_content(
     else:
         git_message = f"\n\nFailed to commit changes to git: {message}"
 
-    return f"Successfully edited {full_file_path}\n\nHere's a snippet of the edited file:\n{snippet}{format_message}{git_message}"
+    result = f"Successfully edited {full_file_path}\n\nHere's a snippet of the edited file:\n{snippet}{format_message}{git_message}"
+
+    # Append commit hash
+    result, _ = await append_commit_hash(result, full_file_path)
+    return result

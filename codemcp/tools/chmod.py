@@ -2,11 +2,12 @@
 
 import os
 import stat
-from typing import Any, Literal
+from typing import Any
 
 from ..common import normalize_file_path
 from ..git import commit_changes
 from ..shell import run_command
+from .commit_utils import append_commit_hash
 
 __all__ = [
     "chmod",
@@ -29,7 +30,7 @@ Example:
 
 async def chmod(
     path: str,
-    mode: Literal["a+x", "a-x"],
+    mode: str,  # Changed from Literal["a+x", "a-x"] to str to handle validation internally
     chat_id: str | None = None,
 ) -> dict[str, Any]:
     """Change file permissions using chmod.
@@ -67,16 +68,26 @@ async def chmod(
 
     if mode == "a+x" and is_executable:
         message = f"File '{path}' is already executable"
-        return {
+        result = {
             "output": message,
             "resultForAssistant": message,
         }
+        # Append commit hash
+        result["resultForAssistant"], _ = await append_commit_hash(
+            result["resultForAssistant"], directory
+        )
+        return result
     elif mode == "a-x" and not is_executable:
         message = f"File '{path}' is already non-executable"
-        return {
+        result = {
             "output": message,
             "resultForAssistant": message,
         }
+        # Append commit hash
+        result["resultForAssistant"], _ = await append_commit_hash(
+            result["resultForAssistant"], directory
+        )
+        return result
 
     # Execute chmod command
     cmd = ["chmod", mode, absolute_path]
@@ -115,6 +126,11 @@ async def chmod(
 
     # Add formatted result for assistant
     output["resultForAssistant"] = render_result_for_assistant(output)
+
+    # Append commit hash
+    output["resultForAssistant"], _ = await append_commit_hash(
+        output["resultForAssistant"], directory
+    )
 
     return output
 

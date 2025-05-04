@@ -4,6 +4,8 @@ import shlex
 from typing import Optional
 
 from ..code_command import get_command_from_config, run_code_command
+from ..common import normalize_file_path
+from .commit_utils import append_commit_hash
 
 __all__ = [
     "run_command",
@@ -13,7 +15,7 @@ __all__ = [
 async def run_command(
     project_dir: str,
     command: str,
-    arguments: Optional[str] = None,
+    arguments: Optional[str | list] = None,
     chat_id: str = "",
 ) -> str:
     """Run a command that is configured in codemcp.toml.
@@ -21,26 +23,40 @@ async def run_command(
     Args:
         project_dir: The directory path containing the codemcp.toml file
         command: The type of command to run (e.g., "format", "lint", "test")
-        arguments: Optional arguments to pass to the command as a string. It will be
-                  parsed into a list of arguments using shell-style tokenization
-                  (spaces separate arguments, quotes can be used for arguments
-                  containing spaces, etc.)
+        arguments: Optional arguments to pass to the command. Can be a string or a list.
+                  If a string, it will be parsed into a list of arguments using shell-style
+                  tokenization (spaces separate arguments, quotes can be used for arguments
+                  containing spaces, etc.). If a list, it will be used directly.
         chat_id: The unique ID of the current chat session
 
     Returns:
         A string containing the result of the command operation
     """
+    # Normalize the project directory path
+    project_dir = normalize_file_path(project_dir)
+
+    # Ensure arguments is a string for run_command
+    args_str = (
+        arguments
+        if isinstance(arguments, str) or arguments is None
+        else " ".join(arguments)
+    )
+
     command_list = get_command_from_config(project_dir, command)
 
     # If arguments are provided, extend the command with them
-    if arguments and command_list:
+    if args_str and command_list:
         command_list = command_list.copy()
-        parsed_args = shlex.split(arguments)
+        parsed_args = shlex.split(args_str)
         command_list.extend(parsed_args)
 
     # Don't pass None to run_code_command
     actual_command = command_list if command_list is not None else []
 
-    return await run_code_command(
+    result = await run_code_command(
         project_dir, command, actual_command, f"Auto-commit {command} changes", chat_id
     )
+
+    # Append commit hash
+    result, _ = await append_commit_hash(result, project_dir)
+    return result

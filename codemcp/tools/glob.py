@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 from ..common import normalize_file_path
+from .commit_utils import append_commit_hash
 
 __all__ = [
     "glob_files",
@@ -161,30 +162,42 @@ async def glob_files(
     Returns:
         A dictionary with matched files
     """
-    # Use current working directory if path is not provided
-    if path is None:
-        path = os.getcwd()
+    try:
+        # Use current directory if path is not provided
+        directory = path or os.getcwd()
+        normalized_path = normalize_file_path(directory)
 
-    # Set up options for glob
-    options = {
-        "limit": limit,
-        "offset": offset,
-    }
+        # Execute glob with options for pagination
+        options = {"limit": limit, "offset": offset}
+        result = await glob(pattern, normalized_path, options)
 
-    # Execute glob
-    result = await glob(pattern, path, options)
+        # Add formatted result for assistant
+        formatted_result = render_result_for_assistant(result)
 
-    # Get matching files
-    files = result.get("files", [])
+        # Append commit hash
+        formatted_result, _ = await append_commit_hash(
+            formatted_result, normalized_path
+        )
+        result["resultForAssistant"] = formatted_result
 
-    # Prepare output
-    output = {
-        "filenames": files,
-        "numFiles": len(files),
-        "truncated": result.get("truncated", False),
-    }
+        return result
+    except Exception as e:
+        # Log the error
+        logging.error(f"Error in glob_files: {e}", exc_info=True)
 
-    # Add formatted result for assistant
-    output["resultForAssistant"] = render_result_for_assistant(output)
+        # Prepare error output
+        error_output = {
+            "files": [],
+            "numFiles": 0,
+            "totalFiles": 0,
+            "pattern": pattern,
+            "path": path,
+            "limit": limit,
+            "offset": offset,
+            "error": str(e),
+        }
 
-    return output
+        # Add formatted result for assistant
+        error_output["resultForAssistant"] = f"Error searching for files: {e}"
+
+        return error_output

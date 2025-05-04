@@ -11,6 +11,7 @@ from ..common import (
 )
 from ..git_query import find_git_root
 from ..rules import get_applicable_rules_content
+from .commit_utils import append_commit_hash
 
 __all__ = [
     "read_file_content",
@@ -105,4 +106,6 @@ async def read_file_content(
         # Add applicable rules content
         content += get_applicable_rules_content(repo_root, full_file_path)
 
-    return content
+    # Append commit hash
+    result, _ = await append_commit_hash(content, full_file_path)
+    return result

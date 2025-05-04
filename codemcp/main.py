@@ -34,34 +34,6 @@ from .tools.write_file import write_file_content
 mcp = FastMCP("codemcp")
 
 
-# Helper function to get the current commit hash and append it to a result string
-async def append_commit_hash(result: str, path: str | None) -> Tuple[str, str | None]:
-    """Get the current Git commit hash and append it to the result string.
-
-    Args:
-        result: The original result string to append to
-        path: Path to the Git repository (if available)
-
-    Returns:
-        A tuple containing:
-            - The result string with the commit hash appended
-            - The current commit hash if available, None otherwise
-    """
-    current_hash = None
-
-    if path is None:
-        return result, None
-
-    try:
-        current_hash = await get_current_commit_hash(path)
-        if current_hash:
-            return f"{result}\n\nCurrent commit hash: {current_hash}", current_hash
-    except Exception as e:
-        logging.warning(f"Failed to get current commit hash: {e}", exc_info=True)
-
-    return result, current_hash
-
-
 # NB: If you edit this, also edit codemcp/tools/init_project.py
 @mcp.tool()
 async def codemcp(
@@ -162,31 +134,14 @@ async def codemcp(
                 f"Unknown subtool: {subtool}. Available subtools: {', '.join(expected_params.keys())}"
             )
 
-        # We no longer need to convert string arguments to list since run_command now only accepts strings
-
-        # Normalize string inputs to ensure consistent newlines
-        def normalize_newlines(s: object) -> object:
-            """Normalize string to use \n for all newlines."""
-            return s.replace("\r\n", "\n") if isinstance(s, str) else s
-
-        # Normalize content, old_string, and new_string to use consistent \n newlines
-        content_norm = normalize_newlines(content)
-        old_string_norm = normalize_newlines(old_string)
-        new_string_norm = normalize_newlines(new_string)
-        # Also normalize backward compatibility parameters
-        old_str_norm = normalize_newlines(old_str)
-        new_str_norm = normalize_newlines(new_str)
-        # And user prompt which might contain code blocks
-        user_prompt_norm = normalize_newlines(user_prompt)
-
         # Get all provided non-None parameters
         provided_params = {
             param: value
             for param, value in {
                 "path": path,
-                "content": content_norm,
-                "old_string": old_string_norm,
-                "new_string": new_string_norm,
+                "content": content,
+                "old_string": old_string,
+                "new_string": new_string,
                 "offset": offset,
                 "limit": limit,
                 "description": description,
@@ -195,12 +150,12 @@ async def codemcp(
                 "command": command,
                 "arguments": arguments,
                 # Include backward compatibility parameters
-                "old_str": old_str_norm,
-                "new_str": new_str_norm,
+                "old_str": old_str,
+                "new_str": new_str,
                 # Chat ID for session identification
                 "chat_id": chat_id,
                 # InitProject commit message parameters
-                "user_prompt": user_prompt_norm,
+                "user_prompt": user_prompt,
                 "subject_line": subject_line,
                 # Whether to reuse the chat ID from the HEAD commit
                 "reuse_head_chat_id": reuse_head_chat_id,
@@ -233,11 +188,7 @@ async def codemcp(
             if path is None:
                 raise ValueError("path is required for ReadFile subtool")
 
-            # Normalize the path (expand tilde) before proceeding
-            normalized_path = normalize_file_path(path)
-
-            result = await read_file_content(normalized_path, offset, limit, chat_id)
-            result, new_commit_hash = await append_commit_hash(result, normalized_path)
+            result = await read_file_content(path, offset, limit, chat_id)
             return result
 
         if subtool == "WriteFile":
@@ -245,24 +196,10 @@ async def codemcp(
                 raise ValueError("path is required for WriteFile subtool")
             if description is None:
                 raise ValueError("description is required for WriteFile subtool")
-
-            # Normalize the path (expand tilde) before proceeding
-            normalized_path = normalize_file_path(path)
-
-            import json
-
-            # If content is not a string, serialize it to a string using json.dumps
-            if content is not None and not isinstance(content, str):
-                content_str = json.dumps(content)
-            else:
-                content_str = content or ""
-
             if chat_id is None:
                 raise ValueError("chat_id is required for WriteFile subtool")
-            result = await write_file_content(
-                normalized_path, content_str, description, chat_id
-            )
-            result, new_commit_hash = await append_commit_hash(result, normalized_path)
+
+            result = await write_file_content(path, content, description, chat_id)
             return result
 
         if subtool == "EditFile":
@@ -275,31 +212,24 @@ async def codemcp(
                 raise ValueError(
                     "Either old_string or old_str is required for EditFile subtool (use empty string for new file creation)"
                 )
-
-            # Normalize the path (expand tilde) before proceeding
-            normalized_path = normalize_file_path(path)
+            if chat_id is None:
+                raise ValueError("chat_id is required for EditFile subtool")
 
             # Accept either old_string or old_str (prefer old_string if both are provided)
             old_content = old_string or old_str or ""
             # Accept either new_string or new_str (prefer new_string if both are provided)
             new_content = new_string or new_str or ""
-            if chat_id is None:
-                raise ValueError("chat_id is required for EditFile subtool")
+
             result = await edit_file_content(
-                normalized_path, old_content, new_content, None, description, chat_id
+                path, old_content, new_content, None, description, chat_id
             )
-            result, new_commit_hash = await append_commit_hash(result, normalized_path)
             return result
 
         if subtool == "LS":
             if path is None:
                 raise ValueError("path is required for LS subtool")
 
-            # Normalize the path (expand tilde) before proceeding
-            normalized_path = normalize_file_path(path)
-
-            result = await ls_directory(normalized_path, chat_id)
-            result, new_commit_hash = await append_commit_hash(result, normalized_path)
+            result = await ls_directory(path, chat_id)
             return result
 
         if subtool == "InitProject":
@@ -314,11 +244,8 @@ async def codemcp(
                     False  # Default value in main.py only, not in the implementation
                 )
 
-            # Normalize the path (expand tilde) before proceeding
-            normalized_path = normalize_file_path(path)
-
             return await init_project(
-                normalized_path, user_prompt, subject_line, reuse_head_chat_id
+                path, user_prompt, subject_line, reuse_head_chat_id
             )
 
         if subtool == "RunCommand":
@@ -331,51 +258,25 @@ async def codemcp(
                 raise ValueError("path is required for RunCommand subtool")
             if command is None:
                 raise ValueError("command is required for RunCommand subtool")
-
-            # Normalize the path (expand tilde) before proceeding
-            normalized_path = normalize_file_path(path)
-
-            # Ensure chat_id is provided
             if chat_id is None:
                 raise ValueError("chat_id is required for RunCommand subtool")
 
-            # Ensure arguments is a string for run_command
-            args_str = (
-                arguments
-                if isinstance(arguments, str) or arguments is None
-                else " ".join(arguments)
-            )
-            result = await run_command(
-                normalized_path,
-                command,
-                args_str,
-                chat_id,
-            )
-            result, new_commit_hash = await append_commit_hash(result, normalized_path)
+            result = await run_command(path, command, arguments, chat_id)
             return result
 
         if subtool == "Grep":
             if pattern is None:
                 raise ValueError("pattern is required for Grep subtool")
-
             if path is None:
                 raise ValueError("path is required for Grep subtool")
 
-            # Normalize the path (expand tilde) before proceeding
-            normalized_path = normalize_file_path(path)
-
             try:
-                grep_result = await grep_files(
-                    pattern, normalized_path, include, chat_id
-                )
+                grep_result = await grep_files(pattern, path, include, chat_id)
                 result_string = grep_result.get(
                     "resultForAssistant",
                     f"Found {grep_result.get('numFiles', 0)} file(s)",
                 )
-                result, new_commit_hash = await append_commit_hash(
-                    result_string, normalized_path
-                )
-                return result
+                return result_string
             except Exception as e:
                 # Log the error but don't suppress it - let it propagate
                 logging.error(f"Exception in grep subtool: {e!s}", exc_info=True)
@@ -384,17 +285,13 @@ async def codemcp(
         if subtool == "Glob":
             if pattern is None:
                 raise ValueError("pattern is required for Glob subtool")
-
             if path is None:
                 raise ValueError("path is required for Glob subtool")
-
-            # Normalize the path (expand tilde) before proceeding
-            normalized_path = normalize_file_path(path)
 
             try:
                 glob_result = await glob_files(
                     pattern,
-                    normalized_path,
+                    path,
                     limit=limit if limit is not None else MAX_RESULTS,
                     offset=offset if offset is not None else 0,
                     chat_id=chat_id,
@@ -403,10 +300,7 @@ async def codemcp(
                     "resultForAssistant",
                     f"Found {glob_result.get('numFiles', 0)} file(s)",
                 )
-                result, new_commit_hash = await append_commit_hash(
-                    result_string, normalized_path
-                )
-                return result
+                return result_string
             except Exception as e:
                 # Log the error but don't suppress it - let it propagate
                 logging.error(f"Exception in glob subtool: {e!s}", exc_info=True)
@@ -419,10 +313,7 @@ async def codemcp(
             result = await user_prompt_tool(user_prompt, chat_id)
             # UserPrompt doesn't need a path, but we might have one in the provided parameters
             if path:
-                normalized_path = normalize_file_path(path)
-                result, new_commit_hash = await append_commit_hash(
-                    result, normalized_path
-                )
+                return result
             return result
 
         if subtool == "RM":
@@ -430,14 +321,10 @@ async def codemcp(
                 raise ValueError("path is required for RM subtool")
             if description is None:
                 raise ValueError("description is required for RM subtool")
-
-            # Normalize the path (expand tilde) before proceeding
-            normalized_path = normalize_file_path(path)
-
             if chat_id is None:
                 raise ValueError("chat_id is required for RM subtool")
-            result = await rm_file(normalized_path, description, chat_id)
-            result, new_commit_hash = await append_commit_hash(result, normalized_path)
+
+            result = await rm_file(path, description, chat_id)
             return result
 
         if subtool == "MV":
@@ -451,19 +338,10 @@ async def codemcp(
                 raise ValueError("target_path is required for MV subtool")
             if description is None:
                 raise ValueError("description is required for MV subtool")
-
-            # Normalize the paths (expand tilde) before proceeding
-            normalized_source_path = normalize_file_path(source_path)
-            normalized_target_path = normalize_file_path(target_path)
-
             if chat_id is None:
                 raise ValueError("chat_id is required for MV subtool")
-            result = await mv_file(
-                normalized_source_path, normalized_target_path, description, chat_id
-            )
-            result, new_commit_hash = await append_commit_hash(
-                result, normalized_source_path
-            )
+
+            result = await mv_file(source_path, target_path, description, chat_id)
             return result
 
         if subtool == "Think":
@@ -473,10 +351,7 @@ async def codemcp(
             result = await think(thought, chat_id)
             # Think doesn't need a path, but we might have one in the provided parameters
             if path:
-                normalized_path = normalize_file_path(path)
-                result, new_commit_hash = await append_commit_hash(
-                    result, normalized_path
-                )
+                return result
             return result
 
         if subtool == "Chmod":
@@ -484,28 +359,14 @@ async def codemcp(
                 raise ValueError("path is required for Chmod subtool")
             if mode is None:
                 raise ValueError("mode is required for Chmod subtool")
-
-            # Normalize the path (expand tilde) before proceeding
-            normalized_path = normalize_file_path(path)
-
             if chat_id is None:
                 raise ValueError("chat_id is required for Chmod subtool")
 
-            # Ensure mode is one of the valid literals
-            if mode not in ["a+x", "a-x"]:
-                raise ValueError("mode must be either 'a+x' or 'a-x' for Chmod subtool")
-
-            from typing import Literal, cast
-
-            chmod_mode = cast(Literal["a+x", "a-x"], mode)
-            chmod_result = await chmod(normalized_path, chmod_mode, chat_id)
+            chmod_result = await chmod(path, mode, chat_id)
             result_string = chmod_result.get(
                 "resultForAssistant", "Chmod operation completed"
             )
-            result, new_commit_hash = await append_commit_hash(
-                result_string, normalized_path
-            )
-            return result
+            return result_string
     except Exception:
         logging.error("Exception", exc_info=True)
         raise
