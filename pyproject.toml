@@ -103,10 +103,6 @@ stubPackages = [
 
 # For testing code specific ignores
 [[tool.pyright.ignoreExtraErrors]]
-path = "codemcp/hot_reload_entry.py"
-errorCodes = ["reportUnknownMemberType"]
-
-[[tool.pyright.ignoreExtraErrors]]
 path = "codemcp/testing.py"
 errorCodes = ["reportUnknownMemberType", "reportUnknownArgumentType", "reportUnknownVariableType"]
 

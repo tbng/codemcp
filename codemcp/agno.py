@@ -62,7 +62,7 @@ async def serve_playground_app_async(
 
 
 async def main(hello_world: bool = False):
-    async with MCPTools(f"{sys.executable} -m codemcp.hot_reload_entry") as codemcp:
+    async with MCPTools(f"{sys.executable} -m codemcp") as codemcp:
         # TODO: cli-ify the model
         from agno.models.anthropic import Claude
 
