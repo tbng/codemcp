@@ -239,7 +239,7 @@ async def run_formatter_without_commit(file_path: str) -> Tuple[bool, str]:
         return False, "No format command configured in codemcp.toml"
 
     # Use relative path from project_dir for the formatting command
-    rel_path = os.path.relpath(file_path, project_dir)
+    os.path.relpath(file_path, project_dir)
 
     # Run the formatter with the specific file path
     command = format_command
