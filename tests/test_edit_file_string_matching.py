@@ -35,6 +35,25 @@ class TestEditFileStringMatching(TestCase):
         self.assertExpectedInline(updated_content, """line1\nline2\nline3\nline4\n""")
         self.assertEqual(len(patch), 0)
 
+    def test_trailing_whitespace(self):
+        # Test no match case (previously in TestPerfectReplace)
+        content = "  line1\n  line2\n  \n  line3\n  line4\n"
+        old_string = "  line2\n\n  line3\n"
+        new_string = "  replaced2\n\n  replaced3"
+
+        patch, updated_content = apply_edit_pure(content, old_string, new_string)
+
+        self.assertExpectedInline(
+            updated_content,
+            """\
+  line1
+  replaced2
+
+  replaced3
+  line4
+""",
+        )
+
     def test_whitespace_match(self):
         # Test whitespace-flexible matching (previously in TestMatchButForLeadingWhitespace)
         content = "    line1\n    line2\n    line3\n"

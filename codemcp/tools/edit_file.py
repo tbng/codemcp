@@ -98,8 +98,38 @@ def apply_edit_pure(
     if old_string in content:
         updated_file = content.replace(old_string, new_string, 1)
     else:
-        logger.debug("All matching techniques failed. No changes made.")
-        updated_file = content
+        # Try with trailing whitespace stripped from each line
+        content_lines = content.splitlines()
+        old_lines = old_string.splitlines()
+
+        # Check if we can find a match ignoring trailing whitespace
+        content_lines_stripped = [line.rstrip() for line in content_lines]
+        old_lines_stripped = [line.rstrip() for line in old_lines]
+
+        old_text_stripped = "\n".join(old_lines_stripped)
+        content_stripped = "\n".join(content_lines_stripped)
+
+        if old_text_stripped in content_stripped:
+            # Find the position in the stripped content
+            start_pos = content_stripped.find(old_text_stripped)
+
+            # Count newlines to find the line number
+            line_num = content_stripped[:start_pos].count("\n")
+
+            # Replace those lines with the new content
+            result_lines = (
+                content_lines[:line_num]
+                + new_string.splitlines()
+                + content_lines[line_num + len(old_lines) :]
+            )
+            updated_file = "\n".join(result_lines)
+            if not content.endswith("\n") and updated_file.endswith("\n"):
+                updated_file = updated_file[:-1]
+            elif content.endswith("\n") and not updated_file.endswith("\n"):
+                updated_file += "\n"
+        else:
+            logger.debug("All matching techniques failed. No changes made.")
+            updated_file = content
 
     # Create a useful diff/patch structure
     diff_patch: List[Dict[str, Any]] = []
@@ -232,7 +262,11 @@ def perfect_replace(
 
     for i in range(len(whole_lines) - part_len + 1):
         whole_tup = tuple(whole_lines[i : i + part_len])
-        if part_tup == whole_tup:
+        whole_tup_stripped = tuple(
+            line.rstrip() for line in whole_lines[i : i + part_len]
+        )
+        part_tup_stripped = tuple(line.rstrip() for line in part_lines)
+        if part_tup == whole_tup or part_tup_stripped == whole_tup_stripped:
             res = whole_lines[:i] + replace_lines + whole_lines[i + part_len :]
             return "".join(res)
 
@@ -521,10 +555,22 @@ def replace_most_similar_chunk(whole: str, part: str, replace: str) -> str | Non
     try:
         res = try_dotdotdots(whole, part, replace)
         if res:
-            return res
-    except ValueError as e:
-        logger.debug(f"Dotdotdots matching failed: {e!s}")
-        # continue with other matching strategies
+            # If it worked with dotdotdots, we're good to proceed
+            logger.debug(
+                "Successfully used dotdotdots strategy to handle multiple occurrences",
+            )
+        else:
+            # Fall back to the original error message
+            matches = whole.count(part)
+            raise ValueError(
+                f"Found {matches} matches of the string to replace. For safety, this tool only supports replacing exactly one occurrence at a time. Add more lines of context to your edit and try again."
+            )
+    except ValueError:
+        # If dotdotdots approach failed, give the original error message
+        matches = whole.count(part)
+        raise ValueError(
+            f"Found {matches} matches of the string to replace. For safety, this tool only supports replacing exactly one occurrence at a time. Add more lines of context to your edit and try again."
+        )
 
     # Try fuzzy matching
     res = replace_closest_edit_distance(whole_lines, part, part_lines, replace_lines)
