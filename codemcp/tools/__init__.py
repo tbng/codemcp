@@ -6,6 +6,7 @@ from .git_blame import git_blame
 from .git_diff import git_diff
 from .git_log import git_log
 from .git_show import git_show
+from .mv import mv_file
 from .rm import rm_file
 
 __all__ = [
@@ -14,5 +15,6 @@ __all__ = [
     "git_diff",
     "git_log",
     "git_show",
+    "mv_file",
     "rm_file",
 ]
