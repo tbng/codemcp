@@ -12,6 +12,7 @@ from codemcp.tools.edit_file import (
     replace_most_similar_chunk,
     prep,
     perfect_or_whitespace,
+    apply_edit_pure,
 )
 
 
@@ -242,6 +243,66 @@ class TestPerfectOrWhitespace(unittest.TestCase):
         result = perfect_or_whitespace(whole_lines, part_lines, replace_lines)
 
         self.assertIsNone(result)
+
+
+class TestApplyEditPure(unittest.TestCase):
+    def test_direct_replacement(self):
+        # Test the most common case - direct string replacement
+        content = "This is a test string with some content to replace."
+        old_string = "with some content"
+        new_string = "with new content"
+
+        patch, updated_content = apply_edit_pure(content, old_string, new_string)
+
+        self.assertEqual(
+            updated_content, "This is a test string with new content to replace."
+        )
+        self.assertEqual(len(patch), 1)
+        self.assertEqual(patch[0]["oldLines"], len(old_string.split("\n")))
+        self.assertEqual(patch[0]["newLines"], len(new_string.split("\n")))
+
+    def test_create_new_file(self):
+        # Test creating new content (empty old_string)
+        content = ""
+        old_string = ""
+        new_string = "This is new content\nwith multiple lines.\n"
+
+        patch, updated_content = apply_edit_pure(content, old_string, new_string)
+
+        self.assertEqual(updated_content, new_string)
+        self.assertEqual(len(patch), 1)
+        self.assertEqual(patch[0]["oldLines"], 0)
+        self.assertEqual(
+            patch[0]["newLines"], 3
+        )  # 3 lines including the trailing newline
+
+    def test_no_match_found(self):
+        # Test when the old_string is not found in content
+        content = "This is existing content.\nIt has multiple lines.\n"
+        old_string = "This text doesn't exist in the content"
+        new_string = "Replacement that won't be used"
+
+        patch, updated_content = apply_edit_pure(content, old_string, new_string)
+
+        # Should return the original content unchanged
+        self.assertEqual(updated_content, content)
+        self.assertEqual(len(patch), 0)  # No patch created
+
+    def test_multiline_replacement(self):
+        # Test replacing multiple lines
+        content = "Line 1\nLine 2\nLine 3\nLine 4\n"
+        old_string = "Line 2\nLine 3"
+        new_string = "New Line 2\nNew Line 3"
+
+        patch, updated_content = apply_edit_pure(content, old_string, new_string)
+
+        self.assertEqual(updated_content, "Line 1\nNew Line 2\nNew Line 3\nLine 4\n")
+        self.assertEqual(len(patch), 1)
+        self.assertEqual(patch[0]["oldLines"], 2)
+        self.assertEqual(patch[0]["newLines"], 2)
+        # Check that the patch has the correct line number
+        self.assertEqual(patch[0]["oldStart"], 2)
+        self.assertEqual(patch[0]["newStart"], 2)
 
 
 if __name__ == "__main__":

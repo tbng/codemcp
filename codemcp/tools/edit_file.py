@@ -27,6 +27,7 @@ logger = logging.getLogger(__name__)
 __all__ = [
     "edit_file_content",
     "find_similar_file",
+    "apply_edit_pure",
 ]
 
 
@@ -58,6 +59,78 @@ def find_similar_file(file_path: str) -> str | None:
     return None
 
 
+def apply_edit_pure(
+    content: str,
+    old_string: str,
+    new_string: str,
+) -> Tuple[List[Dict[str, Any]], str]:
+    """Apply an edit to content using robust matching strategies.
+
+    Args:
+        content: The original content
+        old_string: The text to replace
+        new_string: The text to replace it with
+
+    Returns:
+        A tuple of (patch, updated_content)
+
+    """
+    # For creating a new file, just return the new content
+    if not old_string.strip():
+        updated_file = new_string
+        old_lines: List[str] = []
+        new_lines = new_string.split("\n")
+
+        # Create a simple patch structure
+        result_patch: List[Dict[str, Any]] = [
+            {
+                "oldStart": 1,
+                "oldLines": 0,
+                "newStart": 1,
+                "newLines": len(new_lines),
+                "lines": [f"+{line}" for line in new_lines],
+            },
+        ]
+
+        return result_patch, updated_file
+
+    # First try direct replacement (most common case and efficient)
+    if old_string in content:
+        updated_file = content.replace(old_string, new_string, 1)
+    else:
+        logger.debug("All matching techniques failed. No changes made.")
+        updated_file = content
+
+    # Create a useful diff/patch structure
+    diff_patch: List[Dict[str, Any]] = []
+    if content != updated_file:  # Only create a patch if there were actual changes
+        old_lines = old_string.split("\n")
+        new_lines = new_string.split("\n")
+
+        # Try to find the line number where the change occurs
+        try:
+            # This is a simplification; for exact matches this works,
+            # but for fuzzy matches we would need a more sophisticated approach
+            before_text = content.split(old_string)[0]
+            line_num = before_text.count("\n")
+        except Exception:
+            # Fallback: just say it's at the start of the file
+            line_num = 0
+
+        diff_patch.append(
+            {
+                "oldStart": line_num + 1,
+                "oldLines": len(old_lines),
+                "newStart": line_num + 1,
+                "newLines": len(new_lines),
+                "lines": [f"-{line}" for line in old_lines]
+                + [f"+{line}" for line in new_lines],
+            },
+        )
+
+    return diff_patch, updated_file
+
+
 async def apply_edit(
     file_path: str,
     old_string: str,
@@ -85,60 +158,7 @@ async def apply_edit(
     else:
         content = ""
 
-    # For creating a new file, just return the new content
-    if not old_string.strip():
-        updated_file = new_string
-        old_lines: List[str] = []
-        new_lines = new_string.split("\n")
-
-        # Create a simple patch structure
-        patch: List[Dict[str, Any]] = [
-            {
-                "oldStart": 1,
-                "oldLines": 0,
-                "newStart": 1,
-                "newLines": len(new_lines),
-                "lines": [f"+{line}" for line in new_lines],
-            },
-        ]
-
-        return patch, updated_file
-
-    # First try direct replacement (most common case and efficient)
-    if old_string in content:
-        updated_file = content.replace(old_string, new_string, 1)
-    else:
-        logger.debug("All matching techniques failed. No changes made.")
-        updated_file = content
-
-    # Create a useful diff/patch structure
-    patch: List[Dict[str, Any]] = []
-    if content != updated_file:  # Only create a patch if there were actual changes
-        old_lines = old_string.split("\n")
-        new_lines = new_string.split("\n")
-
-        # Try to find the line number where the change occurs
-        try:
-            # This is a simplification; for exact matches this works,
-            # but for fuzzy matches we would need a more sophisticated approach
-            before_text = content.split(old_string)[0]
-            line_num = before_text.count("\n")
-        except Exception:
-            # Fallback: just say it's at the start of the file
-            line_num = 0
-
-        patch.append(
-            {
-                "oldStart": line_num + 1,
-                "oldLines": len(old_lines),
-                "newStart": line_num + 1,
-                "newLines": len(new_lines),
-                "lines": [f"-{line}" for line in old_lines]
-                + [f"+{line}" for line in new_lines],
-            },
-        )
-
-    return patch, updated_file
+    return apply_edit_pure(content, old_string, new_string)
 
 
 def prep(content: str) -> tuple[str, list[str]]:
@@ -633,8 +653,8 @@ async def edit_file_content(
     full_file_path = normalize_file_path(file_path)
 
     # Normalize string inputs to ensure consistent newlines
-    old_string = old_string.replace("\r\n", "\n") if isinstance(old_string, str) else ""
-    new_string = new_string.replace("\r\n", "\n") if isinstance(new_string, str) else ""
+    old_string = old_string.replace("\r\n", "\n")
+    new_string = new_string.replace("\r\n", "\n")
 
     # Prevent editing codemcp.toml for security reasons
     if os.path.basename(full_file_path) == "codemcp.toml":
