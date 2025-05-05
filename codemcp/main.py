@@ -856,6 +856,23 @@ def create_sse_app(allowed_origins: Optional[List[str]] = None) -> Starlette:
 def run() -> None:
     """Run the MCP server."""
     configure_logging()
+
+    # Set up a signal handler to exit immediately on Ctrl+C
+    import signal
+    import os
+
+    def handle_exit(sig, frame):
+        logging.info(
+            "Received shutdown signal - exiting immediately without waiting for connections"
+        )
+        os._exit(0)
+
+    # Register for SIGINT (Ctrl+C) and SIGTERM
+    signal.signal(signal.SIGINT, handle_exit)
+    signal.signal(signal.SIGTERM, handle_exit)
+
+    # The signal handler will force-exit the process when Ctrl+C is pressed
+    # so we don't need to worry about what happens inside mcp.run()
     mcp.run()
 
 
@@ -888,4 +905,21 @@ def serve(host: str, port: int, cors_origin: List[str]) -> None:
         logging.info("Allowing CORS for: https://claude.ai")
 
     app = create_sse_app(allowed_origins)
-    uvicorn.run(app, host=host, port=port)
+
+    import signal
+    import os
+
+    # Register a custom signal handler that will take precedence and exit immediately
+    def handle_exit(sig, frame):
+        logging.info(
+            "Received shutdown signal - exiting immediately without waiting for connections"
+        )
+        os._exit(0)
+
+    # Register for SIGINT (Ctrl+C) and SIGTERM
+    signal.signal(signal.SIGINT, handle_exit)
+    signal.signal(signal.SIGTERM, handle_exit)
+
+    # Start the server - even though we pass timeout_graceful_shutdown=0,
+    # our signal handler will execute first and terminate the process
+    uvicorn.run(app, host=host, port=port, timeout_graceful_shutdown=0)

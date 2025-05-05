@@ -80,6 +80,22 @@ async def init_project_tool(
 
 
 def main():
+    # Set up a signal handler to exit immediately on Ctrl+C
+    import signal
+    import os
+    import logging
+
+    def handle_exit(sig, frame):
+        logging.info(
+            "Received shutdown signal - exiting immediately without waiting for connections"
+        )
+        os._exit(0)
+
+    # Register for SIGINT (Ctrl+C) and SIGTERM
+    signal.signal(signal.SIGINT, handle_exit)
+    signal.signal(signal.SIGTERM, handle_exit)
+
+    # The signal handler will force-exit the process when Ctrl+C is pressed
     mcp.run()
 
 
