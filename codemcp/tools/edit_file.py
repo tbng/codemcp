@@ -7,7 +7,7 @@ import math
 import os
 import re
 from difflib import SequenceMatcher
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from ..code_command import run_formatter_without_commit
 from ..common import get_edit_snippet, normalize_file_path
@@ -63,7 +63,7 @@ def apply_edit_pure(
     content: str,
     old_string: str,
     new_string: str,
-) -> Tuple[List[Dict[str, Any]], str]:
+) -> Tuple[List[Dict[str, Any]], str, Optional[str]]:
     """Apply an edit to content using robust matching strategies.
 
     Args:
@@ -72,7 +72,8 @@ def apply_edit_pure(
         new_string: The text to replace it with
 
     Returns:
-        A tuple of (patch, updated_content)
+        A tuple of (patch, updated_content, error_message)
+        error_message is None if the edit was successful, otherwise it contains an error message
 
     """
     # For creating a new file, just return the new content
@@ -92,80 +93,159 @@ def apply_edit_pure(
             },
         ]
 
-        return result_patch, updated_file
+        return result_patch, updated_file, None
 
     # First try direct replacement (most common case and efficient)
     if old_string in content:
+        # Check for uniqueness of old_string before applying the replacement
+        # We need to check this to avoid ambiguity in matches
+        if content.count(old_string) > 1:
+            # First try to use the dotdotdots approach which handles multiple matches by context
+            try:
+                test_result = try_dotdotdots(content, old_string, new_string)
+                if test_result:
+                    # If it worked with dotdotdots, we're good to proceed
+                    logger.debug(
+                        "Successfully used dotdotdots strategy to handle multiple occurrences",
+                    )
+                    # Return the result from dotdotdots
+                    updated_file = test_result
+
+                    # Create a useful diff/patch structure for dotdotdots result
+                    dotdot_patch: List[Dict[str, Any]] = []
+                    if (
+                        content != updated_file
+                    ):  # Only create a patch if there were actual changes
+                        old_lines = old_string.split("\n")
+                        new_lines = new_string.split("\n")
+
+                        # Try to find the line number where the change occurs
+                        try:
+                            # This is a simplification; for exact matches this works,
+                            # but for fuzzy matches we would need a more sophisticated approach
+                            before_text = content.split(old_string)[0]
+                            line_num = before_text.count("\n")
+                        except Exception:
+                            # Fallback: just say it's at the start of the file
+                            line_num = 0
+
+                        dotdot_patch.append(
+                            {
+                                "oldStart": line_num + 1,
+                                "oldLines": len(old_lines),
+                                "newStart": line_num + 1,
+                                "newLines": len(new_lines),
+                                "lines": [f"-{line}" for line in old_lines]
+                                + [f"+{line}" for line in new_lines],
+                            },
+                        )
+
+                    return dotdot_patch, updated_file, None
+                else:
+                    # Fall back to the original error message
+                    matches = content.count(old_string)
+                    return (
+                        [],
+                        content,
+                        f"Found {matches} matches of the string to replace. For safety, this tool only supports replacing exactly one occurrence at a time. Add more lines of context to your edit and try again.",
+                    )
+            except ValueError:
+                # If dotdotdots approach failed, give the original error message
+                matches = content.count(old_string)
+                return (
+                    [],
+                    content,
+                    f"Found {matches} matches of the string to replace. For safety, this tool only supports replacing exactly one occurrence at a time. Add more lines of context to your edit and try again.",
+                )
+
+        # If we get here, there's only one occurrence of old_string in content
         updated_file = content.replace(old_string, new_string, 1)
-    else:
-        # Try with trailing whitespace stripped from each line
-        content_lines = content.splitlines()
-        old_lines = old_string.splitlines()
 
-        # Check if we can find a match ignoring trailing whitespace
-        content_lines_stripped = [line.rstrip() for line in content_lines]
-        old_lines_stripped = [line.rstrip() for line in old_lines]
+        # Create a useful diff/patch structure
+        diff_patch: List[Dict[str, Any]] = []
+        if content != updated_file:  # Only create a patch if there were actual changes
+            old_lines = old_string.split("\n")
+            new_lines = new_string.split("\n")
 
-        old_text_stripped = "\n".join(old_lines_stripped)
-        content_stripped = "\n".join(content_lines_stripped)
+            # Try to find the line number where the change occurs
+            try:
+                # This is a simplification; for exact matches this works,
+                # but for fuzzy matches we would need a more sophisticated approach
+                before_text = content.split(old_string)[0]
+                line_num = before_text.count("\n")
+            except Exception:
+                # Fallback: just say it's at the start of the file
+                line_num = 0
 
-        if old_text_stripped in content_stripped:
-            # Find the position in the stripped content
-            start_pos = content_stripped.find(old_text_stripped)
-
-            # Count newlines to find the line number
-            line_num = content_stripped[:start_pos].count("\n")
-
-            # Replace those lines with the new content
-            result_lines = (
-                content_lines[:line_num]
-                + new_string.splitlines()
-                + content_lines[line_num + len(old_lines) :]
+            diff_patch.append(
+                {
+                    "oldStart": line_num + 1,
+                    "oldLines": len(old_lines),
+                    "newStart": line_num + 1,
+                    "newLines": len(new_lines),
+                    "lines": [f"-{line}" for line in old_lines]
+                    + [f"+{line}" for line in new_lines],
+                },
             )
-            updated_file = "\n".join(result_lines)
-            if not content.endswith("\n") and updated_file.endswith("\n"):
-                updated_file = updated_file[:-1]
-            elif content.endswith("\n") and not updated_file.endswith("\n"):
-                updated_file += "\n"
-        else:
-            logger.debug("All matching techniques failed. No changes made.")
-            updated_file = content
 
-    # Create a useful diff/patch structure
-    diff_patch: List[Dict[str, Any]] = []
-    if content != updated_file:  # Only create a patch if there were actual changes
-        old_lines = old_string.split("\n")
-        new_lines = new_string.split("\n")
+        return diff_patch, updated_file, None
 
-        # Try to find the line number where the change occurs
-        try:
-            # This is a simplification; for exact matches this works,
-            # but for fuzzy matches we would need a more sophisticated approach
-            before_text = content.split(old_string)[0]
-            line_num = before_text.count("\n")
-        except Exception:
-            # Fallback: just say it's at the start of the file
-            line_num = 0
+    # Try with trailing whitespace stripped from each line
+    content_lines = content.splitlines()
+    old_lines = old_string.splitlines()
 
-        diff_patch.append(
-            {
-                "oldStart": line_num + 1,
-                "oldLines": len(old_lines),
-                "newStart": line_num + 1,
-                "newLines": len(new_lines),
-                "lines": [f"-{line}" for line in old_lines]
-                + [f"+{line}" for line in new_lines],
-            },
+    # Check if we can find a match ignoring trailing whitespace
+    content_lines_stripped = [line.rstrip() for line in content_lines]
+    old_lines_stripped = [line.rstrip() for line in old_lines]
+
+    old_text_stripped = "\n".join(old_lines_stripped)
+    content_stripped = "\n".join(content_lines_stripped)
+
+    if old_text_stripped in content_stripped:
+        # Find the position in the stripped content
+        start_pos = content_stripped.find(old_text_stripped)
+
+        # Count newlines to find the line number
+        line_num = content_stripped[:start_pos].count("\n")
+
+        # Replace those lines with the new content
+        result_lines = (
+            content_lines[:line_num]
+            + new_string.splitlines()
+            + content_lines[line_num + len(old_lines) :]
         )
+        updated_file = "\n".join(result_lines)
+        if not content.endswith("\n") and updated_file.endswith("\n"):
+            updated_file = updated_file[:-1]
+        elif content.endswith("\n") and not updated_file.endswith("\n"):
+            updated_file += "\n"
 
-    return diff_patch, updated_file
+        # Create a useful diff/patch structure
+        whitespace_patch: List[Dict[str, Any]] = []
+        if content != updated_file:  # Only create a patch if there were actual changes
+            # Try to find the line number where the change occurs
+            whitespace_patch.append(
+                {
+                    "oldStart": line_num + 1,
+                    "oldLines": len(old_lines),
+                    "newStart": line_num + 1,
+                    "newLines": len(new_string.splitlines()),
+                    "lines": [f"-{line}" for line in old_lines]
+                    + [f"+{line}" for line in new_string.splitlines()],
+                },
+            )
+
+        return whitespace_patch, updated_file, None
+    else:
+        logger.debug("All matching techniques failed. No changes made.")
+        return [], content, "String to replace not found in file."
 
 
 async def apply_edit(
     file_path: str,
     old_string: str,
     new_string: str,
-) -> Tuple[List[Dict[str, Any]], str]:
+) -> Tuple[List[Dict[str, Any]], str, Optional[str]]:
     """Apply an edit to a file using robust matching strategies.
 
     Args:
@@ -174,7 +254,8 @@ async def apply_edit(
         new_string: The text to replace it with
 
     Returns:
-        A tuple of (patch, updated_file)
+        A tuple of (patch, updated_file, error_message)
+        error_message is None if the edit was successful, otherwise it contains an error message
 
     """
     # Import normalize_file_path for tilde expansion
@@ -797,36 +878,12 @@ async def edit_file_content(
     # Read the original file
     content = await async_open_text(full_file_path, encoding="utf-8")
 
-    # Check if old_string exists in the file
-    if old_string and old_string not in content:
-        error_msg = "String to replace not found in file."
-        raise ValueError(error_msg)
-
-    # Check for uniqueness of old_string
-    if old_string and content.count(old_string) > 1:
-        # First try to use the dotdotdots approach which handles multiple matches by context
-        try:
-            test_result = try_dotdotdots(content, old_string, new_string)
-            if test_result:
-                # If it worked with dotdotdots, we're good to proceed
-                logger.debug(
-                    "Successfully used dotdotdots strategy to handle multiple occurrences",
-                )
-            else:
-                # Fall back to the original error message
-                matches = content.count(old_string)
-                raise ValueError(
-                    f"Found {matches} matches of the string to replace. For safety, this tool only supports replacing exactly one occurrence at a time. Add more lines of context to your edit and try again."
-                )
-        except ValueError:
-            # If dotdotdots approach failed, give the original error message
-            matches = content.count(old_string)
-            raise ValueError(
-                f"Found {matches} matches of the string to replace. For safety, this tool only supports replacing exactly one occurrence at a time. Add more lines of context to your edit and try again."
-            )
-
     # Apply the edit with advanced matching if needed
-    _, updated_file = await apply_edit(full_file_path, old_string, new_string)
+    _, updated_file, error = await apply_edit(full_file_path, old_string, new_string)
+
+    # If there was an error during apply_edit, raise it
+    if error:
+        raise ValueError(error)
 
     # If no changes were made (which should never happen at this point),
     # log a warning but continue

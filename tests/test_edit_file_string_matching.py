@@ -15,8 +15,9 @@ class TestEditFileStringMatching(TestCase):
         old_string = "line2\nline3\n"
         new_string = "replaced2\nreplaced3\n"
 
-        patch, updated_content = apply_edit_pure(content, old_string, new_string)
+        patch, updated_content, error = apply_edit_pure(content, old_string, new_string)
 
+        self.assertIsNone(error)
         self.assertExpectedInline(
             updated_content, """line1\nreplaced2\nreplaced3\nline4\n"""
         )
@@ -30,19 +31,22 @@ class TestEditFileStringMatching(TestCase):
         old_string = "lineX\nlineY\n"
         new_string = "replaced2\nreplaced3\n"
 
-        patch, updated_content = apply_edit_pure(content, old_string, new_string)
+        patch, updated_content, error = apply_edit_pure(content, old_string, new_string)
 
+        self.assertIsNotNone(error)
+        self.assertEqual(error, "String to replace not found in file.")
         self.assertExpectedInline(updated_content, """line1\nline2\nline3\nline4\n""")
         self.assertEqual(len(patch), 0)
 
     def test_trailing_whitespace(self):
-        # Test no match case (previously in TestPerfectReplace)
+        # Test trailing whitespace handling
         content = "  line1\n  line2\n  \n  line3\n  line4\n"
         old_string = "  line2\n\n  line3\n"
         new_string = "  replaced2\n\n  replaced3"
 
-        patch, updated_content = apply_edit_pure(content, old_string, new_string)
+        _, updated_content, error = apply_edit_pure(content, old_string, new_string)
 
+        self.assertIsNone(error)
         self.assertExpectedInline(
             updated_content,
             """\
@@ -62,8 +66,10 @@ class TestEditFileStringMatching(TestCase):
 
         # Note: apply_edit_pure doesn't currently handle whitespace matching
         # This test demonstrates the current behavior
-        patch, updated_content = apply_edit_pure(content, old_string, new_string)
+        patch, updated_content, error = apply_edit_pure(content, old_string, new_string)
 
+        self.assertIsNotNone(error)
+        self.assertEqual(error, "String to replace not found in file.")
         self.assertExpectedInline(
             updated_content, """    line1\n    line2\n    line3\n"""
         )
@@ -77,8 +83,10 @@ class TestEditFileStringMatching(TestCase):
 
         # Note: apply_edit_pure doesn't currently handle ... patterns
         # This test demonstrates the current behavior
-        patch, updated_content = apply_edit_pure(content, old_string, new_string)
+        patch, updated_content, error = apply_edit_pure(content, old_string, new_string)
 
+        self.assertIsNotNone(error)
+        self.assertEqual(error, "String to replace not found in file.")
         self.assertExpectedInline(updated_content, """start\nmiddle1\nmiddle2\nend""")
         self.assertEqual(len(patch), 0)
 
@@ -90,8 +98,10 @@ class TestEditFileStringMatching(TestCase):
 
         # Note: apply_edit_pure doesn't currently handle fuzzy matching
         # This test demonstrates the current behavior
-        patch, updated_content = apply_edit_pure(content, old_string, new_string)
+        patch, updated_content, error = apply_edit_pure(content, old_string, new_string)
 
+        self.assertIsNotNone(error)
+        self.assertEqual(error, "String to replace not found in file.")
         self.assertExpectedInline(updated_content, """line1\nline2\nlnie3\nline4\n""")
         self.assertEqual(len(patch), 0)
 
@@ -101,8 +111,9 @@ class TestEditFileStringMatching(TestCase):
         old_string = "with some content"
         new_string = "with new content"
 
-        patch, updated_content = apply_edit_pure(content, old_string, new_string)
+        patch, updated_content, error = apply_edit_pure(content, old_string, new_string)
 
+        self.assertIsNone(error)
         self.assertExpectedInline(
             updated_content, """This is a test string with new content to replace."""
         )
@@ -116,8 +127,9 @@ class TestEditFileStringMatching(TestCase):
         old_string = ""
         new_string = "This is new content\nwith multiple lines.\n"
 
-        patch, updated_content = apply_edit_pure(content, old_string, new_string)
+        patch, updated_content, error = apply_edit_pure(content, old_string, new_string)
 
+        self.assertIsNone(error)
         self.assertExpectedInline(
             updated_content, """This is new content\nwith multiple lines.\n"""
         )
@@ -131,8 +143,10 @@ class TestEditFileStringMatching(TestCase):
         old_string = "This text doesn't exist in the content"
         new_string = "Replacement that won't be used"
 
-        patch, updated_content = apply_edit_pure(content, old_string, new_string)
+        patch, updated_content, error = apply_edit_pure(content, old_string, new_string)
 
+        self.assertIsNotNone(error)
+        self.assertEqual(error, "String to replace not found in file.")
         self.assertExpectedInline(
             updated_content, """This is existing content.\nIt has multiple lines.\n"""
         )
@@ -144,8 +158,9 @@ class TestEditFileStringMatching(TestCase):
         old_string = "Line 2\nLine 3"
         new_string = "New Line 2\nNew Line 3"
 
-        patch, updated_content = apply_edit_pure(content, old_string, new_string)
+        patch, updated_content, error = apply_edit_pure(content, old_string, new_string)
 
+        self.assertIsNone(error)
         self.assertExpectedInline(
             updated_content, """Line 1\nNew Line 2\nNew Line 3\nLine 4\n"""
         )
@@ -161,8 +176,9 @@ class TestEditFileStringMatching(TestCase):
         old_string = "Line 2"
         new_string = "New Line 2"
 
-        patch, updated_content = apply_edit_pure(content, old_string, new_string)
+        patch, updated_content, error = apply_edit_pure(content, old_string, new_string)
 
+        self.assertIsNone(error)
         self.assertExpectedInline(updated_content, """Line 1\nNew Line 2\nLine 3\n""")
         self.assertEqual(len(patch), 1)
 
@@ -179,6 +195,19 @@ class TestEditFileStringMatching(TestCase):
             """-Line 2
 +New Line 2""",
         )
+
+    def test_multiple_matches(self):
+        # Test handling of multiple matches
+        content = "line1\nline2\nline1\nline2\n"
+        old_string = "line1\nline2"
+        new_string = "replaced1\nreplaced2"
+
+        _, updated_content, error = apply_edit_pure(content, old_string, new_string)
+
+        self.assertIsNotNone(error)
+        self.assertTrue(error is not None and "Found 2 matches" in error)
+        self.assertExpectedInline(updated_content, """line1\nline2\nline1\nline2\n""")
+        self.assertEqual(len(_), 0)
 
 
 if __name__ == "__main__":
