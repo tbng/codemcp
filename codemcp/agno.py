@@ -26,6 +26,8 @@ async def serve_playground_app_async(
     **kwargs,
 ):
     import uvicorn
+    import signal
+    import os
 
     try:
         create_playground_endpoint(
@@ -56,9 +58,40 @@ async def serve_playground_app_async(
     # Print the panel
     console.print(panel)
 
+    # Original signal handler for cleanup
+    original_handler = None
+
+    # Define our custom signal handler that exits immediately
+    def handle_exit(sig, frame):
+        logger.info(
+            "Received shutdown signal - exiting immediately without waiting for connections"
+        )
+        os._exit(0)
+
+    # Save original SIGINT handler if this is running in the main thread
+    try:
+        original_handler = signal.getsignal(signal.SIGINT)
+        # Register for SIGINT (Ctrl+C)
+        signal.signal(signal.SIGINT, handle_exit)
+    except ValueError:
+        # Can't set signal handlers in non-main threads
+        logger.warning("Can't set custom signal handlers in non-main thread")
+
     config = uvicorn.Config(app=app, host=host, port=port, reload=reload, **kwargs)
     server = uvicorn.Server(config)
-    await server.serve()
+
+    # Skip the standard graceful shutdown process
+    server.install_signal_handlers = lambda: None
+
+    try:
+        await server.serve()
+    finally:
+        # Restore original signal handler if we modified it
+        if original_handler:
+            try:
+                signal.signal(signal.SIGINT, original_handler)
+            except ValueError:
+                pass
 
 
 async def main(hello_world: bool = False):
