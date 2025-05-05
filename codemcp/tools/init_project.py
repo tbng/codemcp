@@ -395,12 +395,6 @@ When making edits:
 
 Remember: when making multiple file edits in a row to the same file, you should prefer to send all edits in a single message with multiple calls to this tool, rather than multiple messages with a single call each.
 
-## UserPrompt chat_id user_prompt
-
-Records the user's verbatim prompt text for each interaction after the initial one.
-You should call this tool with the user's exact message at the beginning of each response.
-This tool must be called in every response except for the first one where InitProject was used.  Do NOT include documents or other attachments, only the text prompt.
-
 ## Think chat_id thought
 
 Use the tool to think about something. It will not obtain new information or change the database, but just append the thought to the log. Use it when complex reasoning or some cache memory is needed.
@@ -483,7 +477,7 @@ Example:
 ## Summary
 
 Args:
-    subtool: The subtool to execute (ReadFile, WriteFile, EditFile, LS, InitProject, UserPrompt, RunCommand, RM, MV, Think, Chmod)
+    subtool: The subtool to execute (ReadFile, WriteFile, EditFile, LS, InitProject, RunCommand, RM, MV, Think, Chmod)
     path: The path to the file or directory to operate on
     content: Content for WriteFile subtool (any type will be serialized to string if needed)
     old_string: String to replace for EditFile subtool
@@ -494,7 +488,7 @@ Args:
     source_path: The path to the source file for MV subtool
     target_path: The destination path for MV subtool
     arguments: A string containing space-separated arguments for RunCommand subtool
-    user_prompt: The user's verbatim text (for UserPrompt subtool)
+    user_prompt: The user's verbatim text
     thought: The thought content (for Think subtool)
     mode: The chmod mode to apply (a+x or a-x) for Chmod subtool
     chat_id: A unique ID to identify the chat session (required for all tools EXCEPT InitProject)
