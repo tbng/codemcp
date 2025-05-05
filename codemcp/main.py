@@ -871,7 +871,8 @@ def run() -> None:
     signal.signal(signal.SIGINT, handle_exit)
     signal.signal(signal.SIGTERM, handle_exit)
 
-    # Run the MCP server
+    # The signal handler will force-exit the process when Ctrl+C is pressed
+    # so we don't need to worry about what happens inside mcp.run()
     mcp.run()
 
 
@@ -905,28 +906,20 @@ def serve(host: str, port: int, cors_origin: List[str]) -> None:
 
     app = create_sse_app(allowed_origins)
 
-    # Configure uvicorn but don't use the standard run method
-    # Instead, use a server instance that we can configure to force exit on Ctrl+C
-    config = uvicorn.Config(app, host=host, port=port)
-    server = uvicorn.Server(config)
-
-    # Override server install_signal_handlers to force quit immediately on Ctrl+C
-    server.install_signal_handlers = lambda: None
-
     import signal
+    import os
 
-    # Register our own signal handler that will exit immediately
+    # Register a custom signal handler that will take precedence and exit immediately
     def handle_exit(sig, frame):
         logging.info(
             "Received shutdown signal - exiting immediately without waiting for connections"
         )
-        import os
-
         os._exit(0)
 
     # Register for SIGINT (Ctrl+C) and SIGTERM
     signal.signal(signal.SIGINT, handle_exit)
     signal.signal(signal.SIGTERM, handle_exit)
 
-    # Start the server
-    server.run()
+    # Start the server - even though we pass timeout_graceful_shutdown=0,
+    # our signal handler will execute first and terminate the process
+    uvicorn.run(app, host=host, port=port, timeout_graceful_shutdown=0)

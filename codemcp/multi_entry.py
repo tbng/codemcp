@@ -95,7 +95,7 @@ def main():
     signal.signal(signal.SIGINT, handle_exit)
     signal.signal(signal.SIGTERM, handle_exit)
 
-    # Run the MCP server
+    # The signal handler will force-exit the process when Ctrl+C is pressed
     mcp.run()
 
 
