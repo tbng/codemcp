@@ -27,7 +27,6 @@ from .tools.read_file import read_file_content
 from .tools.rm import rm_file
 from .tools.run_command import run_command
 from .tools.think import think
-from .tools.user_prompt import user_prompt as user_prompt_tool
 from .tools.write_file import write_file_content
 
 # Initialize FastMCP server
@@ -78,10 +77,6 @@ async def codemcp(
     If the user indicates they want to "amend" or "continue working" on a PR,
     you should set reuse_head_chat_id=True to continue using the same chat ID.
 
-    In each subsequent request NOT including the initial request to initialize
-    codemcp, you must call the UserPrompt tool with the user's verbatim
-    request text.
-
     Arguments:
       subtool: The subtool to run (InitProject, ...)
       path: The path to the file or directory to operate on
@@ -112,7 +107,6 @@ async def codemcp(
                 "subject_line",
                 "reuse_head_chat_id",
             },  # chat_id is not expected for InitProject as it's generated there
-            "UserPrompt": {"user_prompt", "chat_id", "commit_hash"},
             "RunCommand": {"path", "command", "arguments", "chat_id", "commit_hash"},
             "Grep": {"pattern", "path", "include", "chat_id", "commit_hash"},
             "Glob": {"pattern", "path", "limit", "offset", "chat_id", "commit_hash"},
@@ -305,16 +299,6 @@ async def codemcp(
                 # Log the error but don't suppress it - let it propagate
                 logging.error(f"Exception in glob subtool: {e!s}", exc_info=True)
                 raise
-
-        if subtool == "UserPrompt":
-            if user_prompt is None:
-                raise ValueError("user_prompt is required for UserPrompt subtool")
-
-            result = await user_prompt_tool(user_prompt, chat_id)
-            # UserPrompt doesn't need a path, but we might have one in the provided parameters
-            if path:
-                return result
-            return result
 
         if subtool == "RM":
             if path is None:
