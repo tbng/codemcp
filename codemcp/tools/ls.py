@@ -7,7 +7,7 @@ from typing import List, Optional
 from ..access import check_edit_permission
 from ..common import normalize_file_path
 from ..git import is_git_repository
-from ..main import mcp
+from ..mcp import mcp
 from .commit_utils import append_commit_hash
 
 __all__ = [

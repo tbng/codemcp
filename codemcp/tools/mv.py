@@ -6,7 +6,7 @@ import pathlib
 
 from ..common import normalize_file_path
 from ..git import commit_changes, get_repository_root
-from ..main import mcp
+from ..mcp import mcp
 from ..shell import run_command
 from .commit_utils import append_commit_hash
 

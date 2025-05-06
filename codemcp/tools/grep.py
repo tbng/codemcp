@@ -7,7 +7,7 @@ from typing import Any, Dict
 
 from ..common import normalize_file_path
 from ..git import is_git_repository
-from ..main import mcp
+from ..mcp import mcp
 from ..shell import run_command
 from .commit_utils import append_commit_hash
 
@@ -171,7 +171,7 @@ async def grep(
 
     Example:
       Grep "function.*hello" /path/to/repo  # Find files containing functions with "hello" in their name
-      Grep "console\.log" /path/to/repo --include="*.js"  # Find JS files with console.log statements
+      Grep "console\\.log" /path/to/repo --include="*.js"  # Find JS files with console.log statements
 
     Args:
         pattern: The regular expression pattern to search for

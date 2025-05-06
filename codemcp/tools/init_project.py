@@ -10,7 +10,7 @@ import tomli
 
 from ..common import MAX_LINE_LENGTH, MAX_LINES_TO_READ, normalize_file_path
 from ..git import get_repository_root, is_git_repository
-from ..main import mcp
+from ..mcp import mcp
 
 __all__ = [
     "init_project",

@@ -19,7 +19,7 @@ from ..file_utils import (
 )
 from ..git import commit_changes
 from ..line_endings import detect_line_endings
-from ..main import mcp
+from ..mcp import mcp
 from .commit_utils import append_commit_hash
 
 # Set up logger

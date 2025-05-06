@@ -6,7 +6,7 @@ from typing import Any
 
 from ..common import normalize_file_path
 from ..git import commit_changes
-from ..main import mcp
+from ..mcp import mcp
 from ..shell import run_command
 from .commit_utils import append_commit_hash
 

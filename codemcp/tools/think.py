@@ -2,7 +2,7 @@
 
 import logging
 
-from ..main import mcp
+from ..mcp import mcp
 
 __all__ = [
     "think",

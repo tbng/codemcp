@@ -10,7 +10,7 @@ from ..common import (
     normalize_file_path,
 )
 from ..git_query import find_git_root
-from ..main import mcp
+from ..mcp import mcp
 from ..rules import get_applicable_rules_content
 from .commit_utils import append_commit_hash
 
