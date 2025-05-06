@@ -146,10 +146,11 @@ def render_result_for_assistant(output: Dict[str, Any]) -> str:
 async def glob_files(
     pattern: str,
     path: str | None = None,
-    limit: int = MAX_RESULTS,
-    offset: int = 0,
+    limit: int | None = None,
+    offset: int | None = None,
     chat_id: str | None = None,
-) -> Dict[str, Any]:
+    commit_hash: str | None = None,
+) -> str:
     """Search for files matching a glob pattern.
 
     Args:
@@ -158,14 +159,20 @@ async def glob_files(
         limit: Maximum number of results to return
         offset: Number of results to skip (for pagination)
         chat_id: The unique ID of the current chat session
+        commit_hash: Optional Git commit hash for version tracking
 
     Returns:
-        A dictionary with matched files
+        A formatted string with the search results
+
     """
     try:
         # Use current directory if path is not provided
         directory = path or os.getcwd()
         normalized_path = normalize_file_path(directory)
+
+        # Set default values for limit and offset
+        limit = limit or MAX_RESULTS
+        offset = offset or 0
 
         # Execute glob with options for pagination
         options = {"limit": limit, "offset": offset}
@@ -176,28 +183,14 @@ async def glob_files(
 
         # Append commit hash
         formatted_result, _ = await append_commit_hash(
-            formatted_result, normalized_path
+            formatted_result, normalized_path, commit_hash
         )
-        result["resultForAssistant"] = formatted_result
 
-        return result
+        return formatted_result
     except Exception as e:
         # Log the error
         logging.error(f"Error in glob_files: {e}", exc_info=True)
 
-        # Prepare error output
-        error_output = {
-            "files": [],
-            "numFiles": 0,
-            "totalFiles": 0,
-            "pattern": pattern,
-            "path": path,
-            "limit": limit,
-            "offset": offset,
-            "error": str(e),
-        }
-
-        # Add formatted result for assistant
-        error_output["resultForAssistant"] = f"Error searching for files: {e}"
-
-        return error_output
+        # Return error message
+        error_message = f"Error searching for files: {e}"
+        return error_message

@@ -17,8 +17,9 @@ __all__ = [
 async def mv_file(
     source_path: str,
     target_path: str,
-    description: str,
-    chat_id: str = "",
+    description: str | None = None,
+    chat_id: str | None = None,
+    commit_hash: str | None = None,
 ) -> str:
     """Move a file using git mv.
 
@@ -27,10 +28,15 @@ async def mv_file(
         target_path: The path to the target location (can be absolute or relative to repository root)
         description: Short description of why the file is being moved
         chat_id: The unique ID of the current chat session
+        commit_hash: Optional Git commit hash for version tracking
 
     Returns:
         A string containing the result of the move operation
     """
+    # Set default values
+    description = "" if description is None else description
+    chat_id = "" if chat_id is None else chat_id
+
     # Use the directory from the path as our starting point for source
     source_path = normalize_file_path(source_path)
     source_dir_path = (
@@ -137,5 +143,5 @@ async def mv_file(
         result = f"File was moved from {source_rel_path} to {target_rel_path} but failed to commit: {commit_message}"
 
     # Append commit hash
-    result, _ = await append_commit_hash(result, git_root_resolved)
+    result, _ = await append_commit_hash(result, git_root_resolved, commit_hash)
     return result

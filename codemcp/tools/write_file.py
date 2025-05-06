@@ -23,8 +23,9 @@ __all__ = [
 async def write_file_content(
     file_path: str,
     content: str | dict | list | None = None,
-    description: str = "",
-    chat_id: str = "",
+    description: str | None = None,
+    chat_id: str | None = None,
+    commit_hash: str | None = None,
 ) -> str:
     """Write content to a file.
 
@@ -33,6 +34,7 @@ async def write_file_content(
         content: The content to write to the file. Can be a string, dict, or list (will be converted to JSON)
         description: Short description of the change
         chat_id: The unique ID of the current chat session
+        commit_hash: Optional Git commit hash for version tracking
 
     Returns:
         A success message
@@ -43,6 +45,10 @@ async def write_file_content(
         Files must be tracked in the git repository before they can be modified.
 
     """
+    # Set default values
+    description = "" if description is None else description
+    chat_id = "" if chat_id is None else chat_id
+
     # Normalize the file path
     file_path = normalize_file_path(file_path)
 
@@ -108,5 +114,5 @@ async def write_file_content(
     result = f"Successfully wrote to {file_path}{format_message}{git_message}"
 
     # Append commit hash
-    result, _ = await append_commit_hash(result, file_path)
+    result, _ = await append_commit_hash(result, file_path, commit_hash)
     return result
