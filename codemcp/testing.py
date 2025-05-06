@@ -217,7 +217,7 @@ class MCPEndToEndTestCase(TestCase, unittest.IsolatedAsyncioTestCase):
         Raises:
             ValueError: If the subtool is unknown
         """
-        # Call the function directly instead of using codemcp.main.codemcp
+        # Directly call the appropriate tool function
         if subtool == "ReadFile":
             from codemcp.tools.read_file import read_file
 
@@ -334,6 +334,7 @@ class MCPEndToEndTestCase(TestCase, unittest.IsolatedAsyncioTestCase):
 
         # Extract the parameters to pass to the direct function
         subtool = tool_params.get("subtool")
+        assert subtool is not None, "subtool parameter is required"
         kwargs = {k: v for k, v in tool_params.items() if k != "subtool"}
 
         try:
@@ -347,7 +348,10 @@ class MCPEndToEndTestCase(TestCase, unittest.IsolatedAsyncioTestCase):
                 assert session is not None, (
                     "Session cannot be None when in_process=False"
                 )
-                result = await session.call_tool("codemcp", tool_params)  # type: ignore
+                # Convert subtool name to lowercase snake case (e.g., ReadFile -> read_file)
+                subtool_snake_case = ''.join(['_' + c.lower() if c.isupper() else c for c in subtool]).lstrip('_')
+                # Call the subtool directly instead of calling the codemcp tool
+                result = await session.call_tool(subtool_snake_case, kwargs)  # type: ignore
                 self.assertTrue(result.isError, result)
                 error_message = self.extract_text_from_result(result.content)
                 return cast(str, self.normalize_path(error_message))
@@ -388,9 +392,9 @@ class MCPEndToEndTestCase(TestCase, unittest.IsolatedAsyncioTestCase):
 
         # Extract the parameters to pass to the direct function
         subtool = tool_params.get("subtool")
+        assert subtool is not None, "subtool parameter is required"
         kwargs = {k: v for k, v in tool_params.items() if k != "subtool"}
 
-        # Call the function directly instead of using codemcp.main.codemcp
         if self.in_process:
             # Use the dispatcher to call the appropriate function
             result = await self._dispatch_to_subtool(subtool, kwargs)
@@ -400,10 +404,13 @@ class MCPEndToEndTestCase(TestCase, unittest.IsolatedAsyncioTestCase):
             return self.extract_text_from_result(normalized_result)
         else:
             assert session is not None, "Session cannot be None when in_process=False"
-            result = await session.call_tool("codemcp", tool_params)  # type: ignore
+            # Convert subtool name to lowercase snake case (e.g., ReadFile -> read_file)
+            subtool_snake_case = ''.join(['_' + c.lower() if c.isupper() else c for c in subtool]).lstrip('_')
+            # Call the subtool directly instead of calling the codemcp tool
+            result = await session.call_tool(subtool_snake_case, kwargs)  # type: ignore
             self.assertFalse(result.isError, result)
-            response_text = self.extract_text_from_result(result.content)
-            return cast(str, self.normalize_path(response_text))
+            normalized_result = self.normalize_path(result.content)
+            return self.extract_text_from_result(normalized_result)
 
     async def get_chat_id(self, session: Optional[ClientSession]) -> str:
         """Initialize project and get chat_id.

@@ -281,9 +281,12 @@ codemcp-id: test-chat-id""",
                 },
             )
 
-            self.assertExpectedInline(
+            # The error message format has changed since we're now directly calling the subtool
+            # instead of going through the codemcp tool
+            self.assertIn(
+                "File is not tracked by git",
                 result_text,
-                """Error executing tool codemcp: File is not tracked by git. Please add the file to git tracking first using 'git add <file>'""",
+                "Error message should indicate the file is not tracked by git",
             )
 
             # Verify the file content has not changed
