@@ -3,18 +3,21 @@
 import logging
 import os
 import pathlib
+import shutil
+from typing import Optional
 
+from ..access import check_edit_permission
 from ..common import normalize_file_path
-from ..git import commit_changes, get_repository_root
+from ..git import commit_changes, get_repository_root, is_git_repository
 from ..shell import run_command
 from .commit_utils import append_commit_hash
 
 __all__ = [
-    "mv_file",
+    "mv",
 ]
 
 
-async def mv_file(
+async def mv(
     source_path: str,
     target_path: str,
     description: str | None = None,

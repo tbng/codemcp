@@ -17,17 +17,17 @@ from starlette.routing import Mount
 from .common import normalize_file_path
 from .git_query import get_current_commit_hash
 from .tools.chmod import chmod
-from .tools.edit_file import edit_file_content
-from .tools.glob import glob_files
-from .tools.grep import grep_files
+from .tools.edit_file import edit_file
+from .tools.glob import glob
+from .tools.grep import grep
 from .tools.init_project import init_project
-from .tools.ls import ls_directory
-from .tools.mv import mv_file
-from .tools.read_file import read_file_content
-from .tools.rm import rm_file
+from .tools.ls import ls
+from .tools.mv import mv
+from .tools.read_file import read_file
+from .tools.rm import rm
 from .tools.run_command import run_command
 from .tools.think import think
-from .tools.write_file import write_file_content
+from .tools.write_file import write_file
 
 # Initialize FastMCP server
 mcp = FastMCP("codemcp")
@@ -182,7 +182,7 @@ async def codemcp(
             if path is None:
                 raise ValueError("path is required for ReadFile subtool")
 
-            result = await read_file_content(path, offset, limit, chat_id, commit_hash)
+            result = await read_file(path, offset, limit, chat_id, commit_hash)
             return result
 
         if subtool == "WriteFile":
@@ -193,9 +193,7 @@ async def codemcp(
             if chat_id is None:
                 raise ValueError("chat_id is required for WriteFile subtool")
 
-            result = await write_file_content(
-                path, content, description, chat_id, commit_hash
-            )
+            result = await write_file(path, content, description, chat_id, commit_hash)
             return result
 
         if subtool == "EditFile":
@@ -216,16 +214,14 @@ async def codemcp(
             # Accept either new_string or new_str (prefer new_string if both are provided)
             new_content = new_string or new_str
 
-            result = await edit_file_content(
-                path, old_content, new_content, None, description, chat_id, commit_hash
-            )
+            result = await edit_file(path, old_content, new_content, None, description, chat_id, commit_hash)
             return result
 
         if subtool == "LS":
             if path is None:
                 raise ValueError("path is required for LS subtool")
 
-            result = await ls_directory(path, chat_id, commit_hash)
+            result = await ls(path, chat_id, commit_hash)
             return result
 
         if subtool == "InitProject":
@@ -267,9 +263,7 @@ async def codemcp(
                 raise ValueError("path is required for Grep subtool")
 
             try:
-                result_string = await grep_files(
-                    pattern, path, include, chat_id, commit_hash
-                )
+                result_string = await grep(pattern, path, include, chat_id, commit_hash)
                 return result_string
             except Exception as e:
                 logging.error(f"Error in Grep subtool: {e}", exc_info=True)
@@ -282,9 +276,7 @@ async def codemcp(
                 raise ValueError("path is required for Glob subtool")
 
             try:
-                result_string = await glob_files(
-                    pattern, path, limit, offset, chat_id, commit_hash
-                )
+                result_string = await glob(pattern, path, limit, offset, chat_id, commit_hash)
                 return result_string
             except Exception as e:
                 logging.error(f"Error in Glob subtool: {e}", exc_info=True)
@@ -298,7 +290,7 @@ async def codemcp(
             if chat_id is None:
                 raise ValueError("chat_id is required for RM subtool")
 
-            result = await rm_file(path, description, chat_id, commit_hash)
+            result = await rm(path, description, chat_id, commit_hash)
             return result
 
         if subtool == "MV":
@@ -315,9 +307,7 @@ async def codemcp(
             if chat_id is None:
                 raise ValueError("chat_id is required for MV subtool")
 
-            result = await mv_file(
-                source_path, target_path, description, chat_id, commit_hash
-            )
+            result = await mv(source_path, target_path, description, chat_id, commit_hash)
             return result
 
         if subtool == "Think":

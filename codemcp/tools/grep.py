@@ -11,7 +11,7 @@ from ..shell import run_command
 from .commit_utils import append_commit_hash
 
 __all__ = [
-    "grep_files",
+    "grep",
     "git_grep",
     "render_result_for_assistant",
     "TOOL_NAME_FOR_PROMPT",
@@ -156,7 +156,7 @@ def render_result_for_assistant(output: Dict[str, Any]) -> str:
     return result
 
 
-async def grep_files(
+async def grep(
     pattern: str,
     path: str | None = None,
     include: str | None = None,
@@ -215,7 +215,7 @@ async def grep_files(
         return result_for_assistant
     except Exception as e:
         # Log the error
-        logging.error(f"Error in grep_files: {e}", exc_info=True)
+        logging.error(f"Error in grep: {e}", exc_info=True)
 
         # Return error message
         error_message = f"Error searching for pattern: {e}"

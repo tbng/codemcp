@@ -1,161 +1,57 @@
 #!/usr/bin/env python3
 
-import asyncio
+import fnmatch
 import logging
 import os
-from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 from ..common import normalize_file_path
+from ..git import is_git_repository
 from .commit_utils import append_commit_hash
 
 __all__ = [
-    "glob_files",
     "glob",
     "render_result_for_assistant",
 ]
 
-# Define constants
-MAX_RESULTS = 100
+
+def render_result_for_assistant(output: Dict[str, Any]) -> str:
+    """Render the glob results in a format suitable for the assistant.
+
+    Args:
+        output: The output from the glob operation
+
+    Returns:
+        A formatted string representation of the results
+    """
+    filenames = output.get("files", [])
+    num_files = output.get("total", 0)
+
+    if num_files == 0:
+        return "No files found"
+
+    result = f"Found {num_files} files:\n\n"
+
+    # Add each filename to the result
+    for filename in filenames:
+        result += f"{filename}\n"
+
+    return result
 
 
 async def glob(
     pattern: str,
     path: str,
-    options: Optional[Dict[str, Any]] = None,
-) -> Dict[str, Any]:
-    """Find files matching a glob pattern.
-
-    Args:
-        pattern: The glob pattern to match files against
-        path: The directory to search in
-        options: Optional parameters for pagination (limit, offset)
-
-    Returns:
-        A dictionary with matched files and metadata
-    """
-    if options is None:
-        options = {}
-
-    limit = options.get("limit", MAX_RESULTS)
-    offset = options.get("offset", 0)
-
-    # Normalize the directory path
-    absolute_path = normalize_file_path(path)
-
-    # In non-test environment, verify the path exists
-    if not os.environ.get("DESKAID_TESTING"):
-        # Check if path exists
-        if not os.path.exists(absolute_path):
-            raise FileNotFoundError(f"Path does not exist: {path}")
-
-        # Check if it's a directory
-        if not os.path.isdir(absolute_path):
-            raise ValueError(f"Path is not a directory: {path}")
-
-    # Create Path object for the directory
-    path_obj = Path(absolute_path)
-
-    try:
-        # Use pathlib's glob functionality to find matching files
-        if pattern.startswith("/"):
-            # Treat as absolute path if it starts with /
-            matches = list(Path("/").glob(pattern[1:]))
-        else:
-            # Use relative path otherwise
-            matches = list(path_obj.glob(pattern))
-
-        # Filter out directories if they match the pattern
-        matches = [match for match in matches if match.is_file()]
-
-        # Sort matches by modification time (newest first)
-        loop = asyncio.get_event_loop()
-
-        # Get file stats asynchronously
-        stats: List[Optional[os.stat_result]] = []
-        for match in matches:
-            file_stat = await loop.run_in_executor(
-                None, lambda m=match: os.stat(m) if os.path.exists(m) else None
-            )
-            stats.append(file_stat)
-
-        matches_with_stats: List[Tuple[Path, Optional[os.stat_result]]] = list(
-            zip(matches, stats, strict=False)
-        )
-
-        # In tests, sort by filename for deterministic results
-        if os.environ.get("NODE_ENV") == "test":
-            matches_with_stats.sort(key=lambda x: str(x[0]))
-        else:
-            # Sort by modification time (newest first), with filename as tiebreaker
-            matches_with_stats.sort(
-                key=lambda x: (-(x[1].st_mtime if x[1] else 0), str(x[0]))
-            )
-
-        matches = [match for match, _ in matches_with_stats]
-
-        # Convert Path objects to strings
-        file_paths = [str(match) for match in matches]
-
-        # Apply pagination
-        total_files = len(file_paths)
-        if offset > 0:
-            file_paths = file_paths[offset:]
-
-        truncated = total_files > (offset + limit)
-
-        # Limit the number of results
-        file_paths = file_paths[:limit]
-
-        return {
-            "files": file_paths,
-            "truncated": truncated,
-            "total": total_files,
-        }
-    except Exception as e:
-        logging.exception(f"Error executing glob: {e!s}")
-        raise
-
-
-def render_result_for_assistant(output: Dict[str, Any]) -> str:
-    """Render the results in a format suitable for the assistant.
-
-    Args:
-        output: The glob results dictionary
-
-    Returns:
-        A formatted string representation of the results
-    """
-    filenames = output.get("filenames", [])
-    num_files = output.get("numFiles", 0)
-
-    if num_files == 0:
-        return "No files found"
-
-    result = os.linesep.join(filenames)
-
-    # Only add truncation message if results were actually truncated
-    if output.get("truncated", False):
-        result += (
-            "\n(Results are truncated. Consider using a more specific path or pattern.)"
-        )
-
-    return result
-
-
-async def glob_files(
-    pattern: str,
-    path: str | None = None,
     limit: int | None = None,
     offset: int | None = None,
     chat_id: str | None = None,
     commit_hash: str | None = None,
 ) -> str:
-    """Search for files matching a glob pattern.
+    """Find files matching a pattern.
 
     Args:
         pattern: The glob pattern to match files against
-        path: The directory to search in (defaults to current working directory)
+        path: The directory to search in
         limit: Maximum number of results to return
         offset: Number of results to skip (for pagination)
         chat_id: The unique ID of the current chat session
@@ -166,30 +62,73 @@ async def glob_files(
 
     """
     try:
-        # Use current directory if path is not provided
-        directory = path or os.getcwd()
-        normalized_path = normalize_file_path(directory)
+        # Set default values
+        chat_id = "" if chat_id is None else chat_id
+        limit_val = 100 if limit is None else limit
+        offset_val = 0 if offset is None else offset
 
-        # Set default values for limit and offset
-        limit = limit or MAX_RESULTS
-        offset = offset or 0
+        # Normalize the directory path
+        full_directory_path = normalize_file_path(path)
 
-        # Execute glob with options for pagination
-        options = {"limit": limit, "offset": offset}
-        result = await glob(pattern, normalized_path, options)
+        # Validate the directory path
+        if not os.path.exists(full_directory_path):
+            raise FileNotFoundError(f"Directory does not exist: {path}")
 
-        # Add formatted result for assistant
-        formatted_result = render_result_for_assistant(result)
+        if not os.path.isdir(full_directory_path):
+            raise NotADirectoryError(f"Path is not a directory: {path}")
+
+        # Safety check: Verify the directory is within a git repository with codemcp.toml
+        if not await is_git_repository(full_directory_path):
+            raise ValueError(f"Directory is not in a Git repository: {path}")
+
+        # Find all matching files
+        matches: List[str] = []
+        for root, dirs, files in os.walk(full_directory_path):
+            # Skip hidden directories
+            dirs[:] = [d for d in dirs if not d.startswith(".")]
+
+            # Check files against the pattern
+            for file in files:
+                if file.startswith("."):
+                    continue
+
+                file_path = os.path.join(root, file)
+                rel_path = os.path.relpath(file_path, full_directory_path)
+
+                if fnmatch.fnmatch(rel_path, pattern):
+                    matches.append(rel_path)
+
+        # Sort the matches
+        matches.sort()
+
+        # Apply offset and limit
+        total_matches = len(matches)
+        matches = matches[offset_val : offset_val + limit_val]
+
+        # Create the result dictionary
+        result_dict = {
+            "files": matches,
+            "total": total_matches,
+        }
+
+        # Format the results
+        if not matches:
+            output = f"No files matching '{pattern}' found in {path}"
+        else:
+            output = f"Found {total_matches} files matching '{pattern}' in {path}"
+            if offset_val > 0 or total_matches > offset_val + limit_val:
+                output += f" (showing {offset_val+1}-{min(offset_val+limit_val, total_matches)} of {total_matches})"
+            output += ":\n\n"
+            
+            for match in matches:
+                output += f"{match}\n"
 
         # Append commit hash
-        formatted_result, _ = await append_commit_hash(
-            formatted_result, normalized_path, commit_hash
-        )
-
-        return formatted_result
+        result, _ = await append_commit_hash(output, full_directory_path, commit_hash)
+        return result
     except Exception as e:
         # Log the error
-        logging.error(f"Error in glob_files: {e}", exc_info=True)
+        logging.error(f"Error in glob: {e}", exc_info=True)
 
         # Return error message
         error_message = f"Error searching for files: {e}"

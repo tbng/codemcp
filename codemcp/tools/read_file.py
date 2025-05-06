@@ -14,12 +14,12 @@ from ..rules import get_applicable_rules_content
 from .commit_utils import append_commit_hash
 
 __all__ = [
-    "read_file_content",
+    "read_file",
 ]
 
 
-async def read_file_content(
-    file_path: str,
+async def read_file(
+    path: str,
     offset: int | None = None,
     limit: int | None = None,
     chat_id: str | None = None,
@@ -28,7 +28,7 @@ async def read_file_content(
     """Read a file's content with optional offset and limit.
 
     Args:
-        file_path: The absolute path to the file to read
+        path: The absolute path to the file to read
         offset: The line number to start reading from (1-indexed)
         limit: The number of lines to read
         chat_id: The unique ID of the current chat session
@@ -42,15 +42,15 @@ async def read_file_content(
     chat_id = "" if chat_id is None else chat_id
 
     # Normalize the file path
-    full_file_path = normalize_file_path(file_path)
+    full_file_path = normalize_file_path(path)
 
     # Validate the file path
     if not os.path.exists(full_file_path):
         # Try to find a similar file (stub - would need implementation)
-        raise FileNotFoundError(f"File does not exist: {file_path}")
+        raise FileNotFoundError(f"File does not exist: {path}")
 
     if os.path.isdir(full_file_path):
-        raise IsADirectoryError(f"Path is a directory, not a file: {file_path}")
+        raise IsADirectoryError(f"Path is a directory, not a file: {path}")
 
     # Check file size before reading
     file_size = os.path.getsize(full_file_path)

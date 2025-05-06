@@ -25,7 +25,7 @@ from .commit_utils import append_commit_hash
 logger = logging.getLogger(__name__)
 
 __all__ = [
-    "edit_file_content",
+    "edit_file",
     "find_similar_file",
     "apply_edit_pure",
 ]
@@ -744,8 +744,8 @@ def debug_string_comparison(
     return not content_same
 
 
-async def edit_file_content(
-    file_path: str,
+async def edit_file(
+    path: str,
     old_string: str | None = None,
     new_string: str | None = None,
     read_file_timestamps: dict[str, float] | None = None,
@@ -761,7 +761,7 @@ async def edit_file_content(
     whitespace on otherwise empty lines.
 
     Args:
-        file_path: The absolute path to the file to edit
+        path: The absolute path to the file to edit
         old_string: The text to replace (use empty string for new file creation)
         new_string: The new text to replace old_string with
         read_file_timestamps: Dictionary mapping file paths to timestamps when they were last read
@@ -785,7 +785,7 @@ async def edit_file_content(
     chat_id = "" if chat_id is None else chat_id
 
     # Normalize the file path
-    full_file_path = normalize_file_path(file_path)
+    full_file_path = normalize_file_path(path)
 
     # Normalize string inputs to ensure consistent newlines
     old_string = old_string.replace("\r\n", "\n")
