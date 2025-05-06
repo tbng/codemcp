@@ -11,7 +11,7 @@ from ..shell import run_command
 from .commit_utils import append_commit_hash
 
 __all__ = [
-    "grep_files",
+    "grep",
     "git_grep",
     "render_result_for_assistant",
     "TOOL_NAME_FOR_PROMPT",
@@ -107,7 +107,7 @@ async def git_grep(
             cwd=absolute_path,
             capture_output=True,
             text=True,
-            check=False,  # Don't raise exception if git grep doesn't find matches
+            check=False,
         )
 
         # git grep returns exit code 1 when no matches are found, which is normal
@@ -156,12 +156,13 @@ def render_result_for_assistant(output: Dict[str, Any]) -> str:
     return result
 
 
-async def grep_files(
+async def grep(
     pattern: str,
     path: str | None = None,
     include: str | None = None,
     chat_id: str | None = None,
-) -> Dict[str, Any]:
+    commit_hash: str | None = None,
+) -> str:
     """Search for a pattern in files within a directory or in a specific file.
 
     Args:
@@ -169,14 +170,21 @@ async def grep_files(
         path: The directory or file to search in (must be in a git repository)
         include: Optional file pattern to filter the search
         chat_id: The unique ID of the current chat session
+        commit_hash: Optional Git commit hash for version tracking
 
     Returns:
-        A dictionary with matched files
+        A formatted string with the search results
 
     """
     try:
+        # Set default values
+        chat_id = "" if chat_id is None else chat_id
+
+        # Default to current directory if path is not provided
+        path = "." if path is None else path
+
         # Normalize the path
-        normalized_path = normalize_file_path(path) if path else None
+        normalized_path = normalize_file_path(path)
 
         # Execute git grep
         matched_files = await git_grep(pattern, normalized_path, include)
@@ -201,28 +209,14 @@ async def grep_files(
         # Append commit hash
         if normalized_path:
             result_for_assistant, _ = await append_commit_hash(
-                result_for_assistant, normalized_path
+                result_for_assistant, normalized_path, commit_hash
             )
 
-        output["resultForAssistant"] = result_for_assistant
-
-        return output
+        return result_for_assistant
     except Exception as e:
         # Log the error
-        logging.error(f"Error in grep_files: {e}", exc_info=True)
+        logging.error(f"Error in grep: {e}", exc_info=True)
 
-        # Prepare error output
-        error_output = {
-            "numFiles": 0,
-            "matchedFiles": [],
-            "truncated": False,
-            "pattern": pattern,
-            "path": path,
-            "include": include,
-            "error": str(e),
-        }
-
-        # Add formatted result for assistant
-        error_output["resultForAssistant"] = f"Error searching for pattern: {e}"
-
-        return error_output
+        # Return error message
+        error_message = f"Error searching for pattern: {e}"
+        return error_message

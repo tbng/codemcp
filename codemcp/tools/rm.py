@@ -3,65 +3,76 @@
 import logging
 import os
 import pathlib
+from typing import Optional
 
+from ..access import check_edit_permission
 from ..common import normalize_file_path
-from ..git import commit_changes, get_repository_root
+from ..git import commit_changes, get_repository_root, is_git_repository
 from ..shell import run_command
 from .commit_utils import append_commit_hash
 
 __all__ = [
-    "rm_file",
+    "rm",
 ]
 
 
-async def rm_file(
-    path: str,
-    description: str,
-    chat_id: str = "",
+async def rm(
+    path: str, description: str, chat_id: str, commit_hash: Optional[str] = None
 ) -> str:
-    """Remove a file using git rm.
+    """Remove a file or directory.
 
     Args:
-        path: The path to the file to remove (can be absolute or relative to repository root)
-        description: Short description of why the file is being removed
+        path: The absolute path to the file or directory to remove
+        description: Short description of the change
         chat_id: The unique ID of the current chat session
+        commit_hash: Optional Git commit hash for version tracking
 
     Returns:
-        A string containing the result of the removal operation
-    """
-    # Use the directory from the path as our starting point
-    file_path = normalize_file_path(path)
-    dir_path = os.path.dirname(file_path) if os.path.dirname(file_path) else "."
+        A success message
 
-    if not os.path.exists(file_path):
+    """
+    # Normalize the file path
+    full_path = normalize_file_path(path)
+
+    # Validate the file path
+    if not os.path.exists(full_path):
         raise FileNotFoundError(f"File does not exist: {path}")
 
-    if not os.path.isfile(file_path):
-        raise ValueError(f"Path is not a file: {path}")
+    # Safety check: Verify the file is within a git repository with codemcp.toml
+    if not await is_git_repository(os.path.dirname(full_path)):
+        raise ValueError(f"File is not in a Git repository: {path}")
+
+    # Check edit permission (which verifies codemcp.toml exists)
+    is_permitted, permission_message = await check_edit_permission(full_path)
+    if not is_permitted:
+        raise ValueError(permission_message)
+
+    # Determine if it's a file or directory
+    is_dir = os.path.isdir(full_path)
 
     # Get git repository root
-    git_root = await get_repository_root(dir_path)
+    git_root = await get_repository_root(os.path.dirname(full_path))
     # Ensure paths are absolute and resolve any symlinks
-    file_path_resolved = os.path.realpath(file_path)
+    full_path_resolved = os.path.realpath(full_path)
     git_root_resolved = os.path.realpath(git_root)
 
     # Use pathlib to check if the file is within the git repo
     # This handles path traversal correctly on all platforms
     try:
         # Convert to Path objects
-        file_path_obj = pathlib.Path(file_path_resolved)
+        full_path_obj = pathlib.Path(full_path_resolved)
         git_root_obj = pathlib.Path(git_root_resolved)
 
         # Check if file is inside the git repo using Path.relative_to
-        # This will raise ValueError if file_path is not inside git_root
-        file_path_obj.relative_to(git_root_obj)
+        # This will raise ValueError if full_path is not inside git_root
+        full_path_obj.relative_to(git_root_obj)
     except ValueError:
-        msg = f"Path {file_path} is not within the git repository at {git_root}"
+        msg = f"Path {full_path} is not within the git repository at {git_root}"
         logging.error(msg)
         raise ValueError(msg)
 
     # Get the relative path using pathlib
-    rel_path = os.path.relpath(file_path_resolved, git_root_resolved)
+    rel_path = os.path.relpath(full_path_resolved, git_root_resolved)
     logging.info(f"Using relative path: {rel_path}")
 
     # Check if the file is tracked by git from the git root
@@ -98,5 +109,5 @@ async def rm_file(
         result = f"File {rel_path} was removed but failed to commit: {commit_message}"
 
     # Append commit hash
-    result, _ = await append_commit_hash(result, git_root_resolved)
+    result, _ = await append_commit_hash(result, git_root_resolved, commit_hash)
     return result
