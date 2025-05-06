@@ -231,24 +231,7 @@ class MCPEndToEndTestCase(TestCase, unittest.IsolatedAsyncioTestCase):
         elif subtool == "EditFile":
             from codemcp.tools.edit_file import edit_file
 
-            # Handle old_str/new_str vs old_string/new_string compatibility
-            old_content = kwargs.get("old_string") or kwargs.get("old_str")
-            new_content = kwargs.get("new_string") or kwargs.get("new_str")
-            # Remove the old parameters since we're using them directly
-            kwargs_copy = {
-                k: v
-                for k, v in kwargs.items()
-                if k not in ("old_string", "new_string", "old_str", "new_str")
-            }
-            return await edit_file(
-                kwargs["path"],
-                old_content,
-                new_content,
-                None,
-                kwargs_copy.get("description"),
-                kwargs_copy.get("chat_id"),
-                kwargs_copy.get("commit_hash"),
-            )
+            return await edit_file(**kwargs)
 
         elif subtool == "LS":
             from codemcp.tools.ls import ls
@@ -259,15 +242,11 @@ class MCPEndToEndTestCase(TestCase, unittest.IsolatedAsyncioTestCase):
             from codemcp.tools.init_project import init_project
 
             # Convert 'path' parameter to 'directory' as expected by init_project
-            # Also ensure reuse_head_chat_id parameter is provided (defaults to False)
             if "path" in kwargs:
+                kwargs = kwargs.copy()  # Make a copy to avoid modifying the original
                 directory = kwargs.pop("path")
-                if "reuse_head_chat_id" not in kwargs:
-                    kwargs["reuse_head_chat_id"] = False
                 return await init_project(directory=directory, **kwargs)
             else:
-                if "reuse_head_chat_id" not in kwargs:
-                    kwargs["reuse_head_chat_id"] = False
                 return await init_project(**kwargs)
 
         elif subtool == "RunCommand":
@@ -275,6 +254,7 @@ class MCPEndToEndTestCase(TestCase, unittest.IsolatedAsyncioTestCase):
 
             # Convert 'path' parameter to 'project_dir' as expected by run_command
             if "path" in kwargs:
+                kwargs = kwargs.copy()  # Make a copy to avoid modifying the original
                 project_dir = kwargs.pop("path")
                 return await run_command(project_dir=project_dir, **kwargs)
             else:
