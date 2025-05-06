@@ -3,7 +3,7 @@
 import fnmatch
 import logging
 import os
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 from ..common import normalize_file_path
 from ..git import is_git_repository
@@ -106,10 +106,6 @@ async def glob(
         matches = matches[offset_val : offset_val + limit_val]
 
         # Create the result dictionary
-        result_dict = {
-            "files": matches,
-            "total": total_matches,
-        }
 
         # Format the results
         if not matches:

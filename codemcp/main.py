@@ -4,7 +4,7 @@ import logging
 import os
 import re
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import List, Optional
 
 import click
 import pathspec
@@ -14,8 +14,6 @@ from mcp.server.fastmcp import FastMCP
 from starlette.applications import Starlette
 from starlette.routing import Mount
 
-from .common import normalize_file_path
-from .git_query import get_current_commit_hash
 from .tools.chmod import chmod
 from .tools.edit_file import edit_file
 from .tools.glob import glob
@@ -839,8 +837,8 @@ def run() -> None:
     configure_logging()
 
     # Set up a signal handler to exit immediately on Ctrl+C
-    import signal
     import os
+    import signal
 
     def handle_exit(sig, frame):
         logging.info(
@@ -887,8 +885,8 @@ def serve(host: str, port: int, cors_origin: List[str]) -> None:
 
     app = create_sse_app(allowed_origins)
 
-    import signal
     import os
+    import signal
 
     # Register a custom signal handler that will take precedence and exit immediately
     def handle_exit(sig, frame):

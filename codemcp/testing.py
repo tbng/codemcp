@@ -241,13 +241,22 @@ class MCPEndToEndTestCase(TestCase, unittest.IsolatedAsyncioTestCase):
         elif subtool == "InitProject":
             from codemcp.tools.init_project import init_project
 
+            # Make a copy to avoid modifying the original kwargs
+            kwargs_copy = kwargs.copy()
+
             # Convert 'path' parameter to 'directory' as expected by init_project
-            if "path" in kwargs:
-                kwargs = kwargs.copy()  # Make a copy to avoid modifying the original
-                directory = kwargs.pop("path")
-                return await init_project(directory=directory, **kwargs)
-            else:
-                return await init_project(**kwargs)
+            if "path" in kwargs_copy:
+                directory = kwargs_copy.pop("path")
+                kwargs_copy["directory"] = directory
+
+            # Ensure reuse_head_chat_id is provided with a default value if not present
+            if (
+                "reuse_head_chat_id" not in kwargs_copy
+                or kwargs_copy["reuse_head_chat_id"] is None
+            ):
+                kwargs_copy["reuse_head_chat_id"] = False
+
+            return await init_project(**kwargs_copy)
 
         elif subtool == "RunCommand":
             from codemcp.tools.run_command import run_command
@@ -424,14 +433,15 @@ class MCPEndToEndTestCase(TestCase, unittest.IsolatedAsyncioTestCase):
         Returns:
             str: The chat_id
         """
-        from codemcp.tools.init_project import init_project
-
-        # First initialize project to get chat_id using init_project directly
-        init_result_text = await init_project(
-            directory=self.temp_dir.name,
-            user_prompt="Test initialization for get_chat_id",
-            subject_line="test: initialize for e2e testing",
-            reuse_head_chat_id=False,
+        # Use the _dispatch_to_subtool for consistency with other test methods
+        init_result_text = await self._dispatch_to_subtool(
+            "InitProject",
+            {
+                "path": self.temp_dir.name,
+                "user_prompt": "Test initialization for get_chat_id",
+                "subject_line": "test: initialize for e2e testing",
+                "reuse_head_chat_id": False,
+            },
         )
 
         # Extract chat_id from the init result
