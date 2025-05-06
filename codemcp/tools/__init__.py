@@ -6,8 +6,8 @@ from .git_blame import git_blame
 from .git_diff import git_diff
 from .git_log import git_log
 from .git_show import git_show
-from .mv import mv_file
-from .rm import rm_file
+from .mv import mv
+from .rm import rm
 
 __all__ = [
     "chmod",
@@ -15,6 +15,6 @@ __all__ = [
     "git_diff",
     "git_log",
     "git_show",
-    "mv_file",
-    "rm_file",
+    "mv",
+    "rm",
 ]

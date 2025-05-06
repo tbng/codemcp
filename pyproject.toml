@@ -39,7 +39,6 @@ dev = [
 
 [project.scripts]
 codemcp = "codemcp:cli"
-codemcp-multi = "codemcp.multi_entry:main"
 
 [build-system]
 requires = ["hatchling"]
@@ -117,7 +116,3 @@ errorCodes = ["reportUnknownMemberType", "reportUnknownArgumentType", "reportUnk
 [[tool.pyright.ignoreExtraErrors]]
 path = "codemcp/config.py"
 errorCodes = ["reportUnknownVariableType"]
-
-[[tool.pyright.ignoreExtraErrors]]
-path = "codemcp/multi_entry.py"
-errorCodes = ["reportUnknownParameterType", "reportUnknownArgumentType", "reportMissingTypeArgument"]
