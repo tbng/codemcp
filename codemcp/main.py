@@ -18,7 +18,7 @@ from .common import normalize_file_path
 from .git_query import get_current_commit_hash
 from .tools.chmod import chmod
 from .tools.edit_file import edit_file_content
-from .tools.glob import MAX_RESULTS, glob_files
+from .tools.glob import glob_files
 from .tools.grep import grep_files
 from .tools.init_project import init_project
 from .tools.ls import ls_directory
@@ -182,7 +182,7 @@ async def codemcp(
             if path is None:
                 raise ValueError("path is required for ReadFile subtool")
 
-            result = await read_file_content(path, offset, limit, chat_id)
+            result = await read_file_content(path, offset, limit, chat_id, commit_hash)
             return result
 
         if subtool == "WriteFile":
@@ -193,7 +193,9 @@ async def codemcp(
             if chat_id is None:
                 raise ValueError("chat_id is required for WriteFile subtool")
 
-            result = await write_file_content(path, content, description, chat_id)
+            result = await write_file_content(
+                path, content, description, chat_id, commit_hash
+            )
             return result
 
         if subtool == "EditFile":
@@ -210,12 +212,12 @@ async def codemcp(
                 raise ValueError("chat_id is required for EditFile subtool")
 
             # Accept either old_string or old_str (prefer old_string if both are provided)
-            old_content = old_string or old_str or ""
+            old_content = old_string or old_str
             # Accept either new_string or new_str (prefer new_string if both are provided)
-            new_content = new_string or new_str or ""
+            new_content = new_string or new_str
 
             result = await edit_file_content(
-                path, old_content, new_content, None, description, chat_id
+                path, old_content, new_content, None, description, chat_id, commit_hash
             )
             return result
 
@@ -223,7 +225,7 @@ async def codemcp(
             if path is None:
                 raise ValueError("path is required for LS subtool")
 
-            result = await ls_directory(path, chat_id)
+            result = await ls_directory(path, chat_id, commit_hash)
             return result
 
         if subtool == "InitProject":
@@ -255,7 +257,7 @@ async def codemcp(
             if chat_id is None:
                 raise ValueError("chat_id is required for RunCommand subtool")
 
-            result = await run_command(path, command, arguments, chat_id)
+            result = await run_command(path, command, arguments, chat_id, commit_hash)
             return result
 
         if subtool == "Grep":
@@ -265,7 +267,9 @@ async def codemcp(
                 raise ValueError("path is required for Grep subtool")
 
             try:
-                grep_result = await grep_files(pattern, path, include, chat_id)
+                grep_result = await grep_files(
+                    pattern, path, include, chat_id, commit_hash
+                )
                 result_string = grep_result.get(
                     "resultForAssistant",
                     f"Found {grep_result.get('numFiles', 0)} file(s)",
@@ -286,9 +290,10 @@ async def codemcp(
                 glob_result = await glob_files(
                     pattern,
                     path,
-                    limit=limit if limit is not None else MAX_RESULTS,
-                    offset=offset if offset is not None else 0,
-                    chat_id=chat_id,
+                    limit,
+                    offset,
+                    chat_id,
+                    commit_hash,
                 )
                 result_string = glob_result.get(
                     "resultForAssistant",
@@ -308,7 +313,7 @@ async def codemcp(
             if chat_id is None:
                 raise ValueError("chat_id is required for RM subtool")
 
-            result = await rm_file(path, description, chat_id)
+            result = await rm_file(path, description, chat_id, commit_hash)
             return result
 
         if subtool == "MV":
@@ -325,17 +330,16 @@ async def codemcp(
             if chat_id is None:
                 raise ValueError("chat_id is required for MV subtool")
 
-            result = await mv_file(source_path, target_path, description, chat_id)
+            result = await mv_file(
+                source_path, target_path, description, chat_id, commit_hash
+            )
             return result
 
         if subtool == "Think":
             if thought is None:
                 raise ValueError("thought is required for Think subtool")
 
-            result = await think(thought, chat_id)
-            # Think doesn't need a path, but we might have one in the provided parameters
-            if path:
-                return result
+            result = await think(thought, chat_id, commit_hash)
             return result
 
         if subtool == "Chmod":
@@ -346,11 +350,12 @@ async def codemcp(
             if chat_id is None:
                 raise ValueError("chat_id is required for Chmod subtool")
 
-            chmod_result = await chmod(path, mode, chat_id)
+            chmod_result = await chmod(path, mode, chat_id, commit_hash)
             result_string = chmod_result.get(
                 "resultForAssistant", "Chmod operation completed"
             )
             return result_string
+
     except Exception:
         logging.error("Exception", exc_info=True)
         raise

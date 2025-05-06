@@ -23,6 +23,7 @@ async def read_file_content(
     offset: int | None = None,
     limit: int | None = None,
     chat_id: str | None = None,
+    commit_hash: str | None = None,
 ) -> str:
     """Read a file's content with optional offset and limit.
 
@@ -31,11 +32,15 @@ async def read_file_content(
         offset: The line number to start reading from (1-indexed)
         limit: The number of lines to read
         chat_id: The unique ID of the current chat session
+        commit_hash: Optional Git commit hash for version tracking
 
     Returns:
         The file content as a string
 
     """
+    # Set default values
+    chat_id = "" if chat_id is None else chat_id
+
     # Normalize the file path
     full_file_path = normalize_file_path(file_path)
 
@@ -107,5 +112,5 @@ async def read_file_content(
         content += get_applicable_rules_content(repo_root, full_file_path)
 
     # Append commit hash
-    result, _ = await append_commit_hash(content, full_file_path)
+    result, _ = await append_commit_hash(content, full_file_path, commit_hash)
     return result

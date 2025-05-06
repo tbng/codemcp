@@ -32,6 +32,7 @@ async def chmod(
     path: str,
     mode: str,  # Changed from Literal["a+x", "a-x"] to str to handle validation internally
     chat_id: str | None = None,
+    commit_hash: str | None = None,
 ) -> dict[str, Any]:
     """Change file permissions using chmod.
 
@@ -39,10 +40,14 @@ async def chmod(
         path: The absolute path to the file to modify
         mode: The chmod mode to apply, only "a+x" and "a-x" are supported
         chat_id: The unique ID of the current chat session
+        commit_hash: Optional Git commit hash for version tracking
 
     Returns:
         A dictionary with chmod output
     """
+    # Set default values
+    chat_id = "" if chat_id is None else chat_id
+
     if not path:
         raise ValueError("File path must be provided")
 
@@ -113,7 +118,7 @@ async def chmod(
     success, commit_message = await commit_changes(
         directory,
         description,
-        chat_id if chat_id is not None else "",
+        chat_id,
     )
 
     if not success:
