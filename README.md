@@ -36,6 +36,17 @@ Cursor, Cline, Aider), but it occupies a unique point in the design space:
    further edits.  I use vim as my daily driver editor, and coding environments
    that require VSCode or a specific editor are a turn off for me.
 
+## IMPORTANT: For master users - Major changes for token efficiency
+
+To improve codemcp's token efficiency, on master I am in the process of
+changing codemcp back into a multi-tool tool (instead of a single tool whose
+instructions are blatted into chat when you InitProject).  This means you have
+to manually approve tool use.  Because tool use approval is persistent across
+multiple chats, I think this is a reasonable tradeoff to make, but if you
+really don't like, file a bug at
+[refined-claude](https://github.com/ezyang/refined-claude/issues) browser
+extension for supporting auto-approve tool use.
+
 ## Installation
 
 I recommend this specific way of installing and using codemcp:
