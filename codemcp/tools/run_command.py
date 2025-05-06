@@ -15,8 +15,9 @@ __all__ = [
 async def run_command(
     project_dir: str,
     command: str,
-    arguments: Optional[str | list] = None,
-    chat_id: str = "",
+    arguments: Optional[str | list[str]] = None,
+    chat_id: str | None = None,
+    commit_hash: str | None = None,
 ) -> str:
     """Run a command that is configured in codemcp.toml.
 
@@ -28,10 +29,14 @@ async def run_command(
                   tokenization (spaces separate arguments, quotes can be used for arguments
                   containing spaces, etc.). If a list, it will be used directly.
         chat_id: The unique ID of the current chat session
+        commit_hash: Optional Git commit hash for version tracking
 
     Returns:
         A string containing the result of the command operation
     """
+    # Set default values
+    chat_id = "" if chat_id is None else chat_id
+
     # Normalize the project directory path
     project_dir = normalize_file_path(project_dir)
 
@@ -58,5 +63,5 @@ async def run_command(
     )
 
     # Append commit hash
-    result, _ = await append_commit_hash(result, project_dir)
+    result, _ = await append_commit_hash(result, project_dir, commit_hash)
     return result

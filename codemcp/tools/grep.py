@@ -161,6 +161,7 @@ async def grep_files(
     path: str | None = None,
     include: str | None = None,
     chat_id: str | None = None,
+    commit_hash: str | None = None,
 ) -> Dict[str, Any]:
     """Search for a pattern in files within a directory or in a specific file.
 
@@ -169,14 +170,21 @@ async def grep_files(
         path: The directory or file to search in (must be in a git repository)
         include: Optional file pattern to filter the search
         chat_id: The unique ID of the current chat session
+        commit_hash: Optional Git commit hash for version tracking
 
     Returns:
         A dictionary with matched files
 
     """
     try:
+        # Set default values
+        chat_id = "" if chat_id is None else chat_id
+
+        # Default to current directory if path is not provided
+        path = "." if path is None else path
+
         # Normalize the path
-        normalized_path = normalize_file_path(path) if path else None
+        normalized_path = normalize_file_path(path)
 
         # Execute git grep
         matched_files = await git_grep(pattern, normalized_path, include)
@@ -201,7 +209,7 @@ async def grep_files(
         # Append commit hash
         if normalized_path:
             result_for_assistant, _ = await append_commit_hash(
-                result_for_assistant, normalized_path
+                result_for_assistant, normalized_path, commit_hash
             )
 
         output["resultForAssistant"] = result_for_assistant

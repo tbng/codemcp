@@ -11,19 +11,24 @@ __all__ = [
 ]
 
 
-async def append_commit_hash(result: str, path: str | None) -> Tuple[str, str | None]:
+async def append_commit_hash(
+    result: str, path: str | None, commit_hash: str | None = None
+) -> Tuple[str, str | None]:
     """Get the current Git commit hash and append it to the result string.
 
     Args:
         result: The original result string to append to
         path: Path to the Git repository (if available)
+        commit_hash: Optional Git commit hash to use instead of fetching the current one
 
     Returns:
         A tuple containing:
             - The result string with the commit hash appended
             - The current commit hash if available, None otherwise
     """
-    current_hash = None
+    # If commit_hash is provided, use it directly
+    if commit_hash:
+        return f"{result}\n\nCurrent commit hash: {commit_hash}", commit_hash
 
     if path is None:
         return result, None
@@ -38,4 +43,4 @@ async def append_commit_hash(result: str, path: str | None) -> Tuple[str, str | 
     except Exception as e:
         logging.warning(f"Failed to get current commit hash: {e}", exc_info=True)
 
-    return result, current_hash
+    return result, None

@@ -23,17 +23,23 @@ MAX_FILES = 1000
 TRUNCATED_MESSAGE = f"There are more than {MAX_FILES} files in the directory. Use more specific paths to explore nested directories. The first {MAX_FILES} files and directories are included below:\n\n"
 
 
-async def ls_directory(directory_path: str, chat_id: str | None = None) -> str:
+async def ls_directory(
+    directory_path: str, chat_id: str | None = None, commit_hash: str | None = None
+) -> str:
     """List the contents of a directory.
 
     Args:
         directory_path: The absolute path to the directory to list
         chat_id: The unique ID of the current chat session
+        commit_hash: Optional Git commit hash for version tracking
 
     Returns:
         A formatted string representation of the directory contents
 
     """
+    # Set default values
+    chat_id = "" if chat_id is None else chat_id
+
     # Normalize the directory path
     full_directory_path = normalize_file_path(directory_path)
 
@@ -69,7 +75,7 @@ async def ls_directory(directory_path: str, chat_id: str | None = None) -> str:
         output = f"{TRUNCATED_MESSAGE}{tree_output}"
 
     # Append commit hash
-    result, _ = await append_commit_hash(output, full_directory_path)
+    result, _ = await append_commit_hash(output, full_directory_path, commit_hash)
     return result
 
 

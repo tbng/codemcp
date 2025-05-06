@@ -746,11 +746,12 @@ def debug_string_comparison(
 
 async def edit_file_content(
     file_path: str,
-    old_string: str,
-    new_string: str,
+    old_string: str | None = None,
+    new_string: str | None = None,
     read_file_timestamps: dict[str, float] | None = None,
-    description: str = "",
-    chat_id: str = "",
+    description: str | None = None,
+    chat_id: str | None = None,
+    commit_hash: str | None = None,
 ) -> str:
     """Edit a file by replacing old_string with new_string.
 
@@ -761,11 +762,12 @@ async def edit_file_content(
 
     Args:
         file_path: The absolute path to the file to edit
-        old_string: The text to replace
+        old_string: The text to replace (use empty string for new file creation)
         new_string: The new text to replace old_string with
         read_file_timestamps: Dictionary mapping file paths to timestamps when they were last read
         description: Short description of the change
         chat_id: The unique ID of the current chat session
+        commit_hash: Optional Git commit hash for version tracking
 
     Returns:
         A success message
@@ -776,6 +778,12 @@ async def edit_file_content(
         Files must be tracked in the git repository before they can be modified.
 
     """
+    # Set default values
+    old_string = "" if old_string is None else old_string
+    new_string = "" if new_string is None else new_string
+    description = "" if description is None else description
+    chat_id = "" if chat_id is None else chat_id
+
     # Normalize the file path
     full_file_path = normalize_file_path(file_path)
 
@@ -840,7 +848,7 @@ async def edit_file_content(
 
         result = f"Successfully created {full_file_path}{git_message}"
         # Append commit hash
-        result, _ = await append_commit_hash(result, full_file_path)
+        result, _ = await append_commit_hash(result, full_file_path, commit_hash)
         return result
 
     # Check if file exists
@@ -936,5 +944,5 @@ async def edit_file_content(
     result = f"Successfully edited {full_file_path}\n\nHere's a snippet of the edited file:\n{snippet}{format_message}{git_message}"
 
     # Append commit hash
-    result, _ = await append_commit_hash(result, full_file_path)
+    result, _ = await append_commit_hash(result, full_file_path, commit_hash)
     return result
