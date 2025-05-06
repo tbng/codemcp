@@ -117,9 +117,9 @@ async def glob(
         else:
             output = f"Found {total_matches} files matching '{pattern}' in {path}"
             if offset_val > 0 or total_matches > offset_val + limit_val:
-                output += f" (showing {offset_val+1}-{min(offset_val+limit_val, total_matches)} of {total_matches})"
+                output += f" (showing {offset_val + 1}-{min(offset_val + limit_val, total_matches)} of {total_matches})"
             output += ":\n\n"
-            
+
             for match in matches:
                 output += f"{match}\n"
 

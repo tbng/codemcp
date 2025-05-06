@@ -214,7 +214,9 @@ async def codemcp(
             # Accept either new_string or new_str (prefer new_string if both are provided)
             new_content = new_string or new_str
 
-            result = await edit_file(path, old_content, new_content, None, description, chat_id, commit_hash)
+            result = await edit_file(
+                path, old_content, new_content, None, description, chat_id, commit_hash
+            )
             return result
 
         if subtool == "LS":
@@ -276,7 +278,9 @@ async def codemcp(
                 raise ValueError("path is required for Glob subtool")
 
             try:
-                result_string = await glob(pattern, path, limit, offset, chat_id, commit_hash)
+                result_string = await glob(
+                    pattern, path, limit, offset, chat_id, commit_hash
+                )
                 return result_string
             except Exception as e:
                 logging.error(f"Error in Glob subtool: {e}", exc_info=True)
@@ -307,7 +311,9 @@ async def codemcp(
             if chat_id is None:
                 raise ValueError("chat_id is required for MV subtool")
 
-            result = await mv(source_path, target_path, description, chat_id, commit_hash)
+            result = await mv(
+                source_path, target_path, description, chat_id, commit_hash
+            )
             return result
 
         if subtool == "Think":

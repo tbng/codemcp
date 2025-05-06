@@ -210,7 +210,7 @@ class MCPEndToEndTestCase(TestCase, unittest.IsolatedAsyncioTestCase):
         """Call a tool and assert that it fails (isError=True).
 
         This is a helper method for the error path of tool calls, which:
-        1. Calls the specified tool with the given parameters using codemcp.main.codemcp directly
+        1. Calls the specified tool function directly based on subtool parameter
         2. Asserts that the call raises an exception
         3. Returns the exception string
 
@@ -225,21 +225,117 @@ class MCPEndToEndTestCase(TestCase, unittest.IsolatedAsyncioTestCase):
         Raises:
             AssertionError: If the tool call does not result in an error
         """
-        import codemcp.main
-
         # Only codemcp tool is supported
         assert tool_name == "codemcp", (
             f"Only 'codemcp' tool is supported, got '{tool_name}'"
         )
 
-        # Extract the parameters to pass to codemcp.main.codemcp
+        # Extract the parameters to pass to the direct function
         subtool = tool_params.get("subtool")
         kwargs = {k: v for k, v in tool_params.items() if k != "subtool"}
 
         try:
             if self.in_process:
-                # Call codemcp.main.codemcp directly instead of using the client session
-                await codemcp.main.codemcp(subtool, **kwargs)
+                # Call the function directly instead of using codemcp.main.codemcp
+                if subtool == "ReadFile":
+                    from codemcp.tools.read_file import read_file
+
+                    await read_file(**kwargs)
+                elif subtool == "WriteFile":
+                    from codemcp.tools.write_file import write_file
+
+                    await write_file(**kwargs)
+                elif subtool == "EditFile":
+                    from codemcp.tools.edit_file import edit_file
+
+                    # Handle old_str/new_str vs old_string/new_string compatibility
+                    old_content = kwargs.get("old_string") or kwargs.get("old_str")
+                    new_content = kwargs.get("new_string") or kwargs.get("new_str")
+                    # Remove the old parameters since we're using them directly
+                    kwargs_copy = {
+                        k: v
+                        for k, v in kwargs.items()
+                        if k not in ("old_string", "new_string", "old_str", "new_str")
+                    }
+                    await edit_file(
+                        kwargs["path"],
+                        old_content,
+                        new_content,
+                        None,
+                        kwargs_copy.get("description"),
+                        kwargs_copy.get("chat_id"),
+                        kwargs_copy.get("commit_hash"),
+                    )
+                elif subtool == "LS":
+                    from codemcp.tools.ls import ls
+
+                    await ls(**kwargs)
+                elif subtool == "InitProject":
+                    from codemcp.tools.init_project import init_project
+
+                    # Convert 'path' parameter to 'directory' as expected by init_project
+                    # Also ensure reuse_head_chat_id parameter is provided (defaults to False)
+                    if "path" in kwargs:
+                        directory = kwargs.pop("path")
+                        if "reuse_head_chat_id" not in kwargs:
+                            kwargs["reuse_head_chat_id"] = False
+                        await init_project(directory=directory, **kwargs)
+                    else:
+                        if "reuse_head_chat_id" not in kwargs:
+                            kwargs["reuse_head_chat_id"] = False
+                        await init_project(**kwargs)
+                elif subtool == "RunCommand":
+                    from codemcp.tools.run_command import run_command
+
+                    # Convert 'path' parameter to 'project_dir' as expected by run_command
+                    if "path" in kwargs:
+                        project_dir = kwargs.pop("path")
+                        await run_command(project_dir=project_dir, **kwargs)
+                    else:
+                        await run_command(**kwargs)
+                elif subtool == "Grep":
+                    from codemcp.tools.grep import grep
+
+                    await grep(**kwargs)
+                elif subtool == "Glob":
+                    from codemcp.tools.glob import glob
+
+                    await glob(**kwargs)
+                elif subtool == "RM":
+                    from codemcp.tools.rm import rm
+
+                    await rm(**kwargs)
+                elif subtool == "MV":
+                    from codemcp.tools.mv import mv
+
+                    await mv(**kwargs)
+                elif subtool == "Think":
+                    from codemcp.tools.think import think
+
+                    await think(**kwargs)
+                elif subtool == "Chmod":
+                    from codemcp.tools.chmod import chmod
+
+                    await chmod(**kwargs)
+                elif subtool == "GitLog":
+                    from codemcp.tools.git_log import git_log
+
+                    await git_log(**kwargs)
+                elif subtool == "GitDiff":
+                    from codemcp.tools.git_diff import git_diff
+
+                    await git_diff(**kwargs)
+                elif subtool == "GitShow":
+                    from codemcp.tools.git_show import git_show
+
+                    await git_show(**kwargs)
+                elif subtool == "GitBlame":
+                    from codemcp.tools.git_blame import git_blame
+
+                    await git_blame(**kwargs)
+                else:
+                    raise ValueError(f"Unknown subtool: {subtool}")
+
                 # If we get here, the call succeeded - but we expected it to fail
                 self.fail(f"Tool call to {tool_name} succeeded, expected to fail")
             else:
@@ -265,7 +361,7 @@ class MCPEndToEndTestCase(TestCase, unittest.IsolatedAsyncioTestCase):
         """Call a tool and assert that it succeeds (isError=False).
 
         This is a helper method for the happy path of tool calls, which:
-        1. Calls the specified tool with the given parameters using codemcp.main.codemcp directly
+        1. Calls the specified tool function directly based on subtool parameter
         2. Asserts that the call succeeds (no exception)
         3. Returns the result text
 
@@ -280,20 +376,117 @@ class MCPEndToEndTestCase(TestCase, unittest.IsolatedAsyncioTestCase):
         Raises:
             AssertionError: If the tool call results in an error
         """
-        import codemcp.main
-
         # Only codemcp tool is supported
         assert tool_name == "codemcp", (
             f"Only 'codemcp' tool is supported, got '{tool_name}'"
         )
 
-        # Extract the parameters to pass to codemcp.main.codemcp
+        # Extract the parameters to pass to the direct function
         subtool = tool_params.get("subtool")
         kwargs = {k: v for k, v in tool_params.items() if k != "subtool"}
 
-        # Call codemcp.main.codemcp directly instead of using the client session
+        # Call the function directly instead of using codemcp.main.codemcp
         if self.in_process:
-            result = await codemcp.main.codemcp(subtool, **kwargs)
+            # Import the correct module based on subtool
+            if subtool == "ReadFile":
+                from codemcp.tools.read_file import read_file
+
+                result = await read_file(**kwargs)
+            elif subtool == "WriteFile":
+                from codemcp.tools.write_file import write_file
+
+                result = await write_file(**kwargs)
+            elif subtool == "EditFile":
+                from codemcp.tools.edit_file import edit_file
+
+                # Handle old_str/new_str vs old_string/new_string compatibility
+                old_content = kwargs.get("old_string") or kwargs.get("old_str")
+                new_content = kwargs.get("new_string") or kwargs.get("new_str")
+                # Remove the old parameters since we're using them directly
+                kwargs_copy = {
+                    k: v
+                    for k, v in kwargs.items()
+                    if k not in ("old_string", "new_string", "old_str", "new_str")
+                }
+                result = await edit_file(
+                    kwargs["path"],
+                    old_content,
+                    new_content,
+                    None,
+                    kwargs_copy.get("description"),
+                    kwargs_copy.get("chat_id"),
+                    kwargs_copy.get("commit_hash"),
+                )
+            elif subtool == "LS":
+                from codemcp.tools.ls import ls
+
+                result = await ls(**kwargs)
+            elif subtool == "InitProject":
+                from codemcp.tools.init_project import init_project
+
+                # Convert 'path' parameter to 'directory' as expected by init_project
+                # Also ensure reuse_head_chat_id parameter is provided (defaults to False)
+                if "path" in kwargs:
+                    directory = kwargs.pop("path")
+                    if "reuse_head_chat_id" not in kwargs:
+                        kwargs["reuse_head_chat_id"] = False
+                    result = await init_project(directory=directory, **kwargs)
+                else:
+                    if "reuse_head_chat_id" not in kwargs:
+                        kwargs["reuse_head_chat_id"] = False
+                    result = await init_project(**kwargs)
+            elif subtool == "RunCommand":
+                from codemcp.tools.run_command import run_command
+
+                # Convert 'path' parameter to 'project_dir' as expected by run_command
+                if "path" in kwargs:
+                    project_dir = kwargs.pop("path")
+                    result = await run_command(project_dir=project_dir, **kwargs)
+                else:
+                    result = await run_command(**kwargs)
+            elif subtool == "Grep":
+                from codemcp.tools.grep import grep
+
+                result = await grep(**kwargs)
+            elif subtool == "Glob":
+                from codemcp.tools.glob import glob
+
+                result = await glob(**kwargs)
+            elif subtool == "RM":
+                from codemcp.tools.rm import rm
+
+                result = await rm(**kwargs)
+            elif subtool == "MV":
+                from codemcp.tools.mv import mv
+
+                result = await mv(**kwargs)
+            elif subtool == "Think":
+                from codemcp.tools.think import think
+
+                result = await think(**kwargs)
+            elif subtool == "Chmod":
+                from codemcp.tools.chmod import chmod
+
+                result = await chmod(**kwargs)
+            elif subtool == "GitLog":
+                from codemcp.tools.git_log import git_log
+
+                result = await git_log(**kwargs)
+            elif subtool == "GitDiff":
+                from codemcp.tools.git_diff import git_diff
+
+                result = await git_diff(**kwargs)
+            elif subtool == "GitShow":
+                from codemcp.tools.git_show import git_show
+
+                result = await git_show(**kwargs)
+            elif subtool == "GitBlame":
+                from codemcp.tools.git_blame import git_blame
+
+                result = await git_blame(**kwargs)
+            else:
+                raise ValueError(f"Unknown subtool: {subtool}")
+
             # Return the normalized, extracted text result
             normalized_result = self.normalize_path(result)
             return self.extract_text_from_result(normalized_result)
@@ -313,12 +506,11 @@ class MCPEndToEndTestCase(TestCase, unittest.IsolatedAsyncioTestCase):
         Returns:
             str: The chat_id
         """
-        import codemcp.main
+        from codemcp.tools.init_project import init_project
 
-        # First initialize project to get chat_id using codemcp.main.codemcp directly
-        init_result_text = await codemcp.main.codemcp(
-            "InitProject",
-            path=self.temp_dir.name,
+        # First initialize project to get chat_id using init_project directly
+        init_result_text = await init_project(
+            directory=self.temp_dir.name,
             user_prompt="Test initialization for get_chat_id",
             subject_line="test: initialize for e2e testing",
             reuse_head_chat_id=False,
