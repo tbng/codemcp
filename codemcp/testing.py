@@ -241,33 +241,14 @@ class MCPEndToEndTestCase(TestCase, unittest.IsolatedAsyncioTestCase):
         elif subtool == "InitProject":
             from codemcp.tools.init_project import init_project
 
-            # Make a copy to avoid modifying the original kwargs
-            kwargs_copy = kwargs.copy()
-
-            # Convert 'path' parameter to 'directory' as expected by init_project
-            if "path" in kwargs_copy:
-                directory = kwargs_copy.pop("path")
-                kwargs_copy["directory"] = directory
-
-            # Ensure reuse_head_chat_id is provided with a default value if not present
-            if (
-                "reuse_head_chat_id" not in kwargs_copy
-                or kwargs_copy["reuse_head_chat_id"] is None
-            ):
-                kwargs_copy["reuse_head_chat_id"] = False
-
-            return await init_project(**kwargs_copy)
+            # No need for parameter conversion anymore - init_project accepts both path and directory
+            return await init_project(**kwargs)
 
         elif subtool == "RunCommand":
             from codemcp.tools.run_command import run_command
 
-            # Convert 'path' parameter to 'project_dir' as expected by run_command
-            if "path" in kwargs:
-                kwargs = kwargs.copy()  # Make a copy to avoid modifying the original
-                project_dir = kwargs.pop("path")
-                return await run_command(project_dir=project_dir, **kwargs)
-            else:
-                return await run_command(**kwargs)
+            # No need for parameter conversion anymore - run_command accepts both path and project_dir
+            return await run_command(**kwargs)
 
         elif subtool == "Grep":
             from codemcp.tools.grep import grep

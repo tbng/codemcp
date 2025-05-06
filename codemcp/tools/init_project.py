@@ -121,10 +121,11 @@ async def _generate_chat_id(directory: str, description: Optional[str] = None) -
 
 
 async def init_project(
-    directory: str,
-    user_prompt: str,
-    subject_line: str,
-    reuse_head_chat_id: bool,
+    directory: Optional[str] = None,
+    user_prompt: str = "",
+    subject_line: str = "",
+    reuse_head_chat_id: bool = False,
+    path: Optional[str] = None,
 ) -> str:
     """Initialize a project by reading the codemcp.toml TOML file and returning
     a combined system prompt. Creates an empty commit with the user's prompt as the body
@@ -135,6 +136,7 @@ async def init_project(
         user_prompt: The user's original prompt verbatim
         subject_line: A short subject line in Git conventional commit format
         reuse_head_chat_id: Whether to reuse the chat ID from the HEAD commit
+        path: Alias for directory parameter (for backward compatibility)
 
     Returns:
         A string containing the system prompt plus any project_prompt from the config,
@@ -142,15 +144,20 @@ async def init_project(
 
     """
     try:
+        # Use path as an alias for directory if directory is not provided
+        effective_directory = directory if directory is not None else path
+        if effective_directory is None:
+            raise ValueError("Either directory or path must be provided")
+
         # Normalize the directory path
-        full_dir_path = normalize_file_path(directory)
+        full_dir_path = normalize_file_path(effective_directory)
 
         # Validate the directory path
         if not os.path.exists(full_dir_path):
-            raise FileNotFoundError(f"Directory does not exist: {directory}")
+            raise FileNotFoundError(f"Directory does not exist: {effective_directory}")
 
         if not os.path.isdir(full_dir_path):
-            raise NotADirectoryError(f"Path is not a directory: {directory}")
+            raise NotADirectoryError(f"Path is not a directory: {effective_directory}")
 
         # Check if the directory is a Git repository
         is_git_repo = await is_git_repository(full_dir_path)
