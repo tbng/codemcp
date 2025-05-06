@@ -3,7 +3,7 @@
 import logging
 import os
 import subprocess
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict
 
 from ..common import normalize_file_path
 from ..git import is_git_repository

@@ -25,9 +25,10 @@ async def serve_playground_app_async(
     prefix="/v1",
     **kwargs,
 ):
-    import uvicorn
-    import signal
     import os
+    import signal
+
+    import uvicorn
 
     try:
         create_playground_endpoint(

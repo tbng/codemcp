@@ -48,7 +48,7 @@ async def rm(
         raise ValueError(permission_message)
 
     # Determine if it's a file or directory
-    is_dir = os.path.isdir(full_path)
+    os.path.isdir(full_path)
 
     # Get git repository root
     git_root = await get_repository_root(os.path.dirname(full_path))

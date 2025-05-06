@@ -241,24 +241,14 @@ class MCPEndToEndTestCase(TestCase, unittest.IsolatedAsyncioTestCase):
         elif subtool == "InitProject":
             from codemcp.tools.init_project import init_project
 
-            # Convert 'path' parameter to 'directory' as expected by init_project
-            if "path" in kwargs:
-                kwargs = kwargs.copy()  # Make a copy to avoid modifying the original
-                directory = kwargs.pop("path")
-                return await init_project(directory=directory, **kwargs)
-            else:
-                return await init_project(**kwargs)
+            # No need for parameter conversion anymore - init_project accepts both path and directory
+            return await init_project(**kwargs)
 
         elif subtool == "RunCommand":
             from codemcp.tools.run_command import run_command
 
-            # Convert 'path' parameter to 'project_dir' as expected by run_command
-            if "path" in kwargs:
-                kwargs = kwargs.copy()  # Make a copy to avoid modifying the original
-                project_dir = kwargs.pop("path")
-                return await run_command(project_dir=project_dir, **kwargs)
-            else:
-                return await run_command(**kwargs)
+            # No need for parameter conversion anymore - run_command accepts both path and project_dir
+            return await run_command(**kwargs)
 
         elif subtool == "Grep":
             from codemcp.tools.grep import grep
@@ -424,14 +414,15 @@ class MCPEndToEndTestCase(TestCase, unittest.IsolatedAsyncioTestCase):
         Returns:
             str: The chat_id
         """
-        from codemcp.tools.init_project import init_project
-
-        # First initialize project to get chat_id using init_project directly
-        init_result_text = await init_project(
-            directory=self.temp_dir.name,
-            user_prompt="Test initialization for get_chat_id",
-            subject_line="test: initialize for e2e testing",
-            reuse_head_chat_id=False,
+        # Use the _dispatch_to_subtool for consistency with other test methods
+        init_result_text = await self._dispatch_to_subtool(
+            "InitProject",
+            {
+                "path": self.temp_dir.name,
+                "user_prompt": "Test initialization for get_chat_id",
+                "subject_line": "test: initialize for e2e testing",
+                "reuse_head_chat_id": False,
+            },
         )
 
         # Extract chat_id from the init result
