@@ -150,7 +150,7 @@ async def glob_files(
     offset: int | None = None,
     chat_id: str | None = None,
     commit_hash: str | None = None,
-) -> Dict[str, Any]:
+) -> str:
     """Search for files matching a glob pattern.
 
     Args:
@@ -162,7 +162,7 @@ async def glob_files(
         commit_hash: Optional Git commit hash for version tracking
 
     Returns:
-        A dictionary with matched files
+        A formatted string with the search results
 
     """
     try:
@@ -185,26 +185,12 @@ async def glob_files(
         formatted_result, _ = await append_commit_hash(
             formatted_result, normalized_path, commit_hash
         )
-        result["resultForAssistant"] = formatted_result
 
-        return result
+        return formatted_result
     except Exception as e:
         # Log the error
         logging.error(f"Error in glob_files: {e}", exc_info=True)
 
-        # Prepare error output
-        error_output = {
-            "files": [],
-            "numFiles": 0,
-            "totalFiles": 0,
-            "pattern": pattern,
-            "path": path,
-            "limit": limit,
-            "offset": offset,
-            "error": str(e),
-        }
-
-        # Add formatted result for assistant
-        error_output["resultForAssistant"] = f"Error searching for files: {e}"
-
-        return error_output
+        # Return error message
+        error_message = f"Error searching for files: {e}"
+        return error_message
