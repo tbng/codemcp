@@ -2,15 +2,19 @@
 
 import logging
 
+from ..main import mcp
+
 __all__ = [
     "think",
 ]
 
 
+@mcp.tool()
 async def think(
     thought: str, chat_id: str | None = None, commit_hash: str | None = None
 ) -> str:
-    """Use this tool to think about something without obtaining new information or changing the database.
+    """Use the tool to think about something. It will not obtain new information or change the database,
+    but just append the thought to the log. Use it when complex reasoning or some cache memory is needed.
 
     Args:
         thought: The thought to log

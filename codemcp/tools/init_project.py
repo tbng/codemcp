@@ -10,6 +10,7 @@ import tomli
 
 from ..common import MAX_LINE_LENGTH, MAX_LINES_TO_READ, normalize_file_path
 from ..git import get_repository_root, is_git_repository
+from ..main import mcp
 
 __all__ = [
     "init_project",
@@ -120,6 +121,7 @@ async def _generate_chat_id(directory: str, description: Optional[str] = None) -
         return f"0-{human_readable_part}"
 
 
+@mcp.tool()
 async def init_project(
     directory: Optional[str] = None,
     user_prompt: str = "",
@@ -127,13 +129,17 @@ async def init_project(
     reuse_head_chat_id: bool = False,
     path: Optional[str] = None,
 ) -> str:
-    """Initialize a project by reading the codemcp.toml TOML file and returning
-    a combined system prompt. Creates an empty commit with the user's prompt as the body
-    and a subject line in Git conventional commit format.
+    """If and only if the user explicitly asks you to initialize codemcp with
+    path, you should invoke this tool. This will return instructions which you should
+    IMMEDIATELY follow before continuing, in particular, it will explain other ways
+    you can invoke this tool.
+
+    If the user indicates they want to "amend" or "continue working" on a PR,
+    you should set reuse_head_chat_id=True to continue using the same chat ID.
 
     Args:
         directory: The directory path containing the codemcp.toml file
-        user_prompt: The user's original prompt verbatim
+        user_prompt: The user's original prompt verbatim, starting AFTER instructions to initialize codemcp (e.g., you should exclude "Initialize codemcp for PATH")
         subject_line: A short subject line in Git conventional commit format
         reuse_head_chat_id: Whether to reuse the chat ID from the HEAD commit
         path: Alias for directory parameter (for backward compatibility)

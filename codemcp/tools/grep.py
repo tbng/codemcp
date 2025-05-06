@@ -7,6 +7,7 @@ from typing import Any, Dict
 
 from ..common import normalize_file_path
 from ..git import is_git_repository
+from ..main import mcp
 from ..shell import run_command
 from .commit_utils import append_commit_hash
 
@@ -156,6 +157,7 @@ def render_result_for_assistant(output: Dict[str, Any]) -> str:
     return result
 
 
+@mcp.tool()
 async def grep(
     pattern: str,
     path: str | None = None,
@@ -163,7 +165,13 @@ async def grep(
     chat_id: str | None = None,
     commit_hash: str | None = None,
 ) -> str:
-    """Search for a pattern in files within a directory or in a specific file.
+    """Searches for files containing a specified pattern (regular expression) using git grep.
+    Files with a match are returned, up to a maximum of 100 files.
+    Note that this tool only works inside git repositories.
+
+    Example:
+      Grep "function.*hello" /path/to/repo  # Find files containing functions with "hello" in their name
+      Grep "console\.log" /path/to/repo --include="*.js"  # Find JS files with console.log statements
 
     Args:
         pattern: The regular expression pattern to search for

@@ -10,6 +10,7 @@ from ..common import (
     normalize_file_path,
 )
 from ..git_query import find_git_root
+from ..main import mcp
 from ..rules import get_applicable_rules_content
 from .commit_utils import append_commit_hash
 
@@ -18,6 +19,7 @@ __all__ = [
 ]
 
 
+@mcp.tool()
 async def read_file(
     path: str,
     offset: int | None = None,
@@ -25,7 +27,11 @@ async def read_file(
     chat_id: str | None = None,
     commit_hash: str | None = None,
 ) -> str:
-    """Read a file's content with optional offset and limit.
+    """Reads a file from the local filesystem. The path parameter must be an absolute path, not a relative path.
+    By default, it reads up to 1000 lines starting from the beginning of the file. You can optionally specify a
+    line offset and limit (especially handy for long files), but it's recommended to read the whole file by not
+    providing these parameters. Any lines longer than 1000 characters will be truncated. For image files, the
+    tool will display the image for you.
 
     Args:
         path: The absolute path to the file to read

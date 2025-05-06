@@ -7,6 +7,7 @@ from typing import Any, Dict, List
 
 from ..common import normalize_file_path
 from ..git import is_git_repository
+from ..main import mcp
 from .commit_utils import append_commit_hash
 
 __all__ = [
@@ -39,6 +40,7 @@ def render_result_for_assistant(output: Dict[str, Any]) -> str:
     return result
 
 
+@mcp.tool()
 async def glob(
     pattern: str,
     path: str,
@@ -47,7 +49,10 @@ async def glob(
     chat_id: str | None = None,
     commit_hash: str | None = None,
 ) -> str:
-    """Find files matching a pattern.
+    """Fast file pattern matching tool that works with any codebase size
+    Supports glob patterns like "**/*.js" or "src/**/*.ts"
+    Returns matching file paths sorted by modification time
+    Use this tool when you need to find files by name patterns
 
     Args:
         pattern: The glob pattern to match files against

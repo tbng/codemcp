@@ -7,6 +7,7 @@ from typing import List, Optional
 from ..access import check_edit_permission
 from ..common import normalize_file_path
 from ..git import is_git_repository
+from ..main import mcp
 from .commit_utils import append_commit_hash
 
 __all__ = [
@@ -23,10 +24,12 @@ MAX_FILES = 1000
 TRUNCATED_MESSAGE = f"There are more than {MAX_FILES} files in the directory. Use more specific paths to explore nested directories. The first {MAX_FILES} files and directories are included below:\n\n"
 
 
+@mcp.tool()
 async def ls(
     path: str, chat_id: str | None = None, commit_hash: str | None = None
 ) -> str:
-    """List the contents of a directory.
+    """Lists files and directories in a given path. The path parameter must be an absolute path, not a relative path.
+    You should generally prefer the Glob and Grep tools, if you know which directories to search.
 
     Args:
         path: The absolute path to the directory to list
