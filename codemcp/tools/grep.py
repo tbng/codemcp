@@ -107,7 +107,7 @@ async def git_grep(
             cwd=absolute_path,
             capture_output=True,
             text=True,
-            check=False,  # Don't raise exception if git grep doesn't find matches
+            check=False,
         )
 
         # git grep returns exit code 1 when no matches are found, which is normal
@@ -162,7 +162,7 @@ async def grep_files(
     include: str | None = None,
     chat_id: str | None = None,
     commit_hash: str | None = None,
-) -> Dict[str, Any]:
+) -> str:
     """Search for a pattern in files within a directory or in a specific file.
 
     Args:
@@ -173,7 +173,7 @@ async def grep_files(
         commit_hash: Optional Git commit hash for version tracking
 
     Returns:
-        A dictionary with matched files
+        A formatted string with the search results
 
     """
     try:
@@ -212,25 +212,11 @@ async def grep_files(
                 result_for_assistant, normalized_path, commit_hash
             )
 
-        output["resultForAssistant"] = result_for_assistant
-
-        return output
+        return result_for_assistant
     except Exception as e:
         # Log the error
         logging.error(f"Error in grep_files: {e}", exc_info=True)
 
-        # Prepare error output
-        error_output = {
-            "numFiles": 0,
-            "matchedFiles": [],
-            "truncated": False,
-            "pattern": pattern,
-            "path": path,
-            "include": include,
-            "error": str(e),
-        }
-
-        # Add formatted result for assistant
-        error_output["resultForAssistant"] = f"Error searching for pattern: {e}"
-
-        return error_output
+        # Return error message
+        error_message = f"Error searching for pattern: {e}"
+        return error_message

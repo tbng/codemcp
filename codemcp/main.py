@@ -267,17 +267,12 @@ async def codemcp(
                 raise ValueError("path is required for Grep subtool")
 
             try:
-                grep_result = await grep_files(
+                result_string = await grep_files(
                     pattern, path, include, chat_id, commit_hash
-                )
-                result_string = grep_result.get(
-                    "resultForAssistant",
-                    f"Found {grep_result.get('numFiles', 0)} file(s)",
                 )
                 return result_string
             except Exception as e:
-                # Log the error but don't suppress it - let it propagate
-                logging.error(f"Exception in grep subtool: {e!s}", exc_info=True)
+                logging.error(f"Error in Grep subtool: {e}", exc_info=True)
                 raise
 
         if subtool == "Glob":
@@ -287,22 +282,12 @@ async def codemcp(
                 raise ValueError("path is required for Glob subtool")
 
             try:
-                glob_result = await glob_files(
-                    pattern,
-                    path,
-                    limit,
-                    offset,
-                    chat_id,
-                    commit_hash,
-                )
-                result_string = glob_result.get(
-                    "resultForAssistant",
-                    f"Found {glob_result.get('numFiles', 0)} file(s)",
+                result_string = await glob_files(
+                    pattern, path, limit, offset, chat_id, commit_hash
                 )
                 return result_string
             except Exception as e:
-                # Log the error but don't suppress it - let it propagate
-                logging.error(f"Exception in glob subtool: {e!s}", exc_info=True)
+                logging.error(f"Error in Glob subtool: {e}", exc_info=True)
                 raise
 
         if subtool == "RM":
@@ -350,10 +335,7 @@ async def codemcp(
             if chat_id is None:
                 raise ValueError("chat_id is required for Chmod subtool")
 
-            chmod_result = await chmod(path, mode, chat_id, commit_hash)
-            result_string = chmod_result.get(
-                "resultForAssistant", "Chmod operation completed"
-            )
+            result_string = await chmod(path, mode, chat_id, commit_hash)
             return result_string
 
     except Exception:
