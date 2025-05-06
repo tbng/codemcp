@@ -13,6 +13,7 @@ from ..file_utils import (
 )
 from ..git import commit_changes
 from ..line_endings import detect_line_endings, detect_repo_line_endings
+from ..mcp import mcp
 from .commit_utils import append_commit_hash
 
 __all__ = [
@@ -20,6 +21,7 @@ __all__ = [
 ]
 
 
+@mcp.tool()
 async def write_file(
     path: str,
     content: str | dict | list | None = None,
@@ -27,7 +29,15 @@ async def write_file(
     chat_id: str | None = None,
     commit_hash: str | None = None,
 ) -> str:
-    """Write content to a file.
+    """Write a file to the local filesystem. Overwrites the existing file if there is one.
+    Provide a short description of the change.
+
+    Before using this tool:
+
+    1. Use the ReadFile tool to understand the file's contents and context
+
+    2. Directory Verification (only applicable when creating new files):
+       - Use the LS tool to verify the parent directory exists and is the correct location
 
     Args:
         path: The absolute path to the file to write

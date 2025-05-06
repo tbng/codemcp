@@ -6,6 +6,7 @@ import pathlib
 
 from ..common import normalize_file_path
 from ..git import commit_changes, get_repository_root
+from ..mcp import mcp
 from ..shell import run_command
 from .commit_utils import append_commit_hash
 
@@ -14,6 +15,7 @@ __all__ = [
 ]
 
 
+@mcp.tool()
 async def mv(
     source_path: str,
     target_path: str,
@@ -21,13 +23,19 @@ async def mv(
     chat_id: str | None = None,
     commit_hash: str | None = None,
 ) -> str:
-    """Move a file using git mv.
+    """Moves a file using git mv and commits the change.
+    Provide a short description of why the file is being moved.
+
+    Before using this tool:
+    1. Ensure the source file exists and is tracked by git
+    2. Ensure the target directory exists within the git repository
+    3. Provide a meaningful description of why the file is being moved
 
     Args:
-        source_path: The path to the source file to move (can be absolute or relative to repository root)
-        target_path: The path to the target location (can be absolute or relative to repository root)
+        source_path: The path to the file to move (can be relative to the project root or absolute)
+        target_path: The destination path where the file should be moved to (can be relative to the project root or absolute)
         description: Short description of why the file is being moved
-        chat_id: The unique ID of the current chat session
+        chat_id: The unique ID to identify the chat session
         commit_hash: Optional Git commit hash for version tracking
 
     Returns:

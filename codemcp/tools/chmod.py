@@ -6,6 +6,7 @@ from typing import Any
 
 from ..common import normalize_file_path
 from ..git import commit_changes
+from ..mcp import mcp
 from ..shell import run_command
 from .commit_utils import append_commit_hash
 
@@ -18,8 +19,8 @@ __all__ = [
 
 TOOL_NAME_FOR_PROMPT = "Chmod"
 DESCRIPTION = """
-Changes file permissions using chmod. Unlike standard chmod, this tool only supports 
-a+x (add executable permission) and a-x (remove executable permission), because these 
+Changes file permissions using chmod. Unlike standard chmod, this tool only supports
+a+x (add executable permission) and a-x (remove executable permission), because these
 are the only bits that git knows how to track.
 
 Example:
@@ -28,19 +29,26 @@ Example:
 """
 
 
+@mcp.tool()
 async def chmod(
     path: str,
     mode: str,
     chat_id: str | None = None,
     commit_hash: str | None = None,
 ) -> str:
-    """Change file permissions using chmod.
+    """Changes file permissions using chmod. Unlike standard chmod, this tool only supports
+    a+x (add executable permission) and a-x (remove executable permission), because these
+    are the only bits that git knows how to track.
 
     Args:
-        path: The path to the file to change permissions for
+        path: The absolute path to the file to modify
         mode: The chmod mode to apply, only "a+x" and "a-x" are supported
-        chat_id: The unique ID of the current chat session
+        chat_id: The unique ID to identify the chat session
         commit_hash: Optional Git commit hash for version tracking
+
+    Example:
+      chmod a+x path/to/file  # Makes a file executable by all users
+      chmod a-x path/to/file  # Makes a file non-executable for all users
 
     Returns:
         A formatted string with the chmod operation result

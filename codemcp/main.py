@@ -10,10 +10,10 @@ import click
 import pathspec
 import uvicorn
 from fastapi.middleware.cors import CORSMiddleware
-from mcp.server.fastmcp import FastMCP
 from starlette.applications import Starlette
 from starlette.routing import Mount
 
+from .mcp import mcp
 from .tools.chmod import chmod
 from .tools.edit_file import edit_file
 from .tools.glob import glob
@@ -27,11 +27,8 @@ from .tools.run_command import run_command
 from .tools.think import think
 from .tools.write_file import write_file
 
-# Initialize FastMCP server
-mcp = FastMCP("codemcp")
 
-
-# NB: If you edit this, also edit codemcp/tools/init_project.py
+# For backward compatibility - this tool forwards to the individual tools
 @mcp.tool()
 async def codemcp(
     subtool: str,
@@ -63,69 +60,17 @@ async def codemcp(
     target_path: str | None = None,  # Added for MV tool
     commit_hash: str | None = None,  # Added for Git commit hash tracking
 ) -> str:
-    # NOTE: Do NOT add more documentation to this docblock when you add a new
-    # tool, documentation for tools should go in codemcp/tools/init_project.py.
-    # This includes documentation for new parameters!  ONLY InitProject's
-    # parmaeters are documented here.
-    """If and only if the user explicitly asks you to initialize codemcp with
-    path, you should invoke this tool.  This will return instructions which you should
-    IMMEDIATELY follow before continuing, in particular, it will explain other ways
-    you can invoke this tool.
+    """Backward compatibility tool that forwards to the individual tools.
 
-    If the user indicates they want to "amend" or "continue working" on a PR,
-    you should set reuse_head_chat_id=True to continue using the same chat ID.
+    This tool is provided for backward compatibility with existing code that uses
+    the codemcp tool via the old interface. It forwards to the appropriate tool
+    based on the subtool parameter.
 
-    Arguments:
-      subtool: The subtool to run (InitProject, ...)
-      path: The path to the file or directory to operate on
-      user_prompt: The user's original prompt verbatim, starting AFTER instructions to initialize codemcp (e.g., you should exclude "Initialize codemcp for PATH")
-      subject_line: A short subject line in Git conventional commit format (for InitProject)
-      reuse_head_chat_id: If True, reuse the chat ID from the HEAD commit instead of generating a new one (for InitProject)
-      ... (there are other arguments which will be documented when you InitProject)
+    New code should use the individual tools directly instead of this one.
     """
+    logging.info(f"Forwarding codemcp({subtool}) to individual tool")
+
     try:
-        # Define expected parameters for each subtool
-        expected_params = {
-            "ReadFile": {"path", "offset", "limit", "chat_id", "commit_hash"},
-            "WriteFile": {"path", "content", "description", "chat_id", "commit_hash"},
-            "EditFile": {
-                "path",
-                "old_string",
-                "new_string",
-                "description",
-                "old_str",
-                "new_str",
-                "chat_id",
-                "commit_hash",
-            },
-            "LS": {"path", "chat_id", "commit_hash"},
-            "InitProject": {
-                "path",
-                "user_prompt",
-                "subject_line",
-                "reuse_head_chat_id",
-            },  # chat_id is not expected for InitProject as it's generated there
-            "RunCommand": {"path", "command", "arguments", "chat_id", "commit_hash"},
-            "Grep": {"pattern", "path", "include", "chat_id", "commit_hash"},
-            "Glob": {"pattern", "path", "limit", "offset", "chat_id", "commit_hash"},
-            "RM": {"path", "description", "chat_id", "commit_hash"},
-            "MV": {
-                "source_path",
-                "target_path",
-                "description",
-                "chat_id",
-                "commit_hash",
-            },
-            "Think": {"thought", "chat_id", "commit_hash"},
-            "Chmod": {"path", "mode", "chat_id", "commit_hash"},
-        }
-
-        # Check if subtool exists
-        if subtool not in expected_params:
-            raise ValueError(
-                f"Unknown subtool: {subtool}. Available subtools: {', '.join(expected_params.keys())}"
-            )
-
         # Get all provided non-None parameters
         provided_params = {
             param: value
@@ -164,174 +109,41 @@ async def codemcp(
             if value is not None
         }
 
-        # Check for unexpected parameters
-        unexpected_params = set(provided_params.keys()) - expected_params[subtool]
-        if unexpected_params:
-            raise ValueError(
-                f"Unexpected parameters for {subtool} subtool: {', '.join(unexpected_params)}"
-            )
-
-        # Check for required chat_id for all tools except InitProject
-        if subtool != "InitProject" and chat_id is None:
-            raise ValueError(f"chat_id is required for {subtool} subtool")
-
-        # Now handle each subtool with its expected parameters
+        # Direct calls to appropriate tools
         if subtool == "ReadFile":
-            if path is None:
-                raise ValueError("path is required for ReadFile subtool")
-
-            result = await read_file(**provided_params)
-            return result
-
-        if subtool == "WriteFile":
-            if path is None:
-                raise ValueError("path is required for WriteFile subtool")
-            if description is None:
-                raise ValueError("description is required for WriteFile subtool")
-            if chat_id is None:
-                raise ValueError("chat_id is required for WriteFile subtool")
-
-            result = await write_file(**provided_params)
-            return result
-
-        if subtool == "EditFile":
-            if path is None:
-                raise ValueError("path is required for EditFile subtool")
-            if description is None:
-                raise ValueError("description is required for EditFile subtool")
-            if old_string is None and old_str is None:
-                # TODO: I want telemetry to tell me when this occurs.
-                raise ValueError(
-                    "Either old_string or old_str is required for EditFile subtool (use empty string for new file creation)"
-                )
-            if chat_id is None:
-                raise ValueError("chat_id is required for EditFile subtool")
-
-            result = await edit_file(**provided_params)
-            return result
-
-        if subtool == "LS":
-            if path is None:
-                raise ValueError("path is required for LS subtool")
-
-            result = await ls(**provided_params)
-            return result
-
-        if subtool == "InitProject":
-            if path is None:
-                raise ValueError("path is required for InitProject subtool")
-            if user_prompt is None:
-                raise ValueError("user_prompt is required for InitProject subtool")
-            if subject_line is None:
-                raise ValueError("subject_line is required for InitProject subtool")
-
+            return await read_file(**provided_params)
+        elif subtool == "WriteFile":
+            return await write_file(**provided_params)
+        elif subtool == "EditFile":
+            return await edit_file(**provided_params)
+        elif subtool == "LS":
+            return await ls(**provided_params)
+        elif subtool == "InitProject":
             # Handle parameter naming differences with adapter pattern in the central point
             if "path" in provided_params and "directory" not in provided_params:
                 provided_params["directory"] = provided_params.pop("path")
-
-            # Ensure reuse_head_chat_id has a default value
-            if (
-                "reuse_head_chat_id" not in provided_params
-                or provided_params["reuse_head_chat_id"] is None
-            ):
-                provided_params["reuse_head_chat_id"] = False
-
             return await init_project(**provided_params)
-
-        if subtool == "RunCommand":
-            # When is something a command as opposed to a subtool?  They are
-            # basically the same thing, but commands are always USER defined.
-            # This means we shove them all in RunCommand so they are guaranteed
-            # not to conflict with codemcp's subtools.
-
-            if path is None:
-                raise ValueError("path is required for RunCommand subtool")
-            if command is None:
-                raise ValueError("command is required for RunCommand subtool")
-            if chat_id is None:
-                raise ValueError("chat_id is required for RunCommand subtool")
-
+        elif subtool == "RunCommand":
             # Handle parameter naming differences with adapter pattern in the central point
             if "path" in provided_params and "project_dir" not in provided_params:
                 provided_params["project_dir"] = provided_params.pop("path")
-
-            result = await run_command(**provided_params)
-            return result
-
-        if subtool == "Grep":
-            if pattern is None:
-                raise ValueError("pattern is required for Grep subtool")
-            if path is None:
-                raise ValueError("path is required for Grep subtool")
-
-            try:
-                result_string = await grep(**provided_params)
-                return result_string
-            except Exception as e:
-                logging.error(f"Error in Grep subtool: {e}", exc_info=True)
-                raise
-
-        if subtool == "Glob":
-            if pattern is None:
-                raise ValueError("pattern is required for Glob subtool")
-            if path is None:
-                raise ValueError("path is required for Glob subtool")
-
-            try:
-                result_string = await glob(**provided_params)
-                return result_string
-            except Exception as e:
-                logging.error(f"Error in Glob subtool: {e}", exc_info=True)
-                raise
-
-        if subtool == "RM":
-            if path is None:
-                raise ValueError("path is required for RM subtool")
-            if description is None:
-                raise ValueError("description is required for RM subtool")
-            if chat_id is None:
-                raise ValueError("chat_id is required for RM subtool")
-
-            result = await rm(**provided_params)
-            return result
-
-        if subtool == "MV":
-            # Extract parameters specific to MV
-            source_path = provided_params.get("source_path")
-            target_path = provided_params.get("target_path")
-
-            if source_path is None:
-                raise ValueError("source_path is required for MV subtool")
-            if target_path is None:
-                raise ValueError("target_path is required for MV subtool")
-            if description is None:
-                raise ValueError("description is required for MV subtool")
-            if chat_id is None:
-                raise ValueError("chat_id is required for MV subtool")
-
-            result = await mv(**provided_params)
-            return result
-
-        if subtool == "Think":
-            if thought is None:
-                raise ValueError("thought is required for Think subtool")
-
-            result = await think(**provided_params)
-            return result
-
-        if subtool == "Chmod":
-            if path is None:
-                raise ValueError("path is required for Chmod subtool")
-            if mode is None:
-                raise ValueError("mode is required for Chmod subtool")
-            if chat_id is None:
-                raise ValueError("chat_id is required for Chmod subtool")
-
-            result_string = await chmod(**provided_params)
-            return result_string
-
-    except Exception:
-        logging.error("Exception", exc_info=True)
+            return await run_command(**provided_params)
+        elif subtool == "Grep":
+            return await grep(**provided_params)
+        elif subtool == "Glob":
+            return await glob(**provided_params)
+        elif subtool == "RM":
+            return await rm(**provided_params)
+        elif subtool == "MV":
+            return await mv(**provided_params)
+        elif subtool == "Think":
+            return await think(**provided_params)
+        elif subtool == "Chmod":
+            return await chmod(**provided_params)
+        else:
+            raise ValueError(f"Unknown subtool: {subtool}")
+    except Exception as e:
+        logging.error(f"Error in codemcp forwarding: {e}", exc_info=True)
         raise
 
     # This should never be reached, but adding for type safety

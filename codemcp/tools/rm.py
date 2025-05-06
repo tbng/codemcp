@@ -8,6 +8,7 @@ from typing import Optional
 from ..access import check_edit_permission
 from ..common import normalize_file_path
 from ..git import commit_changes, get_repository_root, is_git_repository
+from ..mcp import mcp
 from ..shell import run_command
 from .commit_utils import append_commit_hash
 
@@ -16,15 +17,21 @@ __all__ = [
 ]
 
 
+@mcp.tool()
 async def rm(
     path: str, description: str, chat_id: str, commit_hash: Optional[str] = None
 ) -> str:
-    """Remove a file or directory.
+    """Removes a file using git rm and commits the change.
+    Provide a short description of why the file is being removed.
+
+    Before using this tool:
+    1. Ensure the file exists and is tracked by git
+    2. Provide a meaningful description of why the file is being removed
 
     Args:
-        path: The absolute path to the file or directory to remove
-        description: Short description of the change
-        chat_id: The unique ID of the current chat session
+        path: The path to the file to remove (can be relative to the project root or absolute)
+        description: Short description of why the file is being removed
+        chat_id: The unique ID to identify the chat session
         commit_hash: Optional Git commit hash for version tracking
 
     Returns:
