@@ -16,8 +16,9 @@ __all__ = [
 
 async def rm_file(
     path: str,
-    description: str,
-    chat_id: str = "",
+    description: str | None = None,
+    chat_id: str | None = None,
+    commit_hash: str | None = None,
 ) -> str:
     """Remove a file using git rm.
 
@@ -25,10 +26,15 @@ async def rm_file(
         path: The path to the file to remove (can be absolute or relative to repository root)
         description: Short description of why the file is being removed
         chat_id: The unique ID of the current chat session
+        commit_hash: Optional Git commit hash for version tracking
 
     Returns:
         A string containing the result of the removal operation
     """
+    # Set default values
+    description = "" if description is None else description
+    chat_id = "" if chat_id is None else chat_id
+
     # Use the directory from the path as our starting point
     file_path = normalize_file_path(path)
     dir_path = os.path.dirname(file_path) if os.path.dirname(file_path) else "."
@@ -98,5 +104,5 @@ async def rm_file(
         result = f"File {rel_path} was removed but failed to commit: {commit_message}"
 
     # Append commit hash
-    result, _ = await append_commit_hash(result, git_root_resolved)
+    result, _ = await append_commit_hash(result, git_root_resolved, commit_hash)
     return result
