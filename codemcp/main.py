@@ -182,7 +182,7 @@ async def codemcp(
             if path is None:
                 raise ValueError("path is required for ReadFile subtool")
 
-            result = await read_file(path, offset, limit, chat_id, commit_hash)
+            result = await read_file(**provided_params)
             return result
 
         if subtool == "WriteFile":
@@ -193,7 +193,7 @@ async def codemcp(
             if chat_id is None:
                 raise ValueError("chat_id is required for WriteFile subtool")
 
-            result = await write_file(path, content, description, chat_id, commit_hash)
+            result = await write_file(**provided_params)
             return result
 
         if subtool == "EditFile":
@@ -209,19 +209,14 @@ async def codemcp(
             if chat_id is None:
                 raise ValueError("chat_id is required for EditFile subtool")
 
-            # Accept either old_string or old_str (prefer old_string if both are provided)
-            old_content = old_string or old_str
-            # Accept either new_string or new_str (prefer new_string if both are provided)
-            new_content = new_string or new_str
-
-            result = await edit_file(path, old_content, new_content, None, description, chat_id, commit_hash)
+            result = await edit_file(**provided_params)
             return result
 
         if subtool == "LS":
             if path is None:
                 raise ValueError("path is required for LS subtool")
 
-            result = await ls(path, chat_id, commit_hash)
+            result = await ls(**provided_params)
             return result
 
         if subtool == "InitProject":
@@ -231,14 +226,19 @@ async def codemcp(
                 raise ValueError("user_prompt is required for InitProject subtool")
             if subject_line is None:
                 raise ValueError("subject_line is required for InitProject subtool")
-            if reuse_head_chat_id is None:
-                reuse_head_chat_id = (
-                    False  # Default value in main.py only, not in the implementation
-                )
 
-            return await init_project(
-                path, user_prompt, subject_line, reuse_head_chat_id
-            )
+            # Handle parameter naming differences with adapter pattern in the central point
+            if "path" in provided_params and "directory" not in provided_params:
+                provided_params["directory"] = provided_params.pop("path")
+
+            # Ensure reuse_head_chat_id has a default value
+            if (
+                "reuse_head_chat_id" not in provided_params
+                or provided_params["reuse_head_chat_id"] is None
+            ):
+                provided_params["reuse_head_chat_id"] = False
+
+            return await init_project(**provided_params)
 
         if subtool == "RunCommand":
             # When is something a command as opposed to a subtool?  They are
@@ -253,7 +253,11 @@ async def codemcp(
             if chat_id is None:
                 raise ValueError("chat_id is required for RunCommand subtool")
 
-            result = await run_command(path, command, arguments, chat_id, commit_hash)
+            # Handle parameter naming differences with adapter pattern in the central point
+            if "path" in provided_params and "project_dir" not in provided_params:
+                provided_params["project_dir"] = provided_params.pop("path")
+
+            result = await run_command(**provided_params)
             return result
 
         if subtool == "Grep":
@@ -263,7 +267,7 @@ async def codemcp(
                 raise ValueError("path is required for Grep subtool")
 
             try:
-                result_string = await grep(pattern, path, include, chat_id, commit_hash)
+                result_string = await grep(**provided_params)
                 return result_string
             except Exception as e:
                 logging.error(f"Error in Grep subtool: {e}", exc_info=True)
@@ -276,7 +280,7 @@ async def codemcp(
                 raise ValueError("path is required for Glob subtool")
 
             try:
-                result_string = await glob(pattern, path, limit, offset, chat_id, commit_hash)
+                result_string = await glob(**provided_params)
                 return result_string
             except Exception as e:
                 logging.error(f"Error in Glob subtool: {e}", exc_info=True)
@@ -290,7 +294,7 @@ async def codemcp(
             if chat_id is None:
                 raise ValueError("chat_id is required for RM subtool")
 
-            result = await rm(path, description, chat_id, commit_hash)
+            result = await rm(**provided_params)
             return result
 
         if subtool == "MV":
@@ -307,14 +311,14 @@ async def codemcp(
             if chat_id is None:
                 raise ValueError("chat_id is required for MV subtool")
 
-            result = await mv(source_path, target_path, description, chat_id, commit_hash)
+            result = await mv(**provided_params)
             return result
 
         if subtool == "Think":
             if thought is None:
                 raise ValueError("thought is required for Think subtool")
 
-            result = await think(thought, chat_id, commit_hash)
+            result = await think(**provided_params)
             return result
 
         if subtool == "Chmod":
@@ -325,7 +329,7 @@ async def codemcp(
             if chat_id is None:
                 raise ValueError("chat_id is required for Chmod subtool")
 
-            result_string = await chmod(path, mode, chat_id, commit_hash)
+            result_string = await chmod(**provided_params)
             return result_string
 
     except Exception:
