@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Optional
 
 import tomli
 
-from ..common import MAX_LINE_LENGTH, MAX_LINES_TO_READ, normalize_file_path
+from ..common import normalize_file_path
 from ..git import get_repository_root, is_git_repository
 from ..mcp import mcp
 
@@ -219,7 +219,6 @@ async def init_project(
         )
 
         project_prompt = ""
-        command_help = ""
         command_docs: Dict[str, str] = {}
         rules_config: Dict[str, Any] = {}
 
@@ -239,7 +238,7 @@ async def init_project(
 
             # Extract commands and their documentation
             command_list = rules_config.get("commands", {})
-            command_help = ", ".join(command_list.keys())
+            ", ".join(command_list.keys())
 
             # Process command documentation
             for cmd_name, cmd_config in command_list.items():
@@ -300,7 +299,11 @@ This project uses Git commit hashes to track changes across conversations. After
         if project_prompt:
             combined_prompt += "\n\n" + project_prompt
 
-        return combined_prompt
+        return f"""
+# Chat ID and Git tracking
+This chat has been assigned a chat ID: {chat_id}
+When you use any tool, you MUST always include this chat ID as the chat_id parameter.
+"""
     except Exception as e:
         logging.warning(
             f"Exception suppressed during project initialization: {e!s}", exc_info=True
