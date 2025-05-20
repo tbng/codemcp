@@ -159,6 +159,7 @@ async def commit_changes(
     description: str,
     chat_id: str,
     commit_all: bool = False,
+    auto_commit: bool = True,
 ) -> tuple[bool, str]:
     """Commit changes to a file, directory, or all files in Git.
 
@@ -178,18 +179,24 @@ async def commit_changes(
         description: Commit message describing the change
         chat_id: The unique ID of the current chat session
         commit_all: Whether to commit all changes in the repository
+        auto_commit: Whether to automatically add and commit changes
 
     Returns:
         A tuple of (success, message)
 
     """
     log.debug(
-        "commit_changes(%s, %s, %s, commit_all=%s)",
+        "commit_changes(%s, %s, %s, commit_all=%s, auto_commit=%s)",
         path,
         description,
         chat_id,
         commit_all,
+        auto_commit,
     )
+
+    # If auto_commit is False, skip git operations
+    if not auto_commit:
+        return True, "Changes were made but not committed to git (auto-commit disabled)"
     # First, check if this is a git repository
     if not await is_git_repository(path):
         return False, f"Path '{path}' is not in a Git repository"

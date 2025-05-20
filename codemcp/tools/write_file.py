@@ -113,9 +113,9 @@ async def write_file(
 
     # Commit the changes
     git_message = ""
-    success, message = await commit_changes(path, description, chat_id)
+    success, message = await commit_changes(path, description, chat_id, auto_commit=False)
     if success:
-        git_message = f"\nChanges committed to git: {description}"
+        git_message = f"\n{message}"
     else:
         git_message = f"\nFailed to commit changes to git: {message}"
 
