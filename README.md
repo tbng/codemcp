@@ -7,6 +7,9 @@ run tests.  Say goodbye to copying code in and out of Claude's chat window!
 
 ![Screenshot of Claude Desktop with codemcp](static/screenshot.png?raw=true)
 
+## Modifications
+- May 20, 2025: Added an `auto_commit` parameter to disable automatic git operations. The MCP agent now makes file changes without automatically adding and committing them to git.
+
 codemcp offers similar functionality to other AI coding software (Claude Code,
 Cursor, Cline, Aider), but it occupies a unique point in the design space:
 
