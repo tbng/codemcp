@@ -17,8 +17,8 @@ __all__ = [
 
 TOOL_NAME_FOR_PROMPT = "Chmod"
 DESCRIPTION = """
-Changes file permissions using chmod. Unlike standard chmod, this tool only supports 
-a+x (add executable permission) and a-x (remove executable permission), because these 
+Changes file permissions using chmod. Unlike standard chmod, this tool only supports
+a+x (add executable permission) and a-x (remove executable permission), because these
 are the only bits that git knows how to track.
 
 Example:
@@ -103,6 +103,7 @@ async def chmod(
         directory,
         description,
         chat_id if chat_id is not None else "",
+        auto_commit=False,
     )
 
     if not success:
@@ -110,7 +111,7 @@ async def chmod(
 
     # Prepare output
     output = {
-        "output": f"{action_msg} and committed changes",
+        "output": f"{action_msg}: {commit_message}",
     }
 
     # Add formatted result for assistant

@@ -137,6 +137,7 @@ async def run_code_command(
                 f"Snapshot before auto-{command_name}",
                 chat_id_str,
                 commit_all=True,
+                auto_commit=True,
             )
             if not commit_result[0]:
                 logging.warning(f"Failed to commit pending changes: {commit_result[1]}")
@@ -163,11 +164,11 @@ async def run_code_command(
                     logging.info(f"Changes detected after {command_name}, committing")
                     chat_id_str = str(chat_id) if chat_id is not None else ""
                     success, commit_result_message = await commit_changes(
-                        full_dir_path, commit_message, chat_id_str, commit_all=True
+                        full_dir_path, commit_message, chat_id_str, commit_all=True, auto_commit=True
                     )
 
                     if success:
-                        return f"Code {command_name} successful and changes committed:\n{truncated_stdout}"
+                        return f"Code {command_name} successful: {commit_result_message}\n{truncated_stdout}"
                     else:
                         logging.warning(
                             f"Failed to commit {command_name} changes: {commit_result_message}"

@@ -677,7 +677,7 @@ async def edit_file_content(
         await write_text_content(full_file_path, new_string)
 
         # Commit the changes
-        success, message = await commit_changes(full_file_path, description, chat_id, auto_commit=False)
+        success, message = await commit_changes(full_file_path, description, chat_id)
         git_message = ""
         if success:
             git_message = f"\n{message}"
