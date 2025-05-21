@@ -113,7 +113,7 @@ async def write_file(
 
     # Commit the changes
     git_message = ""
-    success, message = await commit_changes(path, description, chat_id, auto_commit=False)
+    success, message = await commit_changes(path, description, chat_id)
     if success:
         git_message = f"\n{message}"
     else:

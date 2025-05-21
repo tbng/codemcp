@@ -179,7 +179,7 @@ async def commit_changes(
         description: Commit message describing the change
         chat_id: The unique ID of the current chat session
         commit_all: Whether to commit all changes in the repository
-        auto_commit: Whether to automatically add and commit changes
+        auto_commit: Whether to automatically add and commit changes (default: False)
 
     Returns:
         A tuple of (success, message)
