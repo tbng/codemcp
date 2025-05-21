@@ -103,7 +103,6 @@ async def chmod(
         directory,
         description,
         chat_id if chat_id is not None else "",
-        auto_commit=False,
     )
 
     if not success:

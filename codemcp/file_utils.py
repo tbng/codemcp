@@ -100,7 +100,7 @@ async def check_git_tracking_for_existing_file(
             file_path,
             description="Snapshot before codemcp change",
             chat_id=chat_id,
-            auto_commit=False,
+            auto_commit=True,
         )
 
         if not commit_success:

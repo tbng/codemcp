@@ -337,6 +337,7 @@ test = ["./run_test.sh"]
                 path=self.temp_dir.name,
                 description="Testing cherry-pick",
                 chat_id=chat_id,
+                auto_commit=True,
             )
 
             self.assertTrue(success, f"Commit failed: {message}")

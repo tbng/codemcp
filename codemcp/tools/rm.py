@@ -87,7 +87,6 @@ async def rm_file(
         git_root_resolved,
         f"Remove {rel_path}: {description}",
         chat_id,
-        auto_commit=False,
         commit_all=False,  # No need for commit_all since git rm already stages the change
     )
 

@@ -168,7 +168,7 @@ async def run_code_command(
                     )
 
                     if success:
-                        return f"Code {command_name} successful: {commit_result_message}\n{truncated_stdout}"
+                        return f"Code {command_name} successful and changes committed:\n{truncated_stdout}"
                     else:
                         logging.warning(
                             f"Failed to commit {command_name} changes: {commit_result_message}"
