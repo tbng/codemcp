@@ -87,10 +87,11 @@ async def rm_file(
         git_root_resolved,
         f"Remove {rel_path}: {description}",
         chat_id,
+        auto_commit=False,
         commit_all=False,  # No need for commit_all since git rm already stages the change
     )
 
     if success:
-        return f"Successfully removed file {rel_path}."
+        return f"Successfully removed file {rel_path}: {commit_message}"
     else:
         return f"File {rel_path} was removed but failed to commit: {commit_message}"

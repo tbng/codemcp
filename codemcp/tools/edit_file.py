@@ -677,13 +677,10 @@ async def edit_file_content(
         await write_text_content(full_file_path, new_string)
 
         # Commit the changes
-        success, message = await commit_changes(full_file_path, description, chat_id)
+        success, message = await commit_changes(full_file_path, description, chat_id, auto_commit=False)
         git_message = ""
         if success:
-            git_message = f"\nChanges committed to git: {description}"
-            # Include any extra details like previous commit hash if present in the message
-            if "previous commit was" in message:
-                git_message = f"\n{message}"
+            git_message = f"\n{message}"
         else:
             git_message = f"\nFailed to commit changes to git: {message}"
 
