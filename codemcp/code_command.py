@@ -138,6 +138,7 @@ async def run_code_command(
                 f"Snapshot before auto-{command_name}",
                 chat_id_str,
                 commit_all=True,
+                auto_commit=True,
             )
             if not commit_result[0]:
                 logging.warning(f"Failed to commit pending changes: {commit_result[1]}")

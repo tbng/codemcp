@@ -79,6 +79,7 @@ test = ["./run_test.sh"]
                 self.temp_dir.name,
                 description="Adding content",
                 chat_id=original_chat_id,
+                auto_commit=True,
             )
 
             # Now verify the HEAD has the chat ID

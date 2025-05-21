@@ -159,7 +159,7 @@ async def commit_changes(
     description: str,
     chat_id: str,
     commit_all: bool = False,
-    auto_commit: bool = True,
+    auto_commit: bool = False,
 ) -> tuple[bool, str]:
     """Commit changes to a file, directory, or all files in Git.
 
